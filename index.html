@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reproductor</title>
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background-color: #000;
+            color: white;
+        }
+        #video-container {
+            position: relative;
+            width: 80%;
+            max-width: 800px;
+        }
+        video {
+            width: 100%;
+            border: 2px solid white;
+        }
+        #ads-container {
+            position: fixed;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+        }
+        #floating-ad {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+    <div id="ads-container">
+        <script type='text/javascript' src='//pl26244401.effectiveratecpm.com/26/32/33/263233f09bf7d97e3bcf97a0e796d6f5.js'></script>
+    </div>
+    
+    <h2>Reproductor de Video</h2>
+    <div id="video-container">
+        <video id="video" controls></video>
+    </div>
+    
+    <div id="floating-ad">
+        <script type='text/javascript' src='//pl26244412.effectiveratecpm.com/bc/44/53/bc4453dcaf1db01aa61843459a48c51c.js'></script>
+    </div>
+    
+    <script>
+        const video = document.getElementById('video');
+        const videoUrl = "TU_LINK_M3U8_AQUI";  // Reemplaza con el enlace real
+        
+        if (Hls.isSupported()) {
+            const hls = new Hls();
+            hls.loadSource(videoUrl);
+            hls.attachMedia(video);
+            hls.on(Hls.Events.MANIFEST_PARSED, function() {
+                video.play();
+            });
+        } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+            video.src = videoUrl;
+            video.addEventListener('loadedmetadata', function() {
+                video.play();
+            });
+        }
+    </script>
+</body>
+</html>
