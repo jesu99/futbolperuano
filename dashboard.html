@@ -9,26 +9,33 @@
         const SUPABASE_URL = "https://srormesvqserhrfugrls.supabase.co";
         const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNyb3JtZXN2cXNlcmhyZnVncmxzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDMzNTk0MzUsImV4cCI6MjA1ODkzNTQzNX0.zGjT9CbTd6jb1lEBzK3OrsZJIgZSqJH9zfLXzWvLTlM";
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        
+        async function obtenerSaldo() {
+            const email = localStorage.getItem("user_email");
+            if (!email) return;
 
-        document.addEventListener("DOMContentLoaded", async function() {
-            const { data: { user } } = await supabase.auth.getUser();
+            let { data, error } = await supabase
+                .from("usuarios")
+                .select("saldo")
+                .eq("email", email)
+                .single();
             
-            if (!user) {
-                window.location.href = "index.html"; // Redirigir si no está logueado
+            if (error) {
+                console.error("Error al obtener saldo:", error);
             } else {
-                document.getElementById("user-email").textContent = user.email;
+                document.getElementById("saldo").textContent = data.saldo.toFixed(3);
             }
-        });
-
-        async function logout() {
-            await supabase.auth.signOut();
-            window.location.href = "index.html";
         }
+
+        document.addEventListener("DOMContentLoaded", () => {
+            obtenerSaldo();
+            setInterval(obtenerSaldo, 5000); // Polling cada 5 segundos
+        });
     </script>
 </head>
 <body>
-    <h2>Bienvenido al Dashboard</h2>
-    <p>Usuario logueado: <span id="user-email">Cargando...</span></p>
-    <button onclick="logout()">Cerrar sesión</button>
+    <h2>Bienvenido</h2>
+    <p>Tu saldo es: S/ <span id="saldo">0.000</span></p>
+    <button onclick="window.location.href='click.html'">Ganar dinero</button>
 </body>
 </html>
