@@ -3,77 +3,80 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Agregar Método de Pago</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script>
-        const SUPABASE_URL = "https://srormesvqserhrfugrls.supabase.co";
-        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNyb3JtZXN2cXNlcmhyZnVncmxzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDMzNTk0MzUsImV4cCI6MjA1ODkzNTQzNX0.zGjT9CbTd6jb1lEBzK3OrsZJIgZSqJH9zfLXzWvLTlM";
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-        document.addEventListener("DOMContentLoaded", async function() {
-            const { data: { user }, error } = await supabase.auth.getUser();
-
-            if (error || !user) {
-                console.error("Error obteniendo usuario:", error);
-                window.location.href = "index.html"; // Redirigir si no está logueado
-                return;
-            }
-
-            document.getElementById("user-email").textContent = user.email;
-
-            // Obtener el método de pago guardado
-            const { data, error: fetchError } = await supabase
-                .from("users")
-                .select("payment_method")
-                .eq("id", user.id)
-                .single();
-
-            if (fetchError) {
-                console.error("Error al obtener el método de pago:", fetchError);
-                document.getElementById("payment-method").value = "No registrado";
-            } else {
-                document.getElementById("payment-method").value = data?.payment_method || "No registrado";
-            }
-        });
-
-        async function savePaymentMethod() {
-            const newMethod = document.getElementById("payment-method").value.trim();
-            if (!newMethod) {
-                alert("Por favor, ingresa un método de pago.");
-                return;
-            }
-
-            const { data: { user }, error } = await supabase.auth.getUser();
-
-            if (!user) {
-                alert("No se pudo obtener la sesión del usuario.");
-                return;
-            }
-
-            let { error: updateError } = await supabase
-                .from("users")
-                .update({ payment_method: newMethod })
-                .eq("id", user.id);
-
-            if (updateError) {
-                alert("Error al guardar el método de pago.");
-                console.error(updateError);
-            } else {
-                alert("Método de pago actualizado correctamente.");
-                window.location.href = "dashboard.html"; // Volver al Dashboard
-            }
-        }
-    </script>
+    <title>Pago Seguro</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; margin: 20px; }
+        .hidden { display: none; }
+        .container { max-width: 400px; margin: auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px; }
+        label, select, input { display: block; margin-top: 10px; width: 100%; padding: 8px; }
+        button { margin-top: 15px; padding: 10px; cursor: pointer; width: 100%; }
+    </style>
 </head>
 <body>
-    <h2>Agregar Método de Pago</h2>
-    <p>Usuario: <span id="user-email">Cargando...</span></p>
-
-    <label for="payment-method">Método de Pago:</label>
-    <input type="text" id="payment-method" placeholder="Ej: Yape 999999999">
-    <button onclick="savePaymentMethod()">Guardar</button>
-
-    <br><br>
-    <a href="dashboard.html">Cancelar</a>
+    <div class="container">
+        <h2>Selecciona tu método de pago</h2>
+        <label for="payment_method">Método de Pago:</label>
+        <select id="payment_method" onchange="showPaymentField()">
+            <option value="">-- Selecciona --</option>
+            <option value="paypal">PayPal</option>
+            <option value="binance">Binance</option>
+            <option value="yape">Yape</option>
+        </select>
+        
+        <div id="paypal_field" class="hidden">
+            <label for="paypal_email">Correo de PayPal:</label>
+            <input type="email" id="paypal_email" placeholder="Ingresa tu correo de PayPal">
+        </div>
+        
+        <div id="binance_field" class="hidden">
+            <label for="binance_id">ID de Binance:</label>
+            <input type="text" id="binance_id" placeholder="Ingresa tu ID de Binance">
+        </div>
+        
+        <div id="yape_field" class="hidden">
+            <label for="yape_phone">Número de Yape:</label>
+            <input type="tel" id="yape_phone" placeholder="Ingresa tu número de Yape">
+        </div>
+        
+        <button onclick="submitPayment()">Continuar</button>
+    </div>
+    
+    <script>
+        function showPaymentField() {
+            let method = document.getElementById('payment_method').value;
+            document.getElementById('paypal_field').classList.add('hidden');
+            document.getElementById('binance_field').classList.add('hidden');
+            document.getElementById('yape_field').classList.add('hidden');
+            
+            if (method === 'paypal') {
+                document.getElementById('paypal_field').classList.remove('hidden');
+            } else if (method === 'binance') {
+                document.getElementById('binance_field').classList.remove('hidden');
+            } else if (method === 'yape') {
+                document.getElementById('yape_field').classList.remove('hidden');
+            }
+        }
+        
+        function submitPayment() {
+            let method = document.getElementById('payment_method').value;
+            let data = {};
+            
+            if (method === 'paypal') {
+                data.paypal_email = document.getElementById('paypal_email').value;
+            } else if (method === 'binance') {
+                data.binance_id = document.getElementById('binance_id').value;
+            } else if (method === 'yape') {
+                data.yape_phone = document.getElementById('yape_phone').value;
+            }
+            
+            if (!method || Object.values(data)[0] === "") {
+                alert("Por favor, completa los datos requeridos.");
+                return;
+            }
+            
+            alert("Pago procesado con: " + method + " - " + Object.values(data)[0]);
+            // Aquí puedes agregar la lógica para enviar los datos al servidor
+        }
+    </script>
 </body>
 </html>
