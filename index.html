@@ -5,6 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login con Supabase</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        let supabase;
+        document.addEventListener("DOMContentLoaded", function() {
+            const SUPABASE_URL = "https://srormesvqserhrfugrls.supabase.co";
+            const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNyb3JtZXN2cXNlcmhyZnVncmxzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDMzNTk0MzUsImV4cCI6MjA1ODkzNTQzNX0.zGjT9CbTd6jb1lEBzK3OrsZJIgZSqJH9zfLXzWvLTlM";
+            supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        });
+    </script>
 </head>
 <body>
     <h2>Registrarse</h2>
@@ -24,14 +32,14 @@
     <p id="message"></p>
 
     <script>
-        const SUPABASE_URL = "https://srormesvqserhrfugrls.supabase.co";
-        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNyb3JtZXN2cXNlcmhyZnVncmxzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDMzNTk0MzUsImV4cCI6MjA1ODkzNTQzNX0.zGjT9CbTd6jb1lEBzK3OrsZJIgZSqJH9zfLXzWvLTlM";
-        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-        // Registro de usuario
         document.getElementById("register-form").addEventListener("submit", async function(event) {
             event.preventDefault();
             
+            if (!supabase) {
+                document.getElementById("register-message").textContent = "Error: Supabase no está inicializado.";
+                return;
+            }
+
             const email = document.getElementById("reg-email").value;
             const password = document.getElementById("reg-password").value;
             
@@ -44,10 +52,14 @@
             }
         });
 
-        // Inicio de sesión
         document.getElementById("login-form").addEventListener("submit", async function(event) {
             event.preventDefault();
             
+            if (!supabase) {
+                document.getElementById("message").textContent = "Error: Supabase no está inicializado.";
+                return;
+            }
+
             const email = document.getElementById("email").value;
             const password = document.getElementById("password").value;
             
