@@ -48,7 +48,7 @@
             if (error) {
                 document.getElementById("register-message").textContent = "Error: " + error.message;
             } else {
-                document.getElementById("register-message").textContent = "Usuario registrado. Ahora puedes iniciar sesión.";
+                document.getElementById("register-message").textContent = "Usuario registrado. Revisa tu correo para confirmar la cuenta.";
             }
         });
 
@@ -66,7 +66,7 @@
             const { data, error } = await supabase.auth.signInWithPassword({ email, password });
             
             if (error) {
-                document.getElementById("message").textContent = "Error: " + error.message;
+                document.getElementById("message").textContent = "Error al iniciar sesión: " + error.message;
             } else {
                 document.getElementById("message").textContent = "Inicio de sesión exitoso.";
                 setTimeout(() => { window.location.href = "dashboard.html"; }, 1000);
