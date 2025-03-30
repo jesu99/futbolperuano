@@ -3,46 +3,76 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Click Tracker</title>
+    <title>Login con Supabase</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
-        const SUPABASE_URL = "https://srormesvqserhrfugrls.supabase.co";
-        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNyb3JtZXN2cXNlcmhyZnVncmxzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDMzNTk0MzUsImV4cCI6MjA1ODkzNTQzNX0.zGjT9CbTd6jb1lEBzK3OrsZJIgZSqJH9zfLXzWvLTlM";
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-        document.addEventListener("DOMContentLoaded", async function() {
-            const { data: { user } } = await supabase.auth.getUser();
-            
-            if (!user) {
-                window.location.href = "index.html";
-            }
+        let supabase;
+        document.addEventListener("DOMContentLoaded", function() {
+            const SUPABASE_URL = "https://srormesvqserhrfugrls.supabase.co";
+            const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNyb3JtZXN2cXNlcmhyZnVncmxzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDMzNTk0MzUsImV4cCI6MjA1ODkzNTQzNX0.zGjT9CbTd6jb1lEBzK3OrsZJIgZSqJH9zfLXzWvLTlM";
+            supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         });
-
-        async function trackClick() {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) return;
-
-            const { data, error } = await supabase
-                .from("users")
-                .select("balance")
-                .eq("id", user.id)
-                .single();
-
-            if (error) return console.error(error);
-
-            const newBalance = (data.balance || 0) + 0.001;
-
-            await supabase
-                .from("users")
-                .update({ balance: newBalance })
-                .eq("id", user.id);
-
-            alert("Click registrado! Nuevo saldo: " + newBalance);
-        }
     </script>
 </head>
 <body>
-    <h2>Haz clic en el anuncio</h2>
-    <button onclick="trackClick()">Clic aquí</button>
+    <h2>Registrarse</h2>
+    <form id="register-form">
+        <input type="email" id="reg-email" placeholder="Correo" required>
+        <input type="password" id="reg-password" placeholder="Contraseña" required>
+        <button type="submit">Registrarse</button>
+    </form>
+    <p id="register-message"></p>
+
+    <h2>Iniciar Sesión</h2>
+    <form id="login-form">
+        <input type="email" id="email" placeholder="Correo" required>
+        <input type="password" id="password" placeholder="Contraseña" required>
+        <button type="submit">Ingresar</button>
+    </form>
+    <p id="message"></p>
+
+    <script>
+        document.getElementById("register-form").addEventListener("submit", async function(event) {
+            event.preventDefault();
+            
+            if (!supabase) {
+                document.getElementById("register-message").textContent = "Error: Supabase no está inicializado.";
+                return;
+            }
+
+            const email = document.getElementById("reg-email").value;
+            const password = document.getElementById("reg-password").value;
+            
+            const { data, error } = await supabase.auth.signUp({ email, password });
+            
+            if (error) {
+                document.getElementById("register-message").textContent = "Error: " + error.message;
+            } else {
+                document.getElementById("register-message").textContent = "Usuario registrado. Ahora puedes iniciar sesión.";
+            }
+        });
+
+        document.getElementById("login-form").addEventListener("submit", async function(event) {
+            event.preventDefault();
+            
+            if (!supabase) {
+                document.getElementById("message").textContent = "Error: Supabase no está inicializado.";
+                return;
+            }
+
+            const email = document.getElementById("email").value;
+            const password = document.getElementById("password").value;
+            
+            const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+            
+            if (error) {
+                document.getElementById("message").textContent = "Error: " + error.message;
+            } else {
+                document.getElementById("message").textContent = "Inicio de sesión exitoso.";
+                localStorage.setItem("user_email", email);
+                setTimeout(() => { window.location.href = "dashboard.html"; }, 1000);
+            }
+        });
+    </script>
 </body>
 </html>
