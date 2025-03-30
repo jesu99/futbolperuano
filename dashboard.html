@@ -8,22 +8,19 @@
     <script>
         const SUPABASE_URL = "https://srormesvqserhrfugrls.supabase.co";
         const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNyb3JtZXN2cXNlcmhyZnVncmxzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDMzNTk0MzUsImV4cCI6MjA1ODkzNTQzNX0.zGjT9CbTd6jb1lEBzK3OrsZJIgZSqJH9zfLXzWvLTlM";
-        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        async function fetchUserData() {
-            const { data, error } = await supabase.auth.getUser();
-            if (error) {
-                console.error("Error al obtener usuario:", error);
-                return;
-            }
+        document.addEventListener("DOMContentLoaded", async function() {
+            const { data: { user } } = await supabase.auth.getUser();
             
-            if (data.user) {
-                document.getElementById("user-email").textContent = `Usuario: ${data.user.email}`;
-                fetchUserBalance(data.user.id);
+            if (!user) {
+                window.location.href = "index.html"; // Redirigir si no está logueado
             } else {
-                window.location.href = "index.html"; // Redirige si no está logueado
+                document.getElementById("user-email").textContent = user.email;
+                fetchUserBalance(user.id);
+                setInterval(() => fetchUserBalance(user.id), 5000); // Polling cada 5s
             }
-        }
+        });
 
         async function fetchUserBalance(userId) {
             const { data, error } = await supabase
@@ -40,22 +37,15 @@
         }
 
         async function logout() {
-            const { error } = await supabase.auth.signOut();
-            if (!error) {
-                window.location.href = "index.html";
-            }
+            await supabase.auth.signOut();
+            window.location.href = "index.html";
         }
-
-        document.addEventListener("DOMContentLoaded", () => {
-            fetchUserData();
-            setInterval(fetchUserData, 5000); // Actualiza cada 5 segundos
-        });
     </script>
 </head>
 <body>
-    <h2>Dashboard</h2>
-    <p id="user-email">Cargando usuario...</p>
-    <p id="user-balance">Cargando saldo...</p>
+    <h2>Bienvenido al Dashboard</h2>
+    <p>Usuario logueado: <span id="user-email">Cargando...</span></p>
+    <p>Saldo: <span id="user-balance">Cargando...</span></p>
     <button onclick="logout()">Cerrar sesión</button>
 </body>
 </html>
