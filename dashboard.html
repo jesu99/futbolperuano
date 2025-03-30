@@ -36,6 +36,10 @@
             }
         });
 
+        function redirectToPayment() {
+            window.location.href = "pagos.html"; // Asegúrate de que la ruta es correcta
+        }
+
         async function logout() {
             await supabase.auth.signOut();
             window.location.href = "index.html";
@@ -47,10 +51,6 @@
     <p>Usuario logueado: <span id="user-email">Cargando...</span></p>
     <p>Saldo: S/ <span id="user-balance">Cargando...</span></p>
     <button onclick="logout()">Cerrar sesión</button>
-   <button onclick="redirectToPayment()">Agregar / Cambiar Método de Pago</button>
-
-
-
-
+    <button onclick="redirectToPayment()">Agregar / Cambiar Método de Pago</button>
 </body>
 </html>
