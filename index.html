@@ -7,6 +7,14 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
+    <h2>Registrarse</h2>
+    <form id="register-form">
+        <input type="email" id="reg-email" placeholder="Correo" required>
+        <input type="password" id="reg-password" placeholder="Contraseña" required>
+        <button type="submit">Registrarse</button>
+    </form>
+    <p id="register-message"></p>
+
     <h2>Iniciar Sesión</h2>
     <form id="login-form">
         <input type="email" id="email" placeholder="Correo" required>
@@ -20,6 +28,23 @@
         const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNyb3JtZXN2cXNlcmhyZnVncmxzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDMzNTk0MzUsImV4cCI6MjA1ODkzNTQzNX0.zGjT9CbTd6jb1lEBzK3OrsZJIgZSqJH9zfLXzWvLTlM";
         const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+        // Registro de usuario
+        document.getElementById("register-form").addEventListener("submit", async function(event) {
+            event.preventDefault();
+            
+            const email = document.getElementById("reg-email").value;
+            const password = document.getElementById("reg-password").value;
+            
+            const { data, error } = await supabase.auth.signUp({ email, password });
+            
+            if (error) {
+                document.getElementById("register-message").textContent = "Error: " + error.message;
+            } else {
+                document.getElementById("register-message").textContent = "Usuario registrado. Ahora puedes iniciar sesión.";
+            }
+        });
+
+        // Inicio de sesión
         document.getElementById("login-form").addEventListener("submit", async function(event) {
             event.preventDefault();
             
@@ -32,6 +57,7 @@
                 document.getElementById("message").textContent = "Error: " + error.message;
             } else {
                 document.getElementById("message").textContent = "Inicio de sesión exitoso.";
+                setTimeout(() => { window.location.href = "dashboard.html"; }, 1000);
             }
         });
     </script>
