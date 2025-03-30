@@ -59,6 +59,12 @@
         button:hover {
             background-color: #3367d6;
         }
+        .secondary-button {
+            background-color: #6c757d;
+        }
+        .secondary-button:hover {
+            background-color: #5a6268;
+        }
         .success-message { 
             color: #28a745; 
             margin-top: 10px; 
@@ -72,6 +78,14 @@
             padding: 10px;
             background-color: #f8d7da;
             border-radius: 5px;
+        }
+        .warning-message {
+            color: #856404;
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #fff3cd;
+            border-radius: 5px;
+            font-weight: bold;
         }
         .validation-error {
             color: #dc3545;
@@ -89,6 +103,51 @@
             display: flex;
             align-items: center;
         }
+        .confirmation-dialog {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .confirmation-content {
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            max-width: 400px;
+            width: 80%;
+        }
+        .confirmation-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+        .confirmation-buttons button {
+            width: 48%;
+        }
+        .saved-data {
+            text-align: left;
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+            border-left: 4px solid #28a745;
+        }
+        .saved-data h3 {
+            margin-top: 0;
+            color: #28a745;
+        }
+        .saved-data p {
+            margin: 5px 0;
+        }
+        .saved-data strong {
+            margin-right: 5px;
+        }
     </style>
 </head>
 <body>
@@ -96,44 +155,74 @@
         <h2>Selecciona tu método de pago</h2>
         <div id="status-message"></div>
         
-        <label for="payment_method">Método de Pago:</label>
-        <select id="payment_method" onchange="showPaymentField()">
-            <option value="">-- Selecciona --</option>
-            <option value="paypal">PayPal</option>
-            <option value="binance">Binance</option>
-            <option value="yape">Yape</option>
-        </select>
-        
-        <div id="paypal_field" class="hidden">
-            <label for="paypal_email">Correo de PayPal:</label>
-            <input type="email" id="paypal_email" placeholder="Ingresa tu correo de PayPal">
-            <div id="paypal_email_error" class="validation-error"></div>
+        <div id="payment-form">
+            <label for="payment_method">Método de Pago:</label>
+            <select id="payment_method" onchange="showPaymentField()">
+                <option value="">-- Selecciona --</option>
+                <option value="paypal">PayPal</option>
+                <option value="binance">Binance</option>
+                <option value="yape">Yape</option>
+            </select>
+            
+            <div id="paypal_field" class="hidden">
+                <label for="paypal_email">Correo de PayPal:</label>
+                <input type="email" id="paypal_email" placeholder="Ingresa tu correo de PayPal">
+                <div id="paypal_email_error" class="validation-error"></div>
+            </div>
+            
+            <div id="binance_field" class="hidden">
+                <label for="binance_id">ID de Binance:</label>
+                <input type="text" id="binance_id" placeholder="Ingresa tu ID de Binance">
+                <div id="binance_id_error" class="validation-error"></div>
+            </div>
+            
+            <div id="yape_field" class="hidden">
+                <label for="yape_phone">Número de Yape:</label>
+                <input type="tel" id="yape_phone" placeholder="Ingresa tu número de Yape">
+                <div id="yape_phone_error" class="validation-error"></div>
+            </div>
+            
+            <button id="submit_button" onclick="validateAndConfirm()">Guardar</button>
         </div>
-        
-        <div id="binance_field" class="hidden">
-            <label for="binance_id">ID de Binance:</label>
-            <input type="text" id="binance_id" placeholder="Ingresa tu ID de Binance">
-            <div id="binance_id_error" class="validation-error"></div>
+
+        <div id="saved-data-container" class="hidden saved-data">
+            <h3>Método de pago guardado</h3>
+            <p><strong>Método:</strong> <span id="saved-method"></span></p>
+            <p id="saved-paypal" class="hidden"><strong>Correo PayPal:</strong> <span id="saved-paypal-email"></span></p>
+            <p id="saved-binance" class="hidden"><strong>ID Binance:</strong> <span id="saved-binance-id"></span></p>
+            <p id="saved-yape" class="hidden"><strong>Número Yape:</strong> <span id="saved-yape-phone"></span></p>
+            <p><strong>ID de usuario:</strong> <span id="saved-user-id"></span></p>
         </div>
-        
-        <div id="yape_field" class="hidden">
-            <label for="yape_phone">Número de Yape:</label>
-            <input type="tel" id="yape_phone" placeholder="Ingresa tu número de Yape">
-            <div id="yape_phone_error" class="validation-error"></div>
+    </div>
+
+    <!-- Diálogo de confirmación -->
+    <div id="confirmation-dialog" class="confirmation-dialog hidden">
+        <div class="confirmation-content">
+            <div class="warning-message">
+                ⚠️ Una vez guardado, no podrás cambiar tu método de pago. ¿Deseas continuar?
+            </div>
+            <div class="confirmation-buttons">
+                <button class="secondary-button" onclick="hideConfirmation()">Cancelar</button>
+                <button onclick="submitPayment()">Confirmar</button>
+            </div>
         </div>
-        
-        <button id="submit_button" onclick="submitPayment()">Guardar</button>
     </div>
     
     <script>
+        // Simula un ID de usuario para demostración
+        const userId = "user_" + Math.random().toString(36).substr(2, 9);
+        
         // Esta función debería ejecutarse en el servidor o mediante una función segura
         // Las credenciales de Supabase no deberían estar expuestas en el cliente
         async function savePaymentMethod(paymentData) {
             // En un entorno real, se enviaría este objeto a un endpoint de backend
-            // que manejaría la autenticación segura con Supabase
+            // que manejaría la autenticación segura con Supabase y guardaría los datos en auth.users
             
             // Simulación de respuesta exitosa
-            return { success: true };
+            return { 
+                success: true,
+                user_id: userId
+            };
         }
         
         function showPaymentField() {
@@ -184,7 +273,7 @@
             return id.length >= 6;
         }
         
-        async function submitPayment() {
+        function validateAndConfirm() {
             let method = document.getElementById('payment_method').value;
             let isValid = true;
             
@@ -192,11 +281,6 @@
                 showMessage("Por favor, selecciona un método de pago.", true);
                 return;
             }
-            
-            let paymentData = {
-                payment_method: method,
-                created_at: new Date().toISOString()
-            };
             
             // Validar según el método de pago
             if (method === 'paypal') {
@@ -207,8 +291,6 @@
                 } else if (!validateEmail(paypalEmail)) {
                     document.getElementById('paypal_email_error').textContent = "Formato de correo inválido.";
                     isValid = false;
-                } else {
-                    paymentData.paypal_email = paypalEmail;
                 }
             } else if (method === 'binance') {
                 const binanceId = document.getElementById('binance_id').value;
@@ -218,8 +300,6 @@
                 } else if (!validateBinanceId(binanceId)) {
                     document.getElementById('binance_id_error').textContent = "El ID debe tener al menos 6 caracteres.";
                     isValid = false;
-                } else {
-                    paymentData.binance_id = binanceId;
                 }
             } else if (method === 'yape') {
                 const yapePhone = document.getElementById('yape_phone').value;
@@ -229,13 +309,38 @@
                 } else if (!validatePhoneNumber(yapePhone)) {
                     document.getElementById('yape_phone_error').textContent = "Debe ser un número peruano válido (9 seguido de 8 dígitos).";
                     isValid = false;
-                } else {
-                    paymentData.yape_phone = yapePhone;
                 }
             }
             
-            if (!isValid) {
-                return;
+            if (isValid) {
+                // Mostrar diálogo de confirmación
+                document.getElementById('confirmation-dialog').classList.remove('hidden');
+            }
+        }
+        
+        function hideConfirmation() {
+            document.getElementById('confirmation-dialog').classList.add('hidden');
+        }
+        
+        async function submitPayment() {
+            // Ocultar diálogo de confirmación
+            hideConfirmation();
+            
+            let method = document.getElementById('payment_method').value;
+            
+            let paymentData = {
+                payment_method: method,
+                created_at: new Date().toISOString(),
+                user_id: userId
+            };
+            
+            // Obtener datos según el método de pago
+            if (method === 'paypal') {
+                paymentData.paypal_email = document.getElementById('paypal_email').value;
+            } else if (method === 'binance') {
+                paymentData.binance_id = document.getElementById('binance_id').value;
+            } else if (method === 'yape') {
+                paymentData.yape_phone = document.getElementById('yape_phone').value;
             }
             
             // Desactivar botón durante el envío
@@ -250,12 +355,11 @@
                 if (result.success) {
                     showMessage("¡Método de pago guardado correctamente!");
                     
-                    // Limpiar formulario después de guardar
-                    document.getElementById('payment_method').value = "";
-                    document.getElementById('paypal_email').value = "";
-                    document.getElementById('binance_id').value = "";
-                    document.getElementById('yape_phone').value = "";
-                    showPaymentField(); // Ocultar todos los campos
+                    // Mostrar los datos guardados
+                    displaySavedData(paymentData, result.user_id);
+                    
+                    // Ocultar el formulario de pago
+                    document.getElementById('payment-form').classList.add('hidden');
                 } else {
                     showMessage("Error al guardar el método de pago: " + (result.error || "Error desconocido"), true);
                 }
@@ -266,6 +370,38 @@
                 // Restaurar el botón
                 submitButton.disabled = false;
                 submitButton.textContent = "Guardar";
+            }
+        }
+        
+        function displaySavedData(paymentData, userId) {
+            // Método de pago
+            document.getElementById('saved-method').textContent = getMethodName(paymentData.payment_method);
+            
+            // Datos específicos según el método
+            if (paymentData.payment_method === 'paypal') {
+                document.getElementById('saved-paypal').classList.remove('hidden');
+                document.getElementById('saved-paypal-email').textContent = paymentData.paypal_email;
+            } else if (paymentData.payment_method === 'binance') {
+                document.getElementById('saved-binance').classList.remove('hidden');
+                document.getElementById('saved-binance-id').textContent = paymentData.binance_id;
+            } else if (paymentData.payment_method === 'yape') {
+                document.getElementById('saved-yape').classList.remove('hidden');
+                document.getElementById('saved-yape-phone').textContent = paymentData.yape_phone;
+            }
+            
+            // ID de usuario
+            document.getElementById('saved-user-id').textContent = userId;
+            
+            // Mostrar el contenedor de datos guardados
+            document.getElementById('saved-data-container').classList.remove('hidden');
+        }
+        
+        function getMethodName(method) {
+            switch (method) {
+                case 'paypal': return 'PayPal';
+                case 'binance': return 'Binance';
+                case 'yape': return 'Yape';
+                default: return method;
             }
         }
     </script>
