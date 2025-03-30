@@ -11,13 +11,18 @@
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         document.addEventListener("DOMContentLoaded", async function() {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) {
-                window.location.href = "index.html"; // Redirigir si no está logueado
-            } else {
-                document.getElementById("user-email").textContent = user.email;
-                fetchUserData(user.id);
+            const { data: { user }, error } = await supabase.auth.getUser();
+
+            if (error || !user) {
+                window.location.href = "index.html"; // Si no hay sesión, redirige al login
+                return;
             }
+
+            // Mostrar email del usuario
+            document.getElementById("user-email").textContent = user.email;
+
+            // Obtener método de pago
+            fetchUserData(user.id);
         });
 
         async function fetchUserData(userId) {
@@ -32,21 +37,26 @@
                 return;
             }
 
-            document.getElementById("payment-method").value = data.payment_method || "";
+            document.getElementById("payment-method").value = data?.payment_method || "";
         }
 
         async function savePaymentMethod() {
             const newMethod = document.getElementById("payment-method").value;
-            const { data: { user } } = await supabase.auth.getUser();
+            const { data: { user }, error } = await supabase.auth.getUser();
 
-            let { error } = await supabase
+            if (!user) {
+                alert("No se pudo obtener la sesión del usuario.");
+                return;
+            }
+
+            let { error: updateError } = await supabase
                 .from("users")
                 .update({ payment_method: newMethod })
                 .eq("id", user.id);
 
-            if (error) {
+            if (updateError) {
                 alert("Error al guardar el método de pago");
-                console.error(error);
+                console.error(updateError);
             } else {
                 alert("Método de pago actualizado correctamente");
                 window.location.href = "dashboard.html"; // Redirige al Dashboard
