@@ -8,34 +8,43 @@
     <script>
         const SUPABASE_URL = "https://srormesvqserhrfugrls.supabase.co";
         const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNyb3JtZXN2cXNlcmhyZnVncmxzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDMzNTk0MzUsImV4cCI6MjA1ODkzNTQzNX0.zGjT9CbTd6jb1lEBzK3OrsZJIgZSqJH9zfLXzWvLTlM";
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-        
-        async function obtenerSaldo() {
-            const email = localStorage.getItem("user_email");
-            if (!email) return;
+        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-            let { data, error } = await supabase
-                .from("usuarios")
-                .select("saldo")
-                .eq("email", email)
+        async function fetchUserData() {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+                document.getElementById("user-email").textContent = `Usuario: ${user.email}`;
+                fetchUserBalance(user.id);
+            } else {
+                window.location.href = "index.html"; // Redirige si no está logueado
+            }
+        }
+
+        async function fetchUserBalance(userId) {
+            const { data, error } = await supabase
+                .from("users")
+                .select("balance")
+                .eq("id", userId)
                 .single();
             
             if (error) {
                 console.error("Error al obtener saldo:", error);
             } else {
-                document.getElementById("saldo").textContent = data.saldo.toFixed(3);
+                document.getElementById("user-balance").textContent = `Saldo: $${data.balance}`;
             }
         }
 
         document.addEventListener("DOMContentLoaded", () => {
-            obtenerSaldo();
-            setInterval(obtenerSaldo, 5000); // Polling cada 5 segundos
+            fetchUserData();
+            setInterval(() => {
+                fetchUserData();
+            }, 5000); // Actualiza cada 5 segundos
         });
     </script>
 </head>
 <body>
-    <h2>Bienvenido</h2>
-    <p>Tu saldo es: S/ <span id="saldo">0.000</span></p>
-    <button onclick="window.location.href='click.html'">Ganar dinero</button>
+    <h2>Dashboard</h2>
+    <p id="user-email">Cargando usuario...</p>
+    <p id="user-balance">Cargando saldo...</p>
 </body>
 </html>
