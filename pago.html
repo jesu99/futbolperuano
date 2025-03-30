@@ -4,17 +4,23 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pago Seguro</title>
+    <!-- Biblioteca de Supabase -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <style>
         body { font-family: Arial, sans-serif; text-align: center; margin: 20px; }
         .hidden { display: none; }
         .container { max-width: 400px; margin: auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px; }
         label, select, input { display: block; margin-top: 10px; width: 100%; padding: 8px; }
         button { margin-top: 15px; padding: 10px; cursor: pointer; width: 100%; }
+        .success-message { color: green; margin-top: 10px; }
+        .error-message { color: red; margin-top: 10px; }
     </style>
 </head>
 <body>
     <div class="container">
         <h2>Selecciona tu método de pago</h2>
+        <div id="status-message"></div>
+        
         <label for="payment_method">Método de Pago:</label>
         <select id="payment_method" onchange="showPaymentField()">
             <option value="">-- Selecciona --</option>
@@ -38,10 +44,15 @@
             <input type="tel" id="yape_phone" placeholder="Ingresa tu número de Yape">
         </div>
         
-        <button onclick="submitPayment()">Continuar</button>
+        <button onclick="submitPayment()">Guardar</button>
     </div>
     
     <script>
+        // Configura el cliente de Supabase - REEMPLAZA ESTAS CREDENCIALES
+        const SUPABASE_URL = 'YOUR_SUPABASE_URL';
+        const SUPABASE_KEY = 'YOUR_SUPABASE_KEY';
+        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        
         function showPaymentField() {
             let method = document.getElementById('payment_method').value;
             document.getElementById('paypal_field').classList.add('hidden');
@@ -57,25 +68,76 @@
             }
         }
         
-        function submitPayment() {
+        function showMessage(message, isError = false) {
+            const statusElement = document.getElementById('status-message');
+            statusElement.textContent = message;
+            statusElement.className = isError ? 'error-message' : 'success-message';
+            
+            // Limpiar mensaje después de 5 segundos
+            setTimeout(() => {
+                statusElement.textContent = '';
+                statusElement.className = '';
+            }, 5000);
+        }
+        
+        async function submitPayment() {
             let method = document.getElementById('payment_method').value;
-            let data = {};
+            let paymentData = {
+                payment_method: method,
+                created_at: new Date().toISOString()
+                // Si necesitas incluir el ID del usuario logueado:
+                // user_id: 'ID_DEL_USUARIO_ACTUAL'
+            };
             
+            // Agregar el valor específico según el método de pago
             if (method === 'paypal') {
-                data.paypal_email = document.getElementById('paypal_email').value;
+                paymentData.paypal_email = document.getElementById('paypal_email').value;
+                if (!paymentData.paypal_email) {
+                    showMessage("Por favor, ingresa tu correo de PayPal.", true);
+                    return;
+                }
             } else if (method === 'binance') {
-                data.binance_id = document.getElementById('binance_id').value;
+                paymentData.binance_id = document.getElementById('binance_id').value;
+                if (!paymentData.binance_id) {
+                    showMessage("Por favor, ingresa tu ID de Binance.", true);
+                    return;
+                }
             } else if (method === 'yape') {
-                data.yape_phone = document.getElementById('yape_phone').value;
-            }
-            
-            if (!method || Object.values(data)[0] === "") {
-                alert("Por favor, completa los datos requeridos.");
+                paymentData.yape_phone = document.getElementById('yape_phone').value;
+                if (!paymentData.yape_phone) {
+                    showMessage("Por favor, ingresa tu número de Yape.", true);
+                    return;
+                }
+            } else {
+                showMessage("Por favor, selecciona un método de pago.", true);
                 return;
             }
             
-            alert("Pago procesado con: " + method + " - " + Object.values(data)[0]);
-            // Aquí puedes agregar la lógica para enviar los datos al servidor
+            try {
+                // Insertar datos en la tabla (reemplaza 'payment_methods' con el nombre real de tu tabla)
+                const { data, error } = await supabase
+                    .from('payment_methods')
+                    .insert([paymentData]);
+                    
+                if (error) {
+                    console.error('Error al guardar en Supabase:', error);
+                    showMessage('Error al guardar el método de pago: ' + error.message, true);
+                    return;
+                }
+                
+                showMessage("¡Método de pago guardado correctamente!");
+                
+                // Opcional: Limpiar formulario después de guardar
+                document.getElementById('payment_method').value = "";
+                document.getElementById('paypal_email').value = "";
+                document.getElementById('binance_id').value = "";
+                document.getElementById('yape_phone').value = "";
+                showPaymentField(); // Ocultar todos los campos
+                
+            } catch (err) {
+                console.error('Error en la conexión:', err);
+                showMessage('Error de conexión. Por favor, intenta nuevamente.', true);
+            }
         }
     </script>
 </body>
