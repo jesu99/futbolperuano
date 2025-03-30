@@ -14,6 +14,7 @@
             const { data: { user }, error } = await supabase.auth.getUser();
 
             if (error || !user) {
+                console.error("Error obteniendo usuario:", error);
                 window.location.href = "index.html"; // Redirigir si no está logueado
                 return;
             }
@@ -29,13 +30,19 @@
 
             if (fetchError) {
                 console.error("Error al obtener el método de pago:", fetchError);
+                document.getElementById("payment-method").value = "No registrado";
             } else {
-                document.getElementById("payment-method").value = data?.payment_method || "";
+                document.getElementById("payment-method").value = data?.payment_method || "No registrado";
             }
         });
 
         async function savePaymentMethod() {
-            const newMethod = document.getElementById("payment-method").value;
+            const newMethod = document.getElementById("payment-method").value.trim();
+            if (!newMethod) {
+                alert("Por favor, ingresa un método de pago.");
+                return;
+            }
+
             const { data: { user }, error } = await supabase.auth.getUser();
 
             if (!user) {
@@ -49,10 +56,10 @@
                 .eq("id", user.id);
 
             if (updateError) {
-                alert("Error al guardar el método de pago");
+                alert("Error al guardar el método de pago.");
                 console.error(updateError);
             } else {
-                alert("Método de pago actualizado correctamente");
+                alert("Método de pago actualizado correctamente.");
                 window.location.href = "dashboard.html"; // Volver al Dashboard
             }
         }
@@ -62,6 +69,7 @@
     <h2>Agregar Método de Pago</h2>
     <p>Usuario: <span id="user-email">Cargando...</span></p>
 
+    <label for="payment-method">Método de Pago:</label>
     <input type="text" id="payment-method" placeholder="Ej: Yape 999999999">
     <button onclick="savePaymentMethod()">Guardar</button>
 
