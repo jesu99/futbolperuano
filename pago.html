@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Agregar Método de Pago</title>
+    <title>Método de Pago</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
         const SUPABASE_URL = "https://srormesvqserhrfugrls.supabase.co";
-        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNyb3JtZXN2cXNlcmhyZnVncmxzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDMzNTk0MzUsImV4cCI6MjA1ODkzNTQzNX0.zGjT9CbTd6jb1lEBzK3OrsZJIgZSqJH9zfLXzWvLTlM";
+        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...";
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         document.addEventListener("DOMContentLoaded", async function() {
@@ -15,65 +15,43 @@
             const user = data?.user;
 
             if (error || !user) {
-                window.location.href = "index.html"; // Si no hay sesión, redirige al login
+                console.error("Error obteniendo usuario:", error);
+                window.location.href = "index.html"; // Redirigir si no hay sesión
                 return;
             }
 
-            // Mostrar email del usuario
             document.getElementById("user-email").textContent = user.email;
-
-            // Obtener método de pago
-            if (user) fetchUserData(user.id);
+            obtenerMetodoPago(user.id);
         });
 
-        async function fetchUserData(userId) {
-            let { data, error } = await supabase
+        async function obtenerMetodoPago(userId) {
+            const { data, error } = await supabase
                 .from("users")
-                .select("payment_method")
+                .select("payment_method")  // La columna correcta es "payment_method"
                 .eq("id", userId)
                 .single();
 
             if (error) {
-                console.error("Error al obtener datos:", error);
+                console.error("Error obteniendo método de pago:", error);
+                document.getElementById("mostrar-pago").textContent = "No se pudo cargar el método de pago.";
                 return;
             }
 
-            document.getElementById("payment-method").value = data?.payment_method || "";
-        }
+            console.log("Método de pago obtenido:", data?.payment_method); // Depuración en consola
 
-        async function savePaymentMethod() {
-            const newMethod = document.getElementById("payment-method").value;
-            const { data, error } = await supabase.auth.getUser();
-            const user = data?.user;
-
-            if (!user) {
-                alert("No se pudo obtener la sesión del usuario.");
-                return;
-            }
-
-            let { error: updateError } = await supabase
-                .from("users")
-                .update({ payment_method: newMethod })
-                .eq("id", user.id);
-
-            if (updateError) {
-                alert("Error al guardar el método de pago");
-                console.error(updateError);
-            } else {
-                alert("Método de pago actualizado correctamente");
-                window.location.href = "dashboard.html"; // Redirige al Dashboard
-            }
+            // Mostrar el método de pago en pantalla
+            document.getElementById("mostrar-pago").textContent = data?.payment_method || "No registrado";
         }
     </script>
 </head>
 <body>
-    <h2>Agregar Método de Pago</h2>
+    <h2>Método de Pago</h2>
     <p>Usuario: <span id="user-email">Cargando...</span></p>
 
-    <input type="text" id="payment-method" placeholder="Ej: Yape 999999999">
-    <button onclick="savePaymentMethod()">Guardar</button>
+    <h3>Método de pago registrado:</h3>
+    <p id="mostrar-pago">Cargando...</p>
 
-    <br><br>
-    <a href="dashboard.html">Cancelar</a>
+    <br>
+    <a href="dashboard.html">Volver al Dashboard</a>
 </body>
 </html>
