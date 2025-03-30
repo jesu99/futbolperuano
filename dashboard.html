@@ -11,10 +11,15 @@
         const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         async function fetchUserData() {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (user) {
-                document.getElementById("user-email").textContent = `Usuario: ${user.email}`;
-                fetchUserBalance(user.id);
+            const { data, error } = await supabase.auth.getUser();
+            if (error) {
+                console.error("Error al obtener usuario:", error);
+                return;
+            }
+            
+            if (data.user) {
+                document.getElementById("user-email").textContent = `Usuario: ${data.user.email}`;
+                fetchUserBalance(data.user.id);
             } else {
                 window.location.href = "index.html"; // Redirige si no está logueado
             }
@@ -34,11 +39,16 @@
             }
         }
 
+        async function logout() {
+            const { error } = await supabase.auth.signOut();
+            if (!error) {
+                window.location.href = "index.html";
+            }
+        }
+
         document.addEventListener("DOMContentLoaded", () => {
             fetchUserData();
-            setInterval(() => {
-                fetchUserData();
-            }, 5000); // Actualiza cada 5 segundos
+            setInterval(fetchUserData, 5000); // Actualiza cada 5 segundos
         });
     </script>
 </head>
@@ -46,5 +56,6 @@
     <h2>Dashboard</h2>
     <p id="user-email">Cargando usuario...</p>
     <p id="user-balance">Cargando saldo...</p>
+    <button onclick="logout()">Cerrar sesión</button>
 </body>
 </html>
