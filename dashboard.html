@@ -11,30 +11,30 @@
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         document.addEventListener("DOMContentLoaded", async function() {
-            const { data: { user } } = await supabase.auth.getUser();
+            const { data: { user }, error } = await supabase.auth.getUser();
             
-            if (!user) {
+            if (error || !user) {
                 window.location.href = "index.html"; // Redirigir si no está logueado
+                return;
+            }
+
+            document.getElementById("user-email").textContent = user.email;
+            
+            // Verificar si el usuario ya está en la tabla 'users'
+            const { data, error: userError } = await supabase
+                .from('users')
+                .select('balance')
+                .eq('id', user.id)
+                .single();
+
+            if (userError || !data) {
+                console.log("Usuario no encontrado, creando en la base de datos...");
+                await supabase.from('users').insert([{ id: user.id, balance: 0 }]);
+                document.getElementById("user-balance").textContent = "0.00";
             } else {
-                document.getElementById("user-email").textContent = user.email;
-                fetchUserBalance(user.id);
-                setInterval(() => fetchUserBalance(user.id), 5000); // Polling cada 5s
+                document.getElementById("user-balance").textContent = data.balance;
             }
         });
-
-        async function fetchUserBalance(userId) {
-            const { data, error } = await supabase
-                .from("users")
-                .select("balance")
-                .eq("id", userId)
-                .single();
-            
-            if (error) {
-                console.error("Error al obtener saldo:", error);
-            } else {
-                document.getElementById("user-balance").textContent = `Saldo: $${data.balance}`;
-            }
-        }
 
         async function logout() {
             await supabase.auth.signOut();
@@ -45,7 +45,7 @@
 <body>
     <h2>Bienvenido al Dashboard</h2>
     <p>Usuario logueado: <span id="user-email">Cargando...</span></p>
-    <p>Saldo: <span id="user-balance">Cargando...</span></p>
+    <p>Saldo: S/ <span id="user-balance">Cargando...</span></p>
     <button onclick="logout()">Cerrar sesión</button>
 </body>
 </html>
