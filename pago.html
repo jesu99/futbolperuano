@@ -11,7 +11,8 @@
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         document.addEventListener("DOMContentLoaded", async function() {
-            const { data: { user }, error } = await supabase.auth.getUser();
+            const { data, error } = await supabase.auth.getUser();
+            const user = data?.user;
 
             if (error || !user) {
                 window.location.href = "index.html"; // Si no hay sesión, redirige al login
@@ -22,7 +23,7 @@
             document.getElementById("user-email").textContent = user.email;
 
             // Obtener método de pago
-            fetchUserData(user.id);
+            if (user) fetchUserData(user.id);
         });
 
         async function fetchUserData(userId) {
@@ -42,7 +43,8 @@
 
         async function savePaymentMethod() {
             const newMethod = document.getElementById("payment-method").value;
-            const { data: { user }, error } = await supabase.auth.getUser();
+            const { data, error } = await supabase.auth.getUser();
+            const user = data?.user;
 
             if (!user) {
                 alert("No se pudo obtener la sesión del usuario.");
