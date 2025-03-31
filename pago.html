@@ -3,55 +3,78 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Seleccionar Método de Pago</title>
+    <title>Configurar Método de Pago</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
         const SUPABASE_URL = "https://srormesvqserhrfugrls.supabase.co";
         const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNyb3JtZXN2cXNlcmhyZnVncmxzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDMzNTk0MzUsImV4cCI6MjA1ODkzNTQzNX0.zGjT9CbTd6jb1lEBzK3OrsZJIgZSqJH9zfLXzWvLTlM";
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        document.addEventListener("DOMContentLoaded", async function() {
+        document.addEventListener("DOMContentLoaded", async function () {
             const { data: { user }, error } = await supabase.auth.getUser();
+            
             if (error || !user) {
                 window.location.href = "index.html"; // Redirigir si no está logueado
                 return;
             }
+
             document.getElementById("user-email").textContent = user.email;
+            
+            // Cargar datos de pago existentes
+            const { data, error: userError } = await supabase
+                .from('users')
+                .select('payment_method, payment_id')
+                .eq('id', user.id)
+                .single();
+
+            if (!userError && data) {
+                document.getElementById("saved-method").textContent = data.payment_method || "No registrado";
+                document.getElementById("saved-id").textContent = data.payment_id || "No registrado";
+            }
         });
 
-        async function guardarMetodoPago() {
-            const metodo = document.getElementById("metodo").value;
-            const cuenta = document.getElementById("cuenta").value;
+        async function savePaymentMethod() {
+            const method = document.getElementById("payment-method").value;
+            const paymentId = document.getElementById("payment-id").value;
+
             const { data: { user } } = await supabase.auth.getUser();
-            if (!user) return alert("No estás autenticado");
-            
+            if (!user) return;
+
             const { error } = await supabase
                 .from('users')
-                .update({ payment_method: metodo, payment_id: cuenta })
+                .update({ payment_method: method, payment_id: paymentId })
                 .eq('id', user.id);
-            
+
             if (error) {
-                alert("Error al guardar método de pago");
-                console.error(error);
-            } else {
-                alert("Método de pago guardado correctamente");
+                alert("Error al guardar: " + error.message);
+                return;
             }
+
+            // Mostrar confirmación
+            document.getElementById("saved-method").textContent = method;
+            document.getElementById("saved-id").textContent = paymentId;
+            alert("Método de pago guardado correctamente.");
         }
     </script>
 </head>
 <body>
-    <h2>Seleccionar Método de Pago</h2>
+    <h2>Configurar Método de Pago</h2>
     <p>Usuario: <span id="user-email">Cargando...</span></p>
-    <label for="metodo">Método de pago:</label>
-    <select id="metodo">
-        <option value="Yape">Yape</option>
+
+    <label for="payment-method">Selecciona un método de pago:</label>
+    <select id="payment-method">
         <option value="PayPal">PayPal</option>
+        <option value="Yape">Yape</option>
         <option value="Binance">Binance</option>
     </select>
-    <br>
-    <label for="cuenta">Correo o Número:</label>
-    <input type="text" id="cuenta" placeholder="Tu correo o número">
-    <br>
-    <button onclick="guardarMetodoPago()">Guardar</button>
+
+    <label for="payment-id">Ingresa tu ID de pago (correo de PayPal, número de Yape, etc.):</label>
+    <input type="text" id="payment-id" placeholder="Ejemplo: usuario@email.com">
+
+    <button onclick="savePaymentMethod()">Guardar Método de Pago</button>
+
+    <h3>Método de Pago Guardado:</h3>
+    <p><strong>Método:</strong> <span id="saved-method">No registrado</span></p>
+    <p><strong>ID:</strong> <span id="saved-id">No registrado</span></p>
 </body>
 </html>
