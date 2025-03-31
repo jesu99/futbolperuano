@@ -34,8 +34,8 @@
 <body>
     <h2>Anuncios Pagados</h2>
     <p>Usuario: <span id="user-email">Cargando...</span></p>
-    <p>Clics restantes: <span id="click-count">3</span></p>
-    <p class="timer">Próximo reinicio en: <span id="timer">03:00:00</span></p>
+    <p>Clics restantes: <span id="click-count">Cargando...</span></p>
+    <p class="timer">Próximo reinicio en: <span id="timer">Cargando...</span></p>
     
     <script async="async" data-cfasync="false" src="//pl26063295.effectiveratecpm.com/2537ae2ea8b16bc9e554273a94dfd098/invoke.js"></script>
     <div id="container-2537ae2ea8b16bc9e554273a94dfd098" onclick="registerClick()"></div>
@@ -49,9 +49,9 @@
         
         let userId = null;
         let clicksRestantes = 3;
-        let tiempoRestante = 10800;
-        let cronometroActivo = false;
-        
+        let tiempoRestante = 0;
+        let intervalo = null;
+
         document.addEventListener("DOMContentLoaded", async function () {
             const { data: { user }, error } = await supabase.auth.getUser();
             if (error || !user) {
@@ -60,65 +60,60 @@
             }
             userId = user.id;
             document.getElementById("user-email").textContent = user.email;
-            await cargarEstadoUsuario();
+            cargarEstadoUsuario();
         });
-        
+
         async function cargarEstadoUsuario() {
             const { data, error } = await supabase
                 .from('users')
-                .select('clicks_restantes, proximo_reset')
+                .select('clicks_restantes, ultimo_click')
                 .eq('id', userId)
                 .single();
-            
+
             if (!error && data) {
-                clicksRestantes = data.clicks_restantes;
-                document.getElementById("click-count").textContent = clicksRestantes;
-                
-                const ahora = Math.floor(Date.now() / 1000);
-                if (data.proximo_reset > ahora) {
-                    tiempoRestante = data.proximo_reset - ahora;
-                    iniciarCronometro();
+                clicksRestantes = data.clicks_restantes ?? 3;
+                let ultimoClick = data.ultimo_click ? new Date(data.ultimo_click).getTime() : 0;
+                let ahora = Date.now();
+                let diferencia = (ahora - ultimoClick) / 1000;
+                if (diferencia >= 10800) {
+                    clicksRestantes = 3;
+                    await actualizarClicks(3, true);
                 } else {
-                    await reiniciarClicks();
+                    tiempoRestante = 10800 - diferencia;
+                    iniciarCronometro();
                 }
+                actualizarUI();
             }
         }
-        
+
         async function registerClick() {
             if (clicksRestantes > 0) {
                 clicksRestantes--;
-                document.getElementById("click-count").textContent = clicksRestantes;
+                actualizarUI();
+                await supabase.from('users').update({
+                    clicks_restantes: clicksRestantes,
+                    ultimo_click: new Date().toISOString()
+                }).eq('id', userId);
                 await guardarClick(userId);
                 if (clicksRestantes === 0) {
-                    await establecerTiempoEspera();
+                    tiempoRestante = 10800;
+                    iniciarCronometro();
                 }
             } else {
                 alert("Has alcanzado el límite de clics. Espera 3 horas.");
             }
         }
-        
+
         async function guardarClick(userId) {
             const { error } = await supabase.from('clicks').insert([{ user_id: userId, amount: 0.001 }]);
             if (error) {
                 console.error("Error al guardar el clic", error);
             }
         }
-        
-        async function establecerTiempoEspera() {
-            const proximo_reset = Math.floor(Date.now() / 1000) + 10800;
-            await supabase.from('users').update({ clicks_restantes: 0, proximo_reset }).eq('id', userId);
-            iniciarCronometro();
-        }
-        
-        async function reiniciarClicks() {
-            await supabase.from('users').update({ clicks_restantes: 3 }).eq('id', userId);
-            clicksRestantes = 3;
-            document.getElementById("click-count").textContent = clicksRestantes;
-        }
-        
+
         function iniciarCronometro() {
-            cronometroActivo = true;
-            const interval = setInterval(() => {
+            if (intervalo) return;
+            intervalo = setInterval(() => {
                 if (tiempoRestante > 0) {
                     tiempoRestante--;
                     let horas = Math.floor(tiempoRestante / 3600);
@@ -126,11 +121,29 @@
                     let segundos = tiempoRestante % 60;
                     document.getElementById("timer").textContent = `${horas.toString().padStart(2, '0')}:${minutos.toString().padStart(2, '0')}:${segundos.toString().padStart(2, '0')}`;
                 } else {
-                    clearInterval(interval);
-                    reiniciarClicks();
-                    cronometroActivo = false;
+                    clearInterval(intervalo);
+                    intervalo = null;
+                    clicksRestantes = 3;
+                    actualizarClicks(3, false);
                 }
             }, 1000);
+        }
+
+        async function actualizarClicks(nuevosClicks, resetTiempo) {
+            await supabase.from('users').update({
+                clicks_restantes: nuevosClicks,
+                ultimo_click: resetTiempo ? null : new Date().toISOString()
+            }).eq('id', userId);
+            actualizarUI();
+        }
+
+        function actualizarUI() {
+            document.getElementById("click-count").textContent = clicksRestantes;
+            if (clicksRestantes === 0) {
+                document.getElementById("container-2537ae2ea8b16bc9e554273a94dfd098").classList.add("disabled");
+            } else {
+                document.getElementById("container-2537ae2ea8b16bc9e554273a94dfd098").classList.remove("disabled");
+            }
         }
     </script>
 </body>
