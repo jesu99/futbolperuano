@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Agregar Métodos de Pago</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <meta http-equiv="Permissions-Policy" content="interest-cohort=()">
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -51,9 +52,7 @@
     </style>
 </head>
 <body>
-
     <h2>Gestionar Métodos de Pago</h2>
-
     <form id="payment-form">
         <label for="method">Método de Pago:</label>
         <select id="method">
@@ -61,20 +60,16 @@
             <option value="binance">Binance</option>
             <option value="yape">Yape</option>
         </select>
-
         <label for="value">Datos del Método:</label>
         <input type="text" id="value" placeholder="Correo, ID o número">
-
         <button type="submit">Guardar Método</button>
     </form>
-
     <div id="payment-list">
         <h3>Tus Métodos de Pago:</h3>
         <ul id="payment-methods"></ul>
     </div>
-
     <script>
-        const SUPABASE_URL = https://srormesvqserhrfugrls.supabase.co";
+        const SUPABASE_URL = "https://srormesvqserhrfugrls.supabase.co";
         const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNyb3JtZXN2cXNlcmhyZnVncmxzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDMzNTk0MzUsImV4cCI6MjA1ODkzNTQzNX0.zGjT9CbTd6jb1lEBzK3OrsZJIgZSqJH9zfLXzWvLTlM";
         const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
@@ -85,14 +80,10 @@
                 window.location.href = "index.html";
                 return;
             }
-            
-            console.log("Usuario autenticado:", user);
-            const userId = user.id;
-            cargarMetodos(userId);
-
+            cargarMetodos(user.id);
             document.getElementById("payment-form").addEventListener("submit", async function(event) {
                 event.preventDefault();
-                agregarMetodo(userId);
+                agregarMetodo(user.id);
             });
         });
 
@@ -102,12 +93,10 @@
                 .select('payment_methods')
                 .eq('id', userId)
                 .single();
-
             if (error) {
                 console.error("Error al obtener los métodos:", error);
                 return;
             }
-
             const metodos = data?.payment_methods || [];
             mostrarMetodos(metodos);
         }
@@ -125,32 +114,26 @@
         async function agregarMetodo(userId) {
             const metodo = document.getElementById("method").value;
             const valor = document.getElementById("value").value.trim();
-
             if (!metodo || !valor) {
                 alert("Por favor, completa todos los campos.");
                 return;
             }
-
-            let { data, error } = await supabase
+            const { data, error } = await supabase
                 .from('users')
                 .select('payment_methods')
                 .eq('id', userId)
                 .single();
-
             if (error) {
                 console.error("Error al obtener métodos actuales:", error);
                 return;
             }
-
             let metodosActuales = data?.payment_methods || [];
             metodosActuales = metodosActuales.filter(m => m.method !== metodo);
             metodosActuales.push({ method: metodo, value: valor });
-
             const { error: updateError } = await supabase
                 .from('users')
                 .update({ payment_methods: metodosActuales })
                 .eq('id', userId);
-
             if (updateError) {
                 console.error("Error al guardar método:", updateError);
                 alert("Error al guardar el método.");
@@ -160,6 +143,5 @@
             }
         }
     </script>
-
 </body>
 </html>
