@@ -7,42 +7,49 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
         const SUPABASE_URL = "https://srormesvqserhrfugrls.supabase.co";
-        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNyb3JtZXN2cXNlcmhyZnVncmxzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDMzNTk0MzUsImV4cCI6MjA1ODkzNTQzNX0.zGjT9CbTd6jb1lEBzK3OrsZJIgZSqJH9zfLXzWvLTlM";
+        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...";
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-        
+
         let currentUserId = null;
 
         document.addEventListener("DOMContentLoaded", async function() {
-            const { data: { user }, error } = await supabase.auth.getUser();
+            const { data, error } = await supabase.auth.getUser();
             
-            if (error || !user) {
-                console.error("Error de autenticación:", error);
-                window.location.href = "index.html";
+            if (error || !data?.user) {
+                window.location.href = "index.html"; // Redirigir si no está logueado
                 return;
             }
+
+            console.log("Usuario autenticado:", data.user);
             
-            currentUserId = user.id;
-            document.getElementById("user-email").textContent = user.email;
+            document.getElementById("user-email").textContent = data.user.email;
+            currentUserId = data.user.id;
+
             getUserPaymentMethod();
         });
 
         async function getUserPaymentMethod() {
             if (!currentUserId) return;
-            
+
+            console.log("Buscando método de pago para ID:", currentUserId);
+
             const { data, error } = await supabase
                 .from('users')
                 .select('payment_method, paypal_email, binance_id, yape_phone')
                 .eq('id', currentUserId)
                 .single();
-            
+
             if (error) {
                 console.error("Error al obtener el método de pago:", error);
+                alert(`Error: ${error.message}`);
                 return;
             }
 
+            console.log("Datos obtenidos:", data);
+
             let paymentText = "No hay método guardado";
             let paymentValue = "";
-            
+
             switch (data.payment_method) {
                 case "paypal":
                     paymentText = `Método: PayPal - ${data.paypal_email || "No registrado"}`;
@@ -88,7 +95,7 @@
                 console.error("Error al guardar método de pago:", error);
             } else {
                 document.getElementById("message").innerText = "Método de pago guardado con éxito";
-                getUserPaymentMethod();
+                getUserPaymentMethod(); // Actualiza la vista después de guardar
             }
         }
 
