@@ -124,58 +124,21 @@
                     .single();
                     
                 if (error) {
-                    if (error.code === "PGRST116") {
-                        // Registro no encontrado, crear uno nuevo
-                        console.log("Creando nuevo registro para el usuario");
-                        await createUserRecord();
-                        return;
-                    }
-                    
+                    // Si hay error al cargar los datos, mostrar el mensaje
                     showError("Error al cargar datos: " + error.message);
                     console.error("Detalles del error:", error);
                     return;
                 }
                 
-                if (data) {
-                    clickCount = data.click_count || 0;
-                    earnings = parseFloat(data.balance) || 0.000;
-                    document.getElementById("click-count").textContent = clickCount;
-                    document.getElementById("earnings").textContent = earnings.toFixed(3);
-                } else {
-                    console.log("No se encontraron datos para el usuario");
-                    await createUserRecord();
-                }
-            } catch (error) {
-                showError("Error al cargar datos: " + error.message);
-                console.error("Error completo:", error);
-            }
-        }
-        
-        async function createUserRecord() {
-            try {
-                const { error } = await supabase
-                    .from("users")
-                    .insert([
-                        { 
-                            id: userId, 
-                            click_count: 0, 
-                            balance: 0.000 
-                        }
-                    ]);
-                    
-                if (error) {
-                    showError("Error al crear registro: " + error.message);
-                    console.error("Error completo:", error);
-                    return;
-                }
+                // Dado que tenemos el trigger SQL, siempre debería existir un registro
+                // Solo necesitamos verificar si los campos específicos existen
+                clickCount = data.click_count !== null ? data.click_count : 0;
+                earnings = data.balance !== null ? parseFloat(data.balance) : 0.000;
                 
-                // Inicializar contadores
-                clickCount = 0;
-                earnings = 0.000;
                 document.getElementById("click-count").textContent = clickCount;
                 document.getElementById("earnings").textContent = earnings.toFixed(3);
             } catch (error) {
-                showError("Error al crear registro: " + error.message);
+                showError("Error al cargar datos: " + error.message);
                 console.error("Error completo:", error);
             }
         }
