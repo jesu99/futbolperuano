@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Sincronizar Usuarios</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        h2 {
+            text-align: center;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+        }
+        th, td {
+            border: 1px solid black;
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            background-color: #28a745;
+            color: white;
+        }
+        button {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <h2>Panel de Administración - Sincronizar Usuarios</h2>
+    <button onclick="sincronizarUsuarios()">Sincronizar Usuarios</button>
+    <h3>Usuarios en Auth no presentes en Users</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Email</th>
+            </tr>
+        </thead>
+        <tbody id="user-list"></tbody>
+    </table>
+    
+    <script>
+        const SUPABASE_URL = "https://srormesvqserhrfugrls.supabase.co";
+        const SUPABASE_KEY = "TU_SUPABASE_KEY";
+        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        
+        async function sincronizarUsuarios() {
+            const { data: authUsers, error: authError } = await supabase
+                .from('auth.users')
+                .select('id, email');
+            
+            if (authError) {
+                console.error("Error obteniendo usuarios de auth:", authError);
+                return;
+            }
+            
+            const { data: users, error: usersError } = await supabase
+                .from('users')
+                .select('id');
+            
+            if (usersError) {
+                console.error("Error obteniendo usuarios de users:", usersError);
+                return;
+            }
+            
+            const userIds = users.map(user => user.id);
+            const missingUsers = authUsers.filter(authUser => !userIds.includes(authUser.id));
+            
+            const userList = document.getElementById("user-list");
+            userList.innerHTML = "";
+            
+            missingUsers.forEach(user => {
+                const row = document.createElement("tr");
+                row.innerHTML = `<td>${user.id}</td><td>${user.email}</td>`;
+                userList.appendChild(row);
+            });
+            
+            if (missingUsers.length > 0) {
+                await supabase.from('users').insert(missingUsers.map(user => ({ id: user.id, email: user.email, balance: 0 })));
+                alert("Usuarios sincronizados correctamente.");
+            } else {
+                alert("Todos los usuarios ya están sincronizados.");
+            }
+        }
+    </script>
+</body>
+</html>
