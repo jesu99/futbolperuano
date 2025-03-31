@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Agregar Métodos de Pago</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <meta http-equiv="Permissions-Policy" content="interest-cohort=()">
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -71,34 +70,44 @@
     <script>
         const SUPABASE_URL = "https://srormesvqserhrfugrls.supabase.co";
         const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNyb3JtZXN2cXNlcmhyZnVncmxzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDMzNTk0MzUsImV4cCI6MjA1ODkzNTQzNX0.zGjT9CbTd6jb1lEBzK3OrsZJIgZSqJH9zfLXzWvLTlM";
-        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         document.addEventListener("DOMContentLoaded", async function() {
-            const { data: { user }, error } = await supabase.auth.getUser();
-            if (error || !user) {
-                alert("Debes iniciar sesión.");
-                window.location.href = "index.html";
-                return;
+            try {
+                const { data: { user }, error } = await supabase.auth.getUser();
+                if (error || !user) {
+                    alert("Debes iniciar sesión.");
+                    window.location.href = "index.html";
+                    return;
+                }
+                cargarMetodos(user.id);
+                document.getElementById("payment-form").addEventListener("submit", function(event) {
+                    event.preventDefault();
+                    agregarMetodo(user.id);
+                });
+            } catch (err) {
+                console.error("Error en la autenticación:", err);
             }
-            cargarMetodos(user.id);
-            document.getElementById("payment-form").addEventListener("submit", async function(event) {
-                event.preventDefault();
-                agregarMetodo(user.id);
-            });
         });
 
         async function cargarMetodos(userId) {
-            const { data, error } = await supabase
-                .from('users')
-                .select('payment_methods')
-                .eq('id', userId)
-                .single();
-            if (error) {
-                console.error("Error al obtener los métodos:", error);
-                return;
+            try {
+                const { data, error } = await supabase
+                    .from('users')
+                    .select('payment_methods')
+                    .eq('id', userId)
+                    .single();
+                
+                if (error) {
+                    console.error("Error al obtener los métodos:", error);
+                    return;
+                }
+
+                const metodos = data?.payment_methods || [];
+                mostrarMetodos(metodos);
+            } catch (err) {
+                console.error("Error al cargar métodos:", err);
             }
-            const metodos = data?.payment_methods || [];
-            mostrarMetodos(metodos);
         }
 
         function mostrarMetodos(metodos) {
@@ -112,34 +121,43 @@
         }
 
         async function agregarMetodo(userId) {
-            const metodo = document.getElementById("method").value;
-            const valor = document.getElementById("value").value.trim();
-            if (!metodo || !valor) {
-                alert("Por favor, completa todos los campos.");
-                return;
-            }
-            const { data, error } = await supabase
-                .from('users')
-                .select('payment_methods')
-                .eq('id', userId)
-                .single();
-            if (error) {
-                console.error("Error al obtener métodos actuales:", error);
-                return;
-            }
-            let metodosActuales = data?.payment_methods || [];
-            metodosActuales = metodosActuales.filter(m => m.method !== metodo);
-            metodosActuales.push({ method: metodo, value: valor });
-            const { error: updateError } = await supabase
-                .from('users')
-                .update({ payment_methods: metodosActuales })
-                .eq('id', userId);
-            if (updateError) {
-                console.error("Error al guardar método:", updateError);
-                alert("Error al guardar el método.");
-            } else {
-                alert("Método guardado correctamente.");
-                mostrarMetodos(metodosActuales);
+            try {
+                const metodo = document.getElementById("method").value;
+                const valor = document.getElementById("value").value.trim();
+                if (!metodo || !valor) {
+                    alert("Por favor, completa todos los campos.");
+                    return;
+                }
+
+                const { data, error } = await supabase
+                    .from('users')
+                    .select('payment_methods')
+                    .eq('id', userId)
+                    .single();
+
+                if (error) {
+                    console.error("Error al obtener métodos actuales:", error);
+                    return;
+                }
+
+                let metodosActuales = data?.payment_methods || [];
+                metodosActuales = metodosActuales.filter(m => m.method !== metodo);
+                metodosActuales.push({ method: metodo, value: valor });
+
+                const { error: updateError } = await supabase
+                    .from('users')
+                    .update({ payment_methods: metodosActuales })
+                    .eq('id', userId);
+
+                if (updateError) {
+                    console.error("Error al guardar método:", updateError);
+                    alert("Error al guardar el método.");
+                } else {
+                    alert("Método guardado correctamente.");
+                    mostrarMetodos(metodosActuales);
+                }
+            } catch (err) {
+                console.error("Error al agregar método:", err);
             }
         }
     </script>
