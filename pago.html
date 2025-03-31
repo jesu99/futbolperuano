@@ -3,78 +3,95 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Configurar Método de Pago</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script>
-        const SUPABASE_URL = "https://srormesvqserhrfugrls.supabase.co";
-        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNyb3JtZXN2cXNlcmhyZnVncmxzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDMzNTk0MzUsImV4cCI6MjA1ODkzNTQzNX0.zGjT9CbTd6jb1lEBzK3OrsZJIgZSqJH9zfLXzWvLTlM";
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-        document.addEventListener("DOMContentLoaded", async function () {
-            const { data: { user }, error } = await supabase.auth.getUser();
-            
-            if (error || !user) {
-                window.location.href = "index.html"; // Redirigir si no está logueado
-                return;
-            }
-
-            document.getElementById("user-email").textContent = user.email;
-            
-            // Cargar datos de pago existentes
-            const { data, error: userError } = await supabase
-                .from('users')
-                .select('payment_method, payment_id')
-                .eq('id', user.id)
-                .single();
-
-            if (!userError && data) {
-                document.getElementById("saved-method").textContent = data.payment_method || "No registrado";
-                document.getElementById("saved-id").textContent = data.payment_id || "No registrado";
-            }
-        });
-
-        async function savePaymentMethod() {
-            const method = document.getElementById("payment-method").value;
-            const paymentId = document.getElementById("payment-id").value;
-
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) return;
-
-            const { error } = await supabase
-                .from('users')
-                .update({ payment_method: method, payment_id: paymentId })
-                .eq('id', user.id);
-
-            if (error) {
-                alert("Error al guardar: " + error.message);
-                return;
-            }
-
-            // Mostrar confirmación
-            document.getElementById("saved-method").textContent = method;
-            document.getElementById("saved-id").textContent = paymentId;
-            alert("Método de pago guardado correctamente.");
+    <title>Configuración de Pago</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            padding: 20px;
         }
-    </script>
+        .container {
+            max-width: 500px;
+            margin: auto;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-shadow: 2px 2px 12px rgba(0,0,0,0.1);
+        }
+        label, select, input, button {
+            display: block;
+            width: 100%;
+            margin-top: 10px;
+        }
+        .message {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .instructions {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-left: 4px solid #007bff;
+        }
+        .dashboard-btn {
+            margin-top: 15px;
+            background-color: #007bff;
+            color: white;
+            padding: 10px;
+            text-align: center;
+            text-decoration: none;
+            border-radius: 5px;
+        }
+    </style>
 </head>
 <body>
-    <h2>Configurar Método de Pago</h2>
-    <p>Usuario: <span id="user-email">Cargando...</span></p>
+    <div class="container">
+        <h2>Configuración de Método de Pago</h2>
+        <label for="payment_method">Selecciona tu método de pago:</label>
+        <select id="payment_method">
+            <option value="paypal">PayPal</option>
+            <option value="yape">Yape</option>
+            <option value="binance">Binance</option>
+        </select>
 
-    <label for="payment-method">Selecciona un método de pago:</label>
-    <select id="payment-method">
-        <option value="PayPal">PayPal</option>
-        <option value="Yape">Yape</option>
-        <option value="Binance">Binance</option>
-    </select>
+        <label for="payment_id">Ingresa tu ID de pago (Correo de PayPal, número de Yape o ID de Binance):</label>
+        <input type="text" id="payment_id" placeholder="Ejemplo: tuemail@example.com">
 
-    <label for="payment-id">Ingresa tu ID de pago (correo de PayPal, número de Yape, etc.):</label>
-    <input type="text" id="payment-id" placeholder="Ejemplo: usuario@email.com">
+        <button onclick="guardarMetodoPago()">Guardar</button>
+        <div id="message" class="message"></div>
 
-    <button onclick="savePaymentMethod()">Guardar Método de Pago</button>
+        <div class="instructions">
+            <h3>Instrucciones de Pago</h3>
+            <p>Los pagos se procesan todos los **viernes** de cada semana. Asegúrate de haber alcanzado el mínimo requerido para el retiro.</p>
+            <p>Si tienes alguna consulta sobre tu pago, puedes contactarnos al correo: <strong>soporte@tusitio.com</strong></p>
+        </div>
 
-    <h3>Método de Pago Guardado:</h3>
-    <p><strong>Método:</strong> <span id="saved-method">No registrado</span></p>
-    <p><strong>ID:</strong> <span id="saved-id">No registrado</span></p>
+        <a href="dashboard.html" class="dashboard-btn">Volver al Dashboard</a>
+    </div>
+
+    <script>
+        function guardarMetodoPago() {
+            const method = document.getElementById("payment_method").value;
+            const paymentId = document.getElementById("payment_id").value;
+            const messageDiv = document.getElementById("message");
+
+            if (!paymentId) {
+                messageDiv.textContent = "Por favor, ingresa tu información de pago.";
+                messageDiv.className = "message error";
+                return;
+            }
+
+            // Simulación de guardado
+            setTimeout(() => {
+                messageDiv.textContent = "Método de pago guardado correctamente.";
+                messageDiv.className = "message success";
+            }, 1000);
+        }
+    </script>
 </body>
 </html>
