@@ -5,42 +5,34 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Seleccionar Método de Pago</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-</head>
-<body>
-    <h2>Bienvenido, <span id="user-email">Cargando...</span></h2>
-    <p>Elige cómo recibir tu pago:</p>
-    <select id="payment-method">
-        <option value="paypal">PayPal</option>
-        <option value="binance">Binance</option>
-        <option value="yape">Yape</option>
-    </select>
-    <input type="text" id="payment-info" placeholder="Correo/Número de pago">
-    <button onclick="submitPayment()">Guardar Método</button>
-    <p id="message"></p>
-
     <script>
-        const supabase = supabase.createClient("https://srormesvqserhrfugrls.supabase.co", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNyb3JtZXN2cXNlcmhyZnVncmxzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDMzNTk0MzUsImV4cCI6MjA1ODkzNTQzNX0.zGjT9CbTd6jb1lEBzK3OrsZJIgZSqJH9zfLXzWvLTlM");
-        let currentUserEmail = null;
+        const SUPABASE_URL = "https://srormesvqserhrfugrls.supabase.co";
+        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNyb3JtZXN2cXNlcmhyZnVncmxzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDMzNTk0MzUsImV4cCI6MjA1ODkzNTQzNX0.zGjT9CbTd6jb1lEBzK3OrsZJIgZSqJH9zfLXzWvLTlM";
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        
+        let currentUserId = null;
 
-        async function getUser() {
+        document.addEventListener("DOMContentLoaded", async function() {
             const { data: { user }, error } = await supabase.auth.getUser();
+            
             if (error || !user) {
-                document.getElementById("user-email").innerText = "No autenticado";
+                window.location.href = "index.html"; // Redirigir si no está logueado
                 return;
             }
 
-            document.getElementById("user-email").innerText = user.email;
-            currentUserEmail = user.email;  // Guardamos el email para la consulta
+            document.getElementById("user-email").textContent = user.email;
+            currentUserId = user.id; // Guardamos el ID del usuario
+            
             getUserPaymentMethod();
-        }
+        });
 
         async function getUserPaymentMethod() {
-            if (!currentUserEmail) return;
-            
+            if (!currentUserId) return;
+
             const { data, error } = await supabase
                 .from('users')
                 .select('payment_method, payment_info')
-                .eq('email', currentUserEmail)  // Buscamos por email
+                .eq('id', currentUserId)
                 .single();
 
             if (error) {
@@ -55,7 +47,7 @@
         }
 
         async function submitPayment() {
-            if (!currentUserEmail) {
+            if (!currentUserId) {
                 document.getElementById("message").innerText = "Error: Usuario no autenticado";
                 return;
             }
@@ -66,7 +58,7 @@
             const { error } = await supabase
                 .from('users')
                 .update({ payment_method: method, payment_info: info })
-                .eq('email', currentUserEmail);  // Actualizamos por email
+                .eq('id', currentUserId);
 
             if (error) {
                 document.getElementById("message").innerText = "Error al guardar";
@@ -76,7 +68,25 @@
             }
         }
 
-        getUser();
+        function logout() {
+            supabase.auth.signOut().then(() => {
+                window.location.href = "index.html";
+            });
+        }
     </script>
+</head>
+<body>
+    <h2>Bienvenido, <span id="user-email">Cargando...</span></h2>
+    <p>Elige cómo recibir tu pago:</p>
+    <select id="payment-method">
+        <option value="paypal">PayPal</option>
+        <option value="binance">Binance</option>
+        <option value="yape">Yape</option>
+    </select>
+    <input type="text" id="payment-info" placeholder="Correo/Número de pago">
+    <button onclick="submitPayment()">Guardar Método</button>
+    <p id="message"></p>
+
+    <button onclick="logout()">Cerrar sesión</button>
 </body>
 </html>
