@@ -31,7 +31,7 @@
 
             const { data, error } = await supabase
                 .from('users')
-                .select('payment_method, payment_info')
+                .select('payment_method, paypal_email, binance_id, yape_phone')
                 .eq('id', currentUserId)
                 .single();
 
@@ -41,8 +41,27 @@
             }
 
             if (data) {
+                let paymentText = "No hay método guardado";
+                let paymentValue = "";
+                
+                switch (data.payment_method) {
+                    case "paypal":
+                        paymentText = `Método: PayPal - ${data.paypal_email || "No registrado"}`;
+                        paymentValue = data.paypal_email || "";
+                        break;
+                    case "binance":
+                        paymentText = `Método: Binance - ${data.binance_id || "No registrado"}`;
+                        paymentValue = data.binance_id || "";
+                        break;
+                    case "yape":
+                        paymentText = `Método: Yape - ${data.yape_phone || "No registrado"}`;
+                        paymentValue = data.yape_phone || "";
+                        break;
+                }
+
+                document.getElementById("current-method").textContent = paymentText;
                 document.getElementById("payment-method").value = data.payment_method || "";
-                document.getElementById("payment-info").value = data.payment_info || "";
+                document.getElementById("payment-info").value = paymentValue;
             }
         }
 
@@ -55,9 +74,15 @@
             const method = document.getElementById("payment-method").value;
             const info = document.getElementById("payment-info").value;
 
+            let updateData = { payment_method: method };
+            
+            if (method === "paypal") updateData.paypal_email = info;
+            if (method === "binance") updateData.binance_id = info;
+            if (method === "yape") updateData.yape_phone = info;
+
             const { error } = await supabase
                 .from('users')
-                .update({ payment_method: method, payment_info: info })
+                .update(updateData)
                 .eq('id', currentUserId);
 
             if (error) {
@@ -65,6 +90,7 @@
                 console.error("Error al guardar método de pago:", error);
             } else {
                 document.getElementById("message").innerText = "Método de pago guardado con éxito";
+                getUserPaymentMethod(); // Actualiza la vista después de guardar
             }
         }
 
@@ -77,7 +103,11 @@
 </head>
 <body>
     <h2>Bienvenido, <span id="user-email">Cargando...</span></h2>
-    <p>Elige cómo recibir tu pago:</p>
+    
+    <h3>Información de pago actual:</h3>
+    <p id="current-method">Método guardado: Cargando...</p>
+
+    <h3>Actualizar Método de Pago:</h3>
     <select id="payment-method">
         <option value="paypal">PayPal</option>
         <option value="binance">Binance</option>
