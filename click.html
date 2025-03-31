@@ -3,76 +3,99 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login con Supabase</title>
+    <title>Anuncios Pagados</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script>
-        let supabase;
-        document.addEventListener("DOMContentLoaded", function() {
-            const SUPABASE_URL = "https://srormesvqserhrfugrls.supabase.co";
-            const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNyb3JtZXN2cXNlcmhyZnVncmxzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDMzNTk0MzUsImV4cCI6MjA1ODkzNTQzNX0.zGjT9CbTd6jb1lEBzK3OrsZJIgZSqJH9zfLXzWvLTlM";
-            supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-        });
-    </script>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; padding: 20px; }
+        .ad-container { display: flex; justify-content: space-around; margin-top: 20px; }
+        .ad { width: 30%; padding: 20px; border: 1px solid #ddd; cursor: pointer; background-color: #f8f9fa; }
+        .disabled { opacity: 0.5; pointer-events: none; }
+        .timer { font-weight: bold; margin-top: 10px; }
+    </style>
 </head>
 <body>
-    <h2>Registrarse</h2>
-    <form id="register-form">
-        <input type="email" id="reg-email" placeholder="Correo" required>
-        <input type="password" id="reg-password" placeholder="Contraseña" required>
-        <button type="submit">Registrarse</button>
-    </form>
-    <p id="register-message"></p>
+    <h2>Bienvenido a los Anuncios Pagados</h2>
+    <p>Usuario: <span id="user-email">Cargando...</span></p>
+    <p>Clics disponibles: <span id="clicks-left">3</span></p>
+    <p class="timer">Tiempo restante: <span id="timer">--:--</span></p>
 
-    <h2>Iniciar Sesión</h2>
-    <form id="login-form">
-        <input type="email" id="email" placeholder="Correo" required>
-        <input type="password" id="password" placeholder="Contraseña" required>
-        <button type="submit">Ingresar</button>
-    </form>
-    <p id="message"></p>
+    <div class="ad-container">
+        <div class="ad" onclick="registerClick(1)">Anuncio 1</div>
+        <div class="ad" onclick="registerClick(2)">Anuncio 2</div>
+        <div class="ad" onclick="registerClick(3)">Anuncio 3</div>
+    </div>
 
     <script>
-        document.getElementById("register-form").addEventListener("submit", async function(event) {
-            event.preventDefault();
-            
-            if (!supabase) {
-                document.getElementById("register-message").textContent = "Error: Supabase no está inicializado.";
+        const SUPABASE_URL = "https://srormesvqserhrfugrls.supabase.co;
+        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNyb3JtZXN2cXNlcmhyZnVncmxzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDMzNTk0MzUsImV4cCI6MjA1ODkzNTQzNX0.zGjT9CbTd6jb1lEBzK3OrsZJIgZSqJH9zfLXzWvLTlM";
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        let userId = null;
+        let clicksLeft = 3;
+        let cooldownTime = 0;
+
+        document.addEventListener("DOMContentLoaded", async function () {
+            const { data: { user }, error } = await supabase.auth.getUser();
+            if (error || !user) {
+                window.location.href = "index.html";
                 return;
             }
-
-            const email = document.getElementById("reg-email").value;
-            const password = document.getElementById("reg-password").value;
-            
-            const { data, error } = await supabase.auth.signUp({ email, password });
-            
-            if (error) {
-                document.getElementById("register-message").textContent = "Error: " + error.message;
-            } else {
-                document.getElementById("register-message").textContent = "Usuario registrado. Ahora puedes iniciar sesión.";
-            }
+            userId = user.id;
+            document.getElementById("user-email").textContent = user.email;
+            loadUserData();
         });
 
-        document.getElementById("login-form").addEventListener("submit", async function(event) {
-            event.preventDefault();
-            
-            if (!supabase) {
-                document.getElementById("message").textContent = "Error: Supabase no está inicializado.";
+        async function loadUserData() {
+            const { data, error } = await supabase.from('users').select('click_count, last_click_time').eq('id', userId).single();
+            if (!error && data) {
+                const lastClickTime = new Date(data.last_click_time);
+                const now = new Date();
+                const timeDiff = Math.floor((now - lastClickTime) / (1000 * 60 * 60));
+                
+                if (timeDiff < 3) {
+                    clicksLeft = 3 - data.click_count;
+                    cooldownTime = (3 - timeDiff) * 3600;
+                }
+            }
+            updateUI();
+        }
+
+        async function registerClick(adId) {
+            if (clicksLeft <= 0) return;
+            clicksLeft--;
+            updateUI();
+
+            const { error } = await supabase.rpc('register_click', { user_id: userId });
+            if (error) {
+                alert("Error al registrar clic: " + error.message);
                 return;
             }
+            alert("Clic registrado en el Anuncio " + adId);
+        }
 
-            const email = document.getElementById("email").value;
-            const password = document.getElementById("password").value;
-            
-            const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-            
-            if (error) {
-                document.getElementById("message").textContent = "Error: " + error.message;
-            } else {
-                document.getElementById("message").textContent = "Inicio de sesión exitoso.";
-                localStorage.setItem("user_email", email);
-                setTimeout(() => { window.location.href = "dashboard.html"; }, 1000);
+        function updateUI() {
+            document.getElementById("clicks-left").textContent = clicksLeft;
+            document.querySelectorAll(".ad").forEach(ad => {
+                ad.classList.toggle("disabled", clicksLeft <= 0);
+            });
+            startCooldown();
+        }
+
+        function startCooldown() {
+            if (cooldownTime > 0) {
+                let timer = setInterval(() => {
+                    cooldownTime--;
+                    let minutes = Math.floor(cooldownTime / 60);
+                    let seconds = cooldownTime % 60;
+                    document.getElementById("timer").textContent = `${minutes}:${seconds}`;
+                    if (cooldownTime <= 0) {
+                        clearInterval(timer);
+                        clicksLeft = 3;
+                        updateUI();
+                    }
+                }, 1000);
             }
-        });
+        }
     </script>
 </body>
 </html>
