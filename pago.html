@@ -3,125 +3,68 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Seleccionar Método de Pago</title>
+    <title>Método de Pago</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
         const SUPABASE_URL = "https://srormesvqserhrfugrls.supabase.co";
         const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNyb3JtZXN2cXNlcmhyZnVncmxzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDMzNTk0MzUsImV4cCI6MjA1ODkzNTQzNX0.zGjT9CbTd6jb1lEBzK3OrsZJIgZSqJH9zfLXzWvLTlM";
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        let currentUserId = null;
+        async function guardarMetodoPago() {
+            const { data: { user }, error } = await supabase.auth.getUser();
 
-        document.addEventListener("DOMContentLoaded", async function() {
-            const { data, error } = await supabase.auth.getUser();
-            
-            if (error || !data?.user) {
-                window.location.href = "index.html"; // Redirigir si no está logueado
+            if (error || !user) {
+                alert("Debes iniciar sesión para guardar un método de pago.");
                 return;
             }
 
-            console.log("Usuario autenticado:", data.user);
-            
-            document.getElementById("user-email").textContent = data.user.email;
-            currentUserId = data.user.id;
+            const metodo = document.getElementById("metodo").value;
+            const valor = document.getElementById("valor").value;
 
-            getUserPaymentMethod();
-        });
+            if (!metodo || !valor) {
+                alert("Por favor, ingresa un método de pago y su información.");
+                return;
+            }
 
-        async function getUserPaymentMethod() {
-            if (!currentUserId) return;
-
-            console.log("Buscando método de pago para ID:", currentUserId);
-
-            const { data, error } = await supabase
+            // Obtener métodos de pago actuales
+            const { data, error: userError } = await supabase
                 .from('users')
-                .select('payment_method, paypal_email, binance_id, yape_phone')
-                .eq('id', currentUserId)
+                .select('payment_methods')
+                .eq('id', user.id)
                 .single();
 
-            if (error) {
-                console.error("Error al obtener el método de pago:", error);
-                alert(`Error: ${error.message}`);
-                return;
-            }
+            let nuevosMetodos = userError ? [] : userError?.payment_methods || [];
 
-            console.log("Datos obtenidos:", data);
+            // Eliminar el método si ya existe y agregar el nuevo
+            nuevosMetodos = nuevosMetodos.filter(m => m.method !== metodo);
+            nuevosMetodos.push({ method: metodo, value: valor });
 
-            let paymentText = "No hay método guardado";
-            let paymentValue = "";
-
-            switch (data.payment_method) {
-                case "paypal":
-                    paymentText = `Método: PayPal - ${data.paypal_email || "No registrado"}`;
-                    paymentValue = data.paypal_email || "";
-                    break;
-                case "binance":
-                    paymentText = `Método: Binance - ${data.binance_id || "No registrado"}`;
-                    paymentValue = data.binance_id || "";
-                    break;
-                case "yape":
-                    paymentText = `Método: Yape - ${data.yape_phone || "No registrado"}`;
-                    paymentValue = data.yape_phone || "";
-                    break;
-            }
-
-            document.getElementById("current-method").textContent = paymentText;
-            document.getElementById("payment-method").value = data.payment_method || "";
-            document.getElementById("payment-info").value = paymentValue;
-        }
-
-        async function submitPayment() {
-            if (!currentUserId) {
-                document.getElementById("message").innerText = "Error: Usuario no autenticado";
-                return;
-            }
-
-            const method = document.getElementById("payment-method").value;
-            const info = document.getElementById("payment-info").value;
-
-            let updateData = { payment_method: method };
-            
-            if (method === "paypal") updateData.paypal_email = info;
-            if (method === "binance") updateData.binance_id = info;
-            if (method === "yape") updateData.yape_phone = info;
-
-            const { error } = await supabase
+            // Guardar en la base de datos
+            const { error: updateError } = await supabase
                 .from('users')
-                .update(updateData)
-                .eq('id', currentUserId);
+                .update({ payment_methods: nuevosMetodos })
+                .eq('id', user.id);
 
-            if (error) {
-                document.getElementById("message").innerText = "Error al guardar";
-                console.error("Error al guardar método de pago:", error);
+            if (updateError) {
+                alert("Error al guardar el método de pago.");
             } else {
-                document.getElementById("message").innerText = "Método de pago guardado con éxito";
-                getUserPaymentMethod(); // Actualiza la vista después de guardar
+                alert("Método de pago guardado correctamente.");
             }
-        }
-
-        function logout() {
-            supabase.auth.signOut().then(() => {
-                window.location.href = "index.html";
-            });
         }
     </script>
 </head>
 <body>
-    <h2>Bienvenido, <span id="user-email">Cargando...</span></h2>
-    
-    <h3>Información de pago actual:</h3>
-    <p id="current-method">Método guardado: Cargando...</p>
-
-    <h3>Actualizar Método de Pago:</h3>
-    <select id="payment-method">
+    <h2>Agregar Método de Pago</h2>
+    <label for="metodo">Método:</label>
+    <select id="metodo">
         <option value="paypal">PayPal</option>
         <option value="binance">Binance</option>
         <option value="yape">Yape</option>
     </select>
-    <input type="text" id="payment-info" placeholder="Correo/Número de pago">
-    <button onclick="submitPayment()">Guardar Método</button>
-    <p id="message"></p>
-
-    <button onclick="logout()">Cerrar sesión</button>
+    <br><br>
+    <label for="valor">Correo/ID/Número:</label>
+    <input type="text" id="valor">
+    <br><br>
+    <button onclick="guardarMetodoPago()">Guardar Método</button>
 </body>
 </html>
