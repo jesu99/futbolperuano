@@ -6,34 +6,51 @@
     <title>Anuncios Pagados</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        body { font-family: Arial, sans-serif; text-align: center; padding: 20px; }
-        .ad-container { display: flex; justify-content: space-around; margin-top: 20px; }
-        .ad { width: 30%; padding: 20px; border: 1px solid #ddd; cursor: pointer; background-color: #f8f9fa; }
-        .disabled { opacity: 0.5; pointer-events: none; }
-        .timer { font-weight: bold; margin-top: 10px; }
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 20px;
+        }
+        .ad-container {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 20px;
+        }
+        .ad {
+            width: 200px;
+            height: 150px;
+            background-color: lightgray;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            border: 1px solid #ccc;
+        }
+        .timer {
+            margin-top: 20px;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
-    <h2>Bienvenido a los Anuncios Pagados</h2>
+    <h2>Anuncios Pagados</h2>
     <p>Usuario: <span id="user-email">Cargando...</span></p>
-    <p>Clics disponibles: <span id="clicks-left">3</span></p>
-    <p class="timer">Tiempo restante: <span id="timer">--:--</span></p>
-
+    <p>Clics restantes: <span id="click-count">3</span></p>
+    <p class="timer">Próximo reinicio en: <span id="timer">03:00:00</span></p>
     <div class="ad-container">
         <div class="ad" onclick="registerClick(1)">Anuncio 1</div>
         <div class="ad" onclick="registerClick(2)">Anuncio 2</div>
         <div class="ad" onclick="registerClick(3)">Anuncio 3</div>
     </div>
-
     <script>
-        const SUPABASE_URL = "https://srormesvqserhrfugrls.supabase.co;
+        const SUPABASE_URL = "https://srormesvqserhrfugrls.supabase.co";
         const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNyb3JtZXN2cXNlcmhyZnVncmxzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDMzNTk0MzUsImV4cCI6MjA1ODkzNTQzNX0.zGjT9CbTd6jb1lEBzK3OrsZJIgZSqJH9zfLXzWvLTlM";
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
+        
         let userId = null;
-        let clicksLeft = 3;
-        let cooldownTime = 0;
-
+        let clicksRestantes = 3;
+        let tiempoRestante = 10800;
+        
         document.addEventListener("DOMContentLoaded", async function () {
             const { data: { user }, error } = await supabase.auth.getUser();
             if (error || !user) {
@@ -42,60 +59,41 @@
             }
             userId = user.id;
             document.getElementById("user-email").textContent = user.email;
-            loadUserData();
         });
-
-        async function loadUserData() {
-            const { data, error } = await supabase.from('users').select('click_count, last_click_time').eq('id', userId).single();
-            if (!error && data) {
-                const lastClickTime = new Date(data.last_click_time);
-                const now = new Date();
-                const timeDiff = Math.floor((now - lastClickTime) / (1000 * 60 * 60));
-                
-                if (timeDiff < 3) {
-                    clicksLeft = 3 - data.click_count;
-                    cooldownTime = (3 - timeDiff) * 3600;
-                }
+        
+        function registerClick(adId) {
+            if (clicksRestantes > 0) {
+                clicksRestantes--;
+                document.getElementById("click-count").textContent = clicksRestantes;
+                guardarClick(userId, adId);
+            } else {
+                alert("Has alcanzado el límite de clics. Espera 3 horas.");
             }
-            updateUI();
         }
-
-        async function registerClick(adId) {
-            if (clicksLeft <= 0) return;
-            clicksLeft--;
-            updateUI();
-
-            const { error } = await supabase.rpc('register_click', { user_id: userId });
+        
+        async function guardarClick(userId, adId) {
+            const { error } = await supabase.from('clicks').insert([{ user_id: userId, ad_id: adId, amount: 0.001 }]);
             if (error) {
-                alert("Error al registrar clic: " + error.message);
-                return;
-            }
-            alert("Clic registrado en el Anuncio " + adId);
-        }
-
-        function updateUI() {
-            document.getElementById("clicks-left").textContent = clicksLeft;
-            document.querySelectorAll(".ad").forEach(ad => {
-                ad.classList.toggle("disabled", clicksLeft <= 0);
-            });
-            startCooldown();
-        }
-
-        function startCooldown() {
-            if (cooldownTime > 0) {
-                let timer = setInterval(() => {
-                    cooldownTime--;
-                    let minutes = Math.floor(cooldownTime / 60);
-                    let seconds = cooldownTime % 60;
-                    document.getElementById("timer").textContent = `${minutes}:${seconds}`;
-                    if (cooldownTime <= 0) {
-                        clearInterval(timer);
-                        clicksLeft = 3;
-                        updateUI();
-                    }
-                }, 1000);
+                console.error("Error al guardar el clic", error);
             }
         }
+        
+        function iniciarCronometro() {
+            setInterval(() => {
+                if (tiempoRestante > 0) {
+                    tiempoRestante--;
+                    let horas = Math.floor(tiempoRestante / 3600);
+                    let minutos = Math.floor((tiempoRestante % 3600) / 60);
+                    let segundos = tiempoRestante % 60;
+                    document.getElementById("timer").textContent = `${horas.toString().padStart(2, '0')}:${minutos.toString().padStart(2, '0')}:${segundos.toString().padStart(2, '0')}`;
+                } else {
+                    clicksRestantes = 3;
+                    document.getElementById("click-count").textContent = clicksRestantes;
+                    tiempoRestante = 10800;
+                }
+            }, 1000);
+        }
+        iniciarCronometro();
     </script>
 </body>
 </html>
