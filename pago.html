@@ -16,53 +16,51 @@
             const { data: { user }, error } = await supabase.auth.getUser();
             
             if (error || !user) {
-                window.location.href = "index.html"; // Redirigir si no está logueado
+                console.error("Error de autenticación:", error);
+                window.location.href = "index.html";
                 return;
             }
-
-            document.getElementById("user-email").textContent = user.email;
-            currentUserId = user.id; // Guardamos el ID del usuario
             
+            currentUserId = user.id;
+            document.getElementById("user-email").textContent = user.email;
             getUserPaymentMethod();
         });
 
         async function getUserPaymentMethod() {
             if (!currentUserId) return;
-
+            
             const { data, error } = await supabase
                 .from('users')
                 .select('payment_method, paypal_email, binance_id, yape_phone')
                 .eq('id', currentUserId)
                 .single();
-
+            
             if (error) {
                 console.error("Error al obtener el método de pago:", error);
                 return;
             }
 
-            if (data) {
-                let paymentText = "No hay método guardado";
-                let paymentValue = "";
-                
-                switch (data.payment_method) {
-                    case "paypal":
-                        paymentText = `Método: PayPal - ${data.paypal_email || "No registrado"}`;
-                        paymentValue = data.paypal_email || "";
-                        break;
-                    case "binance":
-                        paymentText = `Método: Binance - ${data.binance_id || "No registrado"}`;
-                        paymentValue = data.binance_id || "";
-                        break;
-                    case "yape":
-                        paymentText = `Método: Yape - ${data.yape_phone || "No registrado"}`;
-                        paymentValue = data.yape_phone || "";
-                        break;
-                }
-
-                document.getElementById("current-method").textContent = paymentText;
-                document.getElementById("payment-method").value = data.payment_method || "";
-                document.getElementById("payment-info").value = paymentValue;
+            let paymentText = "No hay método guardado";
+            let paymentValue = "";
+            
+            switch (data.payment_method) {
+                case "paypal":
+                    paymentText = `Método: PayPal - ${data.paypal_email || "No registrado"}`;
+                    paymentValue = data.paypal_email || "";
+                    break;
+                case "binance":
+                    paymentText = `Método: Binance - ${data.binance_id || "No registrado"}`;
+                    paymentValue = data.binance_id || "";
+                    break;
+                case "yape":
+                    paymentText = `Método: Yape - ${data.yape_phone || "No registrado"}`;
+                    paymentValue = data.yape_phone || "";
+                    break;
             }
+
+            document.getElementById("current-method").textContent = paymentText;
+            document.getElementById("payment-method").value = data.payment_method || "";
+            document.getElementById("payment-info").value = paymentValue;
         }
 
         async function submitPayment() {
@@ -90,7 +88,7 @@
                 console.error("Error al guardar método de pago:", error);
             } else {
                 document.getElementById("message").innerText = "Método de pago guardado con éxito";
-                getUserPaymentMethod(); // Actualiza la vista después de guardar
+                getUserPaymentMethod();
             }
         }
 
