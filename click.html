@@ -72,9 +72,10 @@
 
             if (!error && data) {
                 clicksRestantes = data.click_count ?? 3;
-                let ultimoClick = data.last_click_time ? new Date(data.last_click_time).getTime() : 0;
+                let lastClickTime = data.last_click_time ? new Date(data.last_click_time).getTime() : 0;
                 let ahora = Date.now();
-                let diferencia = (ahora - ultimoClick) / 1000;
+                let diferencia = (ahora - lastClickTime) / 1000;
+                
                 if (diferencia >= 10800) {
                     clicksRestantes = 3;
                     await actualizarClicks(3, true);
