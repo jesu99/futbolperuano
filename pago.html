@@ -65,7 +65,7 @@
     </form>
     <div id="payment-list">
         <h3>Tus Métodos de Pago:</h3>
-        <ul id="payment-methods"></ul>
+        <ul id="payment-method"></ul>
     </div>
     <script>
         const SUPABASE_URL = "https://srormesvqserhrfugrls.supabase.co";
@@ -94,7 +94,7 @@
             try {
                 const { data, error } = await supabase
                     .from('users')
-                    .select('payment_methods')
+                    .select('payment_method')
                     .eq('id', userId)
                     .single();
                 
@@ -103,7 +103,7 @@
                     return;
                 }
 
-                const metodos = data?.payment_methods || [];
+                const metodos = data?.payment_method || [];
                 mostrarMetodos(metodos);
             } catch (err) {
                 console.error("Error al cargar métodos:", err);
@@ -111,7 +111,7 @@
         }
 
         function mostrarMetodos(metodos) {
-            const lista = document.getElementById("payment-methods");
+            const lista = document.getElementById("payment-method");
             lista.innerHTML = "";
             metodos.forEach(metodo => {
                 const item = document.createElement("li");
@@ -131,7 +131,7 @@
 
                 const { data, error } = await supabase
                     .from('users')
-                    .select('payment_methods')
+                    .select('payment_method')
                     .eq('id', userId)
                     .single();
 
@@ -140,13 +140,13 @@
                     return;
                 }
 
-                let metodosActuales = data?.payment_methods || [];
+                let metodosActuales = data?.payment_method || [];
                 metodosActuales = metodosActuales.filter(m => m.method !== metodo);
                 metodosActuales.push({ method: metodo, value: valor });
 
                 const { error: updateError } = await supabase
                     .from('users')
-                    .update({ payment_methods: metodosActuales })
+                    .update({ payment_method: metodosActuales })
                     .eq('id', userId);
 
                 if (updateError) {
