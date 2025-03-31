@@ -37,14 +37,14 @@
     <p>Clics restantes: <span id="click-count">Cargando...</span></p>
     <p class="timer">Próximo reinicio en: <span id="timer">Cargando...</span></p>
     
-    <script async="async" data-cfasync="false" src="//pl26063295.effectiveratecpm.com/2537ae2ea8b16bc9e554273a94dfd098/invoke.js"></script>
+    <script async data-cfasync="false" src="//pl26063295.effectiveratecpm.com/2537ae2ea8b16bc9e554273a94dfd098/invoke.js"></script>
     <div id="container-2537ae2ea8b16bc9e554273a94dfd098" onclick="registerClick()"></div>
     
     <a href="dashboard.html" class="dashboard-btn">Volver al Dashboard</a>
     
     <script>
         const SUPABASE_URL = "https://srormesvqserhrfugrls.supabase.co";
-        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNyb3JtZXN2cXNlcmhyZnVncmxzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDMzNTk0MzUsImV4cCI6MjA1ODkzNTQzNX0.zGjT9CbTd6jb1lEBzK3OrsZJIgZSqJH9zfLXzWvLTlM";
+        const SUPABASE_KEY = "PUBLIC_KEY_AQUI"; // ⚠️ NO EXPONGAS TU CLAVE PRIVADA
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         
         let userId = null;
@@ -53,29 +53,35 @@
         let intervalo = null;
 
         document.addEventListener("DOMContentLoaded", async function () {
-            const { data: { user }, error } = await supabase.auth.getUser();
-            if (error || !user) {
-                window.location.href = "index.html";
-                return;
+            try {
+                const { data: { user }, error } = await supabase.auth.getUser();
+                if (error || !user) {
+                    window.location.href = "index.html";
+                    return;
+                }
+                userId = user.id;
+                document.getElementById("user-email").textContent = user.email;
+                await cargarEstadoUsuario();
+            } catch (error) {
+                console.error("Error al obtener el usuario:", error);
             }
-            userId = user.id;
-            document.getElementById("user-email").textContent = user.email;
-            cargarEstadoUsuario();
         });
 
         async function cargarEstadoUsuario() {
-            const { data, error } = await supabase
-                .from('users')
-                .select('click_count, last_click_time')
-                .eq('id', userId)
-                .single();
+            try {
+                const { data, error } = await supabase
+                    .from('users')
+                    .select('click_count, last_click_time')
+                    .eq('id', userId)
+                    .single();
 
-            if (!error && data) {
-                clicksRestantes = data.click_count ?? 3;
-                let lastClickTime = data.last_click_time ? new Date(data.last_click_time).getTime() : 0;
+                if (error) throw error;
+
+                clicksRestantes = data?.click_count ?? 3;
+                let lastClickTime = data?.last_click_time ? new Date(data.last_click_time).getTime() : 0;
                 let ahora = Date.now();
                 let diferencia = (ahora - lastClickTime) / 1000;
-                
+
                 if (diferencia >= 10800) {
                     clicksRestantes = 3;
                     await actualizarClicks(3, true);
@@ -84,21 +90,31 @@
                     iniciarCronometro();
                 }
                 actualizarUI();
+            } catch (error) {
+                console.error("Error al cargar estado del usuario:", error);
             }
         }
 
         async function registerClick() {
+            if (!userId) return;
+            
             if (clicksRestantes > 0) {
                 clicksRestantes--;
                 actualizarUI();
-                await supabase.from('users').update({
-                    click_count: clicksRestantes,
-                    last_click_time: new Date().toISOString()
-                }).eq('id', userId);
-                await guardarClick(userId);
-                if (clicksRestantes === 0) {
-                    tiempoRestante = 10800;
-                    iniciarCronometro();
+                try {
+                    await supabase.from('users').update({
+                        click_count: clicksRestantes,
+                        last_click_time: new Date().toISOString()
+                    }).eq('id', userId);
+                    
+                    await guardarClick(userId);
+
+                    if (clicksRestantes === 0) {
+                        tiempoRestante = 10800;
+                        iniciarCronometro();
+                    }
+                } catch (error) {
+                    console.error("Error al registrar el clic:", error);
                 }
             } else {
                 alert("Has alcanzado el límite de clics. Espera 3 horas.");
@@ -106,9 +122,13 @@
         }
 
         async function guardarClick(userId) {
-            const { error } = await supabase.from('clicks').insert([{ user_id: userId, amount: 0.001 }]);
-            if (error) {
-                console.error("Error al guardar el clic", error);
+            if (!userId) return;
+
+            try {
+                const { error } = await supabase.from('clicks').insert([{ user_id: userId, amount: 0.001 }]);
+                if (error) throw error;
+            } catch (error) {
+                console.error("Error al guardar el clic:", error);
             }
         }
 
@@ -131,19 +151,24 @@
         }
 
         async function actualizarClicks(nuevosClicks, resetTiempo) {
-            await supabase.from('users').update({
-                click_count: nuevosClicks,
-                last_click_time: resetTiempo ? null : new Date().toISOString()
-            }).eq('id', userId);
-            actualizarUI();
+            try {
+                await supabase.from('users').update({
+                    click_count: nuevosClicks,
+                    last_click_time: resetTiempo ? null : new Date().toISOString()
+                }).eq('id', userId);
+                actualizarUI();
+            } catch (error) {
+                console.error("Error al actualizar los clics:", error);
+            }
         }
 
         function actualizarUI() {
             document.getElementById("click-count").textContent = clicksRestantes;
+            const container = document.getElementById("container-2537ae2ea8b16bc9e554273a94dfd098");
             if (clicksRestantes === 0) {
-                document.getElementById("container-2537ae2ea8b16bc9e554273a94dfd098").classList.add("disabled");
+                container.classList.add("disabled");
             } else {
-                document.getElementById("container-2537ae2ea8b16bc9e554273a94dfd098").classList.remove("disabled");
+                container.classList.remove("disabled");
             }
         }
     </script>
