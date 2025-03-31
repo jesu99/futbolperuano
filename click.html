@@ -25,6 +25,10 @@
             border-radius: 5px;
             width: 200px;
         }
+        .disabled {
+            pointer-events: none;
+            opacity: 0.5;
+        }
     </style>
 </head>
 <body>
@@ -46,6 +50,7 @@
         let userId = null;
         let clicksRestantes = 3;
         let tiempoRestante = 10800;
+        let clicksHechos = 0;
         let cronometroActivo = false;
         
         document.addEventListener("DOMContentLoaded", async function () {
@@ -61,11 +66,13 @@
         function registerClick() {
             if (clicksRestantes > 0) {
                 clicksRestantes--;
+                clicksHechos++;
                 document.getElementById("click-count").textContent = clicksRestantes;
                 guardarClick(userId);
-                if (!cronometroActivo) {
+                if (clicksHechos === 3) {
                     iniciarCronometro();
                     cronometroActivo = true;
+                    bloquearAnuncios();
                 }
             } else {
                 alert("Has alcanzado el límite de clics. Espera 3 horas.");
@@ -80,7 +87,7 @@
         }
         
         function iniciarCronometro() {
-            setInterval(() => {
+            const interval = setInterval(() => {
                 if (tiempoRestante > 0) {
                     tiempoRestante--;
                     let horas = Math.floor(tiempoRestante / 3600);
@@ -88,12 +95,23 @@
                     let segundos = tiempoRestante % 60;
                     document.getElementById("timer").textContent = `${horas.toString().padStart(2, '0')}:${minutos.toString().padStart(2, '0')}:${segundos.toString().padStart(2, '0')}`;
                 } else {
+                    clearInterval(interval);
                     clicksRestantes = 3;
+                    clicksHechos = 0;
                     document.getElementById("click-count").textContent = clicksRestantes;
                     tiempoRestante = 10800;
                     cronometroActivo = false;
+                    desbloquearAnuncios();
                 }
             }, 1000);
+        }
+
+        function bloquearAnuncios() {
+            document.getElementById("container-2537ae2ea8b16bc9e554273a94dfd098").classList.add("disabled");
+        }
+        
+        function desbloquearAnuncios() {
+            document.getElementById("container-2537ae2ea8b16bc9e554273a94dfd098").classList.remove("disabled");
         }
     </script>
 </body>
