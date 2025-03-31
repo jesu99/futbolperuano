@@ -11,24 +11,19 @@
             text-align: center;
             margin: 20px;
         }
-        .ad-container {
-            display: flex;
-            justify-content: space-around;
-            margin-top: 20px;
-        }
-        .ad {
-            width: 200px;
-            height: 150px;
-            background-color: lightgray;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            border: 1px solid #ccc;
-        }
         .timer {
             margin-top: 20px;
             font-weight: bold;
+        }
+        .dashboard-btn {
+            display: block;
+            margin: 20px auto;
+            padding: 10px;
+            background-color: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            width: 200px;
         }
     </style>
 </head>
@@ -37,11 +32,12 @@
     <p>Usuario: <span id="user-email">Cargando...</span></p>
     <p>Clics restantes: <span id="click-count">3</span></p>
     <p class="timer">Próximo reinicio en: <span id="timer">03:00:00</span></p>
-    <div class="ad-container">
-        <div class="ad" onclick="registerClick(1)">Anuncio 1</div>
-        <div class="ad" onclick="registerClick(2)">Anuncio 2</div>
-        <div class="ad" onclick="registerClick(3)">Anuncio 3</div>
-    </div>
+    
+    <script async="async" data-cfasync="false" src="//pl26063295.effectiveratecpm.com/2537ae2ea8b16bc9e554273a94dfd098/invoke.js"></script>
+    <div id="container-2537ae2ea8b16bc9e554273a94dfd098" onclick="registerClick()"></div>
+    
+    <a href="dashboard.html" class="dashboard-btn">Volver al Dashboard</a>
+    
     <script>
         const SUPABASE_URL = "https://srormesvqserhrfugrls.supabase.co";
         const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNyb3JtZXN2cXNlcmhyZnVncmxzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDMzNTk0MzUsImV4cCI6MjA1ODkzNTQzNX0.zGjT9CbTd6jb1lEBzK3OrsZJIgZSqJH9zfLXzWvLTlM";
@@ -50,6 +46,7 @@
         let userId = null;
         let clicksRestantes = 3;
         let tiempoRestante = 10800;
+        let cronometroActivo = false;
         
         document.addEventListener("DOMContentLoaded", async function () {
             const { data: { user }, error } = await supabase.auth.getUser();
@@ -61,18 +58,22 @@
             document.getElementById("user-email").textContent = user.email;
         });
         
-        function registerClick(adId) {
+        function registerClick() {
             if (clicksRestantes > 0) {
                 clicksRestantes--;
                 document.getElementById("click-count").textContent = clicksRestantes;
-                guardarClick(userId, adId);
+                guardarClick(userId);
+                if (!cronometroActivo) {
+                    iniciarCronometro();
+                    cronometroActivo = true;
+                }
             } else {
                 alert("Has alcanzado el límite de clics. Espera 3 horas.");
             }
         }
         
-        async function guardarClick(userId, adId) {
-            const { error } = await supabase.from('clicks').insert([{ user_id: userId, ad_id: adId, amount: 0.001 }]);
+        async function guardarClick(userId) {
+            const { error } = await supabase.from('clicks').insert([{ user_id: userId, amount: 0.001 }]);
             if (error) {
                 console.error("Error al guardar el clic", error);
             }
@@ -90,10 +91,10 @@
                     clicksRestantes = 3;
                     document.getElementById("click-count").textContent = clicksRestantes;
                     tiempoRestante = 10800;
+                    cronometroActivo = false;
                 }
             }, 1000);
         }
-        iniciarCronometro();
     </script>
 </body>
 </html>
