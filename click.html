@@ -53,120 +53,73 @@
         let intervalo = null;
 
         document.addEventListener("DOMContentLoaded", async function () {
-            try {
-                const { data: { user }, error } = await supabase.auth.getUser();
-                if (error || !user) {
-                    window.location.href = "index.html";
-                    return;
-                }
-                userId = user.id;
-                document.getElementById("user-email").textContent = user.email;
-                await cargarEstadoUsuario();
-            } catch (error) {
-                console.error("Error al cargar usuario:", error);
-                alert("Error al cargar datos de usuario.");
+            const { data: { user }, error } = await supabase.auth.getUser();
+            if (error || !user) {
+                window.location.href = "index.html";
+                return;
             }
+            userId = user.id;
+            document.getElementById("user-email").textContent = user.email;
+            cargarEstadoUsuario();
         });
 
         async function cargarEstadoUsuario() {
-            try {
-                const { data, error } = await supabase
-                    .from('users')
-                    .select('clicks_restantes, ultimo_click')
-                    .eq('id', userId)
-                    .single();
+            const { data, error } = await supabase
+                .from('users')
+                .select('click_count, last_click_time')
+                .eq('id', userId)
+                .single();
 
-                if (error) {
-                    console.error("Error al cargar estado del usuario:", error);
-                    return;
+            if (!error && data) {
+                clicksRestantes = data.click_count ?? 3;
+                let ultimoClick = data.last_click_time ? new Date(data.last_click_time).getTime() : 0;
+                let ahora = Date.now();
+                let diferencia = (ahora - ultimoClick) / 1000;
+                if (diferencia >= 10800) {
+                    clicksRestantes = 3;
+                    await actualizarClicks(3, true);
+                } else {
+                    tiempoRestante = 10800 - diferencia;
+                    iniciarCronometro();
                 }
-
-                if (data) {
-                    // Usa el operador de coalescencia nulo para asignar 3 si data.clicks_restantes es null o undefined
-                    clicksRestantes = data.clicks_restantes ?? 3;
-                    
-                    // Manejo del tiempo
-                    const ahora = Date.now();
-                    const ultimoClick = data.ultimo_click ? new Date(data.ultimo_click).getTime() : 0;
-                    const diferencia = Math.floor((ahora - ultimoClick) / 1000);
-                    
-                    if (diferencia >= 10800 || !data.ultimo_click) {
-                        // Han pasado más de 3 horas o no hay último click
-                        clicksRestantes = 3;
-                        await actualizarClicks(3, true);
-                    } else {
-                        // Todavía no han pasado 3 horas
-                        tiempoRestante = 10800 - diferencia;
-                        iniciarCronometro();
-                    }
-                    
-                    actualizarUI();
-                }
-            } catch (error) {
-                console.error("Error en cargarEstadoUsuario:", error);
+                actualizarUI();
             }
         }
 
         async function registerClick() {
-            if (clicksRestantes <= 0) {
-                alert("Has alcanzado el límite de clics. Espera 3 horas.");
-                return;
-            }
-            
-            try {
+            if (clicksRestantes > 0) {
                 clicksRestantes--;
                 actualizarUI();
-                
-                const ahora = new Date().toISOString();
-                
-                const { error: updateError } = await supabase.from('users').update({
-                    clicks_restantes: clicksRestantes,
-                    ultimo_click: ahora
+                await supabase.from('users').update({
+                    click_count: clicksRestantes,
+                    last_click_time: new Date().toISOString()
                 }).eq('id', userId);
-                
-                if (updateError) {
-                    console.error("Error al actualizar clicks:", updateError);
-                    return;
-                }
-                
                 await guardarClick(userId);
-                
                 if (clicksRestantes === 0) {
                     tiempoRestante = 10800;
                     iniciarCronometro();
                 }
-            } catch (error) {
-                console.error("Error en registerClick:", error);
+            } else {
+                alert("Has alcanzado el límite de clics. Espera 3 horas.");
             }
         }
 
         async function guardarClick(userId) {
-            try {
-                const { error } = await supabase.from('clicks').insert([{ 
-                    user_id: userId, 
-                    amount: 0.001,
-                    created_at: new Date().toISOString()
-                }]);
-                
-                if (error) {
-                    console.error("Error al guardar el clic", error);
-                }
-            } catch (error) {
-                console.error("Error en guardarClick:", error);
+            const { error } = await supabase.from('clicks').insert([{ user_id: userId, amount: 0.001 }]);
+            if (error) {
+                console.error("Error al guardar el clic", error);
             }
         }
 
         function iniciarCronometro() {
-            if (intervalo) {
-                clearInterval(intervalo);
-            }
-            
-            document.getElementById("timer").textContent = formatearTiempo(tiempoRestante);
-            
+            if (intervalo) return;
             intervalo = setInterval(() => {
                 if (tiempoRestante > 0) {
                     tiempoRestante--;
-                    document.getElementById("timer").textContent = formatearTiempo(tiempoRestante);
+                    let horas = Math.floor(tiempoRestante / 3600);
+                    let minutos = Math.floor((tiempoRestante % 3600) / 60);
+                    let segundos = tiempoRestante % 60;
+                    document.getElementById("timer").textContent = `${horas.toString().padStart(2, '0')}:${minutos.toString().padStart(2, '0')}:${segundos.toString().padStart(2, '0')}`;
                 } else {
                     clearInterval(intervalo);
                     intervalo = null;
@@ -175,47 +128,21 @@
                 }
             }, 1000);
         }
-        
-        function formatearTiempo(segundos) {
-            const horas = Math.floor(segundos / 3600);
-            const minutos = Math.floor((segundos % 3600) / 60);
-            const segs = segundos % 60;
-            return `${horas.toString().padStart(2, '0')}:${minutos.toString().padStart(2, '0')}:${segs.toString().padStart(2, '0')}`;
-        }
 
         async function actualizarClicks(nuevosClicks, resetTiempo) {
-            try {
-                const updateData = {
-                    clicks_restantes: nuevosClicks
-                };
-                
-                if (resetTiempo) {
-                    updateData.ultimo_click = null;
-                }
-                
-                const { error } = await supabase.from('users')
-                    .update(updateData)
-                    .eq('id', userId);
-                    
-                if (error) {
-                    console.error("Error al actualizar clicks:", error);
-                    return;
-                }
-                
-                actualizarUI();
-            } catch (error) {
-                console.error("Error en actualizarClicks:", error);
-            }
+            await supabase.from('users').update({
+                click_count: nuevosClicks,
+                last_click_time: resetTiempo ? null : new Date().toISOString()
+            }).eq('id', userId);
+            actualizarUI();
         }
 
         function actualizarUI() {
             document.getElementById("click-count").textContent = clicksRestantes;
-            const container = document.getElementById("container-2537ae2ea8b16bc9e554273a94dfd098");
-            
             if (clicksRestantes === 0) {
-                container.classList.add("disabled");
+                document.getElementById("container-2537ae2ea8b16bc9e554273a94dfd098").classList.add("disabled");
             } else {
-                container.classList.remove("disabled");
+                document.getElementById("container-2537ae2ea8b16bc9e554273a94dfd098").classList.remove("disabled");
             }
         }
     </script>
