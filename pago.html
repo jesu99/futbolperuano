@@ -6,49 +6,107 @@
     <title>Configuración de Pago</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
+        /* Estilo inspirado en Netflix */
         body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-            padding: 20px;
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #141414;
+            color: #fff;
         }
         .container {
             max-width: 500px;
-            margin: auto;
-            padding: 20px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            box-shadow: 2px 2px 12px rgba(0,0,0,0.1);
+            margin: 40px auto;
+            padding: 30px;
+            background-color: #181818;
+            border-radius: 4px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.4);
         }
-        label, select, input, button {
+        h2, h3 {
+            font-weight: 500;
+            color: #fff;
+        }
+        label {
             display: block;
+            margin-top: 20px;
+            margin-bottom: 8px;
+            font-size: 14px;
+            color: #e5e5e5;
+        }
+        select, input {
             width: 100%;
-            margin-top: 10px;
+            padding: 12px;
+            margin-bottom: 15px;
+            border: none;
+            background-color: #333;
+            color: #fff;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        select:focus, input:focus {
+            outline: none;
+            box-shadow: 0 0 0 2px #e50914;
+        }
+        button {
+            width: 100%;
+            padding: 14px;
+            background-color: #e50914;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            margin-top: 15px;
+            transition: background-color 0.2s;
+        }
+        button:hover {
+            background-color: #f40612;
         }
         .message {
-            margin-top: 10px;
-            padding: 10px;
-            border-radius: 5px;
+            margin-top: 15px;
+            padding: 12px;
+            border-radius: 4px;
         }
         .success {
-            background-color: #d4edda;
-            color: #155724;
+            background-color: rgba(39, 174, 96, 0.2);
+            color: #27ae60;
+            border: 1px solid #27ae60;
+        }
+        .error {
+            background-color: rgba(229, 9, 20, 0.2);
+            color: #e50914;
+            border: 1px solid #e50914;
         }
         .instructions {
-            margin-top: 20px;
-            padding: 15px;
-            background-color: #f8f9fa;
-            border-left: 4px solid #007bff;
+            margin-top: 25px;
+            padding: 20px;
+            background-color: #222;
+            border-left: 4px solid #e50914;
+            border-radius: 4px;
         }
         .dashboard-btn {
-            margin-top: 15px;
-            background-color: #007bff;
+            margin-top: 25px;
+            background-color: #333;
             color: white;
-            padding: 10px;
+            padding: 14px;
             text-align: center;
             text-decoration: none;
-            border-radius: 5px;
+            border-radius: 4px;
             display: block;
-            text-align: center;
+            transition: background-color 0.2s;
+        }
+        .dashboard-btn:hover {
+            background-color: #444;
+        }
+        .payment-info {
+            background-color: #222;
+            padding: 15px;
+            border-radius: 4px;
+            margin-top: 20px;
+        }
+        .payment-info p {
+            margin: 10px 0;
         }
     </style>
 </head>
@@ -56,6 +114,7 @@
     <div class="container">
         <h2>Configuración de Método de Pago</h2>
         <p>Usuario: <span id="user-email">Cargando...</span></p>
+        
         <label for="payment_method">Selecciona tu método de pago:</label>
         <select id="payment_method">
             <option value="paypal">PayPal</option>
@@ -69,13 +128,15 @@
         <button onclick="guardarMetodoPago()">Guardar</button>
         <div id="message" class="message"></div>
 
-        <h3>Método de Pago Guardado:</h3>
-        <p><strong>Método:</strong> <span id="saved-method">No registrado</span></p>
-        <p><strong>ID:</strong> <span id="saved-id">No registrado</span></p>
+        <div class="payment-info">
+            <h3>Método de Pago Guardado:</h3>
+            <p><strong>Método:</strong> <span id="saved-method">No registrado</span></p>
+            <p><strong>ID:</strong> <span id="saved-id">No registrado</span></p>
+        </div>
 
         <div class="instructions">
             <h3>Instrucciones de Pago</h3>
-            <p>Los pagos se procesan todos los **viernes** de cada semana. Asegúrate de haber alcanzado el mínimo requerido para el retiro.</p>
+            <p>Los pagos se procesan todos los <strong>viernes</strong> de cada semana. Asegúrate de haber alcanzado el mínimo requerido para el retiro.</p>
             <p>Si tienes alguna consulta sobre tu pago, puedes contactarnos al correo: <strong>soporte@tusitio.com</strong></p>
         </div>
 
