@@ -50,7 +50,6 @@
         let userId = null;
         let clicksRestantes = 3;
         let tiempoRestante = 10800;
-        let clicksHechos = 0;
         let cronometroActivo = false;
         
         document.addEventListener("DOMContentLoaded", async function () {
@@ -61,18 +60,37 @@
             }
             userId = user.id;
             document.getElementById("user-email").textContent = user.email;
+            await cargarEstadoUsuario();
         });
         
-        function registerClick() {
+        async function cargarEstadoUsuario() {
+            const { data, error } = await supabase
+                .from('users')
+                .select('clicks_restantes, proximo_reset')
+                .eq('id', userId)
+                .single();
+            
+            if (!error && data) {
+                clicksRestantes = data.clicks_restantes;
+                document.getElementById("click-count").textContent = clicksRestantes;
+                
+                const ahora = Math.floor(Date.now() / 1000);
+                if (data.proximo_reset > ahora) {
+                    tiempoRestante = data.proximo_reset - ahora;
+                    iniciarCronometro();
+                } else {
+                    await reiniciarClicks();
+                }
+            }
+        }
+        
+        async function registerClick() {
             if (clicksRestantes > 0) {
                 clicksRestantes--;
-                clicksHechos++;
                 document.getElementById("click-count").textContent = clicksRestantes;
-                guardarClick(userId);
-                if (clicksHechos === 3) {
-                    iniciarCronometro();
-                    cronometroActivo = true;
-                    bloquearAnuncios();
+                await guardarClick(userId);
+                if (clicksRestantes === 0) {
+                    await establecerTiempoEspera();
                 }
             } else {
                 alert("Has alcanzado el límite de clics. Espera 3 horas.");
@@ -86,7 +104,20 @@
             }
         }
         
+        async function establecerTiempoEspera() {
+            const proximo_reset = Math.floor(Date.now() / 1000) + 10800;
+            await supabase.from('users').update({ clicks_restantes: 0, proximo_reset }).eq('id', userId);
+            iniciarCronometro();
+        }
+        
+        async function reiniciarClicks() {
+            await supabase.from('users').update({ clicks_restantes: 3 }).eq('id', userId);
+            clicksRestantes = 3;
+            document.getElementById("click-count").textContent = clicksRestantes;
+        }
+        
         function iniciarCronometro() {
+            cronometroActivo = true;
             const interval = setInterval(() => {
                 if (tiempoRestante > 0) {
                     tiempoRestante--;
@@ -96,22 +127,10 @@
                     document.getElementById("timer").textContent = `${horas.toString().padStart(2, '0')}:${minutos.toString().padStart(2, '0')}:${segundos.toString().padStart(2, '0')}`;
                 } else {
                     clearInterval(interval);
-                    clicksRestantes = 3;
-                    clicksHechos = 0;
-                    document.getElementById("click-count").textContent = clicksRestantes;
-                    tiempoRestante = 10800;
+                    reiniciarClicks();
                     cronometroActivo = false;
-                    desbloquearAnuncios();
                 }
             }, 1000);
-        }
-
-        function bloquearAnuncios() {
-            document.getElementById("container-2537ae2ea8b16bc9e554273a94dfd098").classList.add("disabled");
-        }
-        
-        function desbloquearAnuncios() {
-            document.getElementById("container-2537ae2ea8b16bc9e554273a94dfd098").classList.remove("disabled");
         }
     </script>
 </body>
