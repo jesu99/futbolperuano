@@ -3,103 +3,55 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin - Sincronizar Usuarios</title>
+    <title>Seleccionar Método de Pago</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-            padding: 20px;
-            background-color: #f4f4f4;
-        }
-        h2 {
-            text-align: center;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            background: white;
-        }
-        th, td {
-            border: 1px solid black;
-            padding: 10px;
-            text-align: left;
-        }
-        th {
-            background-color: #28a745;
-            color: white;
-        }
-        button {
-            margin-top: 10px;
-            padding: 10px;
-            background-color: #007bff;
-            color: white;
-            border: none;
-            cursor: pointer;
-            border-radius: 5px;
-        }
-        button:hover {
-            background-color: #0056b3;
-        }
-    </style>
-</head>
-<body>
-    <h2>Panel de Administración - Sincronizar Usuarios</h2>
-    <button onclick="sincronizarUsuarios()">Sincronizar Usuarios</button>
-    <h3>Usuarios en Auth no presentes en Users</h3>
-    <table>
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>Email</th>
-            </tr>
-        </thead>
-        <tbody id="user-list"></tbody>
-    </table>
-    
     <script>
         const SUPABASE_URL = "https://srormesvqserhrfugrls.supabase.co";
-        const SUPABASE_KEY = "TU_SUPABASE_KEY";
-        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-        
-        async function sincronizarUsuarios() {
-            const { data: authUsers, error: authError } = await supabase
-                .from('auth.users')
-                .select('id, email');
-            
-            if (authError) {
-                console.error("Error obteniendo usuarios de auth:", authError);
+        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNyb3JtZXN2cXNlcmhyZnVncmxzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDMzNTk0MzUsImV4cCI6MjA1ODkzNTQzNX0.zGjT9CbTd6jb1lEBzK3OrsZJIgZSqJH9zfLXzWvLTlM";
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        document.addEventListener("DOMContentLoaded", async function() {
+            const { data: { user }, error } = await supabase.auth.getUser();
+            if (error || !user) {
+                window.location.href = "index.html"; // Redirigir si no está logueado
                 return;
             }
+            document.getElementById("user-email").textContent = user.email;
+        });
+
+        async function guardarMetodoPago() {
+            const metodo = document.getElementById("metodo").value;
+            const cuenta = document.getElementById("cuenta").value;
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) return alert("No estás autenticado");
             
-            const { data: users, error: usersError } = await supabase
+            const { error } = await supabase
                 .from('users')
-                .select('id');
+                .update({ payment_method: metodo, payment_id: cuenta })
+                .eq('id', user.id);
             
-            if (usersError) {
-                console.error("Error obteniendo usuarios de users:", usersError);
-                return;
-            }
-            
-            const userIds = users.map(user => user.id);
-            const missingUsers = authUsers.filter(authUser => !userIds.includes(authUser.id));
-            
-            const userList = document.getElementById("user-list");
-            userList.innerHTML = "";
-            
-            missingUsers.forEach(user => {
-                const row = document.createElement("tr");
-                row.innerHTML = `<td>${user.id}</td><td>${user.email}</td>`;
-                userList.appendChild(row);
-            });
-            
-            if (missingUsers.length > 0) {
-                await supabase.from('users').insert(missingUsers.map(user => ({ id: user.id, email: user.email, balance: 0 })));
-                alert("Usuarios sincronizados correctamente.");
+            if (error) {
+                alert("Error al guardar método de pago");
+                console.error(error);
             } else {
-                alert("Todos los usuarios ya están sincronizados.");
+                alert("Método de pago guardado correctamente");
             }
         }
     </script>
+</head>
+<body>
+    <h2>Seleccionar Método de Pago</h2>
+    <p>Usuario: <span id="user-email">Cargando...</span></p>
+    <label for="metodo">Método de pago:</label>
+    <select id="metodo">
+        <option value="Yape">Yape</option>
+        <option value="PayPal">PayPal</option>
+        <option value="Binance">Binance</option>
+    </select>
+    <br>
+    <label for="cuenta">Correo o Número:</label>
+    <input type="text" id="cuenta" placeholder="Tu correo o número">
+    <br>
+    <button onclick="guardarMetodoPago()">Guardar</button>
 </body>
 </html>
