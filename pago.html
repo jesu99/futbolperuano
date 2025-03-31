@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Configuración de Pago</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -46,12 +47,15 @@
             text-align: center;
             text-decoration: none;
             border-radius: 5px;
+            display: block;
+            text-align: center;
         }
     </style>
 </head>
 <body>
     <div class="container">
         <h2>Configuración de Método de Pago</h2>
+        <p>Usuario: <span id="user-email">Cargando...</span></p>
         <label for="payment_method">Selecciona tu método de pago:</label>
         <select id="payment_method">
             <option value="paypal">PayPal</option>
@@ -65,6 +69,10 @@
         <button onclick="guardarMetodoPago()">Guardar</button>
         <div id="message" class="message"></div>
 
+        <h3>Método de Pago Guardado:</h3>
+        <p><strong>Método:</strong> <span id="saved-method">No registrado</span></p>
+        <p><strong>ID:</strong> <span id="saved-id">No registrado</span></p>
+
         <div class="instructions">
             <h3>Instrucciones de Pago</h3>
             <p>Los pagos se procesan todos los **viernes** de cada semana. Asegúrate de haber alcanzado el mínimo requerido para el retiro.</p>
@@ -75,22 +83,59 @@
     </div>
 
     <script>
-        function guardarMetodoPago() {
+        const SUPABASE_URL = "https://srormesvqserhrfugrls.supabase.co";
+        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNyb3JtZXN2cXNlcmhyZnVncmxzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDMzNTk0MzUsImV4cCI6MjA1ODkzNTQzNX0.zGjT9CbTd6jb1lEBzK3OrsZJIgZSqJH9zfLXzWvLTlM";
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        document.addEventListener("DOMContentLoaded", async function () {
+            const { data: { user }, error } = await supabase.auth.getUser();
+            
+            if (error || !user) {
+                window.location.href = "index.html";
+                return;
+            }
+
+            document.getElementById("user-email").textContent = user.email;
+            
+            const { data, error: userError } = await supabase
+                .from('users')
+                .select('payment_method, payment_id')
+                .eq('id', user.id)
+                .single();
+
+            if (!userError && data) {
+                document.getElementById("saved-method").textContent = data.payment_method || "No registrado";
+                document.getElementById("saved-id").textContent = data.payment_id || "No registrado";
+            }
+        });
+
+        async function guardarMetodoPago() {
             const method = document.getElementById("payment_method").value;
             const paymentId = document.getElementById("payment_id").value;
             const messageDiv = document.getElementById("message");
+            const { data: { user } } = await supabase.auth.getUser();
 
+            if (!user) return;
             if (!paymentId) {
                 messageDiv.textContent = "Por favor, ingresa tu información de pago.";
                 messageDiv.className = "message error";
                 return;
             }
 
-            // Simulación de guardado
-            setTimeout(() => {
-                messageDiv.textContent = "Método de pago guardado correctamente.";
-                messageDiv.className = "message success";
-            }, 1000);
+            const { error } = await supabase
+                .from('users')
+                .update({ payment_method: method, payment_id: paymentId })
+                .eq('id', user.id);
+
+            if (error) {
+                alert("Error al guardar: " + error.message);
+                return;
+            }
+
+            document.getElementById("saved-method").textContent = method;
+            document.getElementById("saved-id").textContent = paymentId;
+            messageDiv.textContent = "Método de pago guardado correctamente.";
+            messageDiv.className = "message success";
         }
     </script>
 </body>
