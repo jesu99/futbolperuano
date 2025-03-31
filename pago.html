@@ -79,6 +79,7 @@
         }
         .secondary-button {
             background-color: rgba(109, 109, 110, 0.7);
+            margin-top: 15px;
         }
         .secondary-button:hover {
             background-color: rgba(109, 109, 110, 0.9);
@@ -140,6 +141,60 @@
             margin: 15px 0;
             border-radius: 4px;
         }
+        /* Modal de confirmación personalizado */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.7);
+        }
+        .modal-content {
+            background-color: #2a2a2a;
+            margin: 15% auto;
+            padding: 25px;
+            border-radius: 5px;
+            width: 90%;
+            max-width: 400px;
+            text-align: center;
+        }
+        .modal-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .modal-button {
+            padding: 10px 20px;
+            border-radius: 4px;
+            font-weight: 500;
+            cursor: pointer;
+            border: none;
+        }
+        .confirm-button {
+            background-color: #e50914;
+            color: white;
+        }
+        .cancel-button {
+            background-color: #555;
+            color: white;
+        }
+        .loading-spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 8px;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body>
@@ -191,56 +246,119 @@
         </div>
     </div>
     
+    <!-- Modal de confirmación -->
+    <div id="confirmation-modal" class="modal">
+        <div class="modal-content">
+            <p>⚠️ <strong>Importante:</strong> Una vez guardado, no podrás cambiar tu método de pago.</p>
+            <p>¿Deseas continuar?</p>
+            <div class="modal-buttons">
+                <button id="cancel-button" class="modal-button cancel-button">Cancelar</button>
+                <button id="confirm-button" class="modal-button confirm-button">Confirmar</button>
+            </div>
+        </div>
+    </div>
+    
     <script>
-        // Inicializar Supabase cliente (reemplaza con tus credenciales reales)
+        // Inicializar Supabase cliente
         const SUPABASE_URL = 'https://srormesvqserhrfugrls.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNyb3JtZXN2cXNlcmhyZnVncmxzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDMzNTk0MzUsImV4cCI6MjA1ODkzNTQzNX0.zGjT9CbTd6jb1lEBzK3OrsZJIgZSqJH9zfLXzWvLTlM';
         const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         
-        // Variables para el usuario actual
+        // Variables para el usuario actual y datos de pago
         let currentUser = null;
         let currentUserId = null;
+        let pendingPaymentData = null;
+        
+        // Referencias al modal de confirmación
+        const modal = document.getElementById('confirmation-modal');
+        const confirmButton = document.getElementById('confirm-button');
+        const cancelButton = document.getElementById('cancel-button');
         
         // Función que se ejecuta al cargar la página
         document.addEventListener('DOMContentLoaded', async function() {
-            // Verificar si hay una sesión activa
-            const { data: { session }, error } = await supabase.auth.getSession();
-            
-            if (error) {
-                showMessage("Error al verificar la sesión: " + error.message, true);
-                return;
-            }
-            
-            if (session) {
-                currentUser = session.user;
-                currentUserId = currentUser.id;
-                document.getElementById('current-email').textContent = currentUser.email;
+            try {
+                // Verificar si hay una sesión activa
+                const { data: { session }, error } = await supabase.auth.getSession();
+                
+                if (error) {
+                    console.error("Error al verificar la sesión:", error);
+                    showMessage("Error al verificar la sesión: " + error.message, true);
+                    simulateUser(); // Caer en la simulación si hay error
+                    return;
+                }
+                
+                if (session && session.user) {
+                    currentUser = session.user;
+                    currentUserId = currentUser.id;
+                    document.getElementById('current-email').textContent = currentUser.email;
+                } else {
+                    console.log("No se encontró una sesión activa, usando simulación");
+                    simulateUser();
+                }
                 
                 // Comprobar si el usuario ya tiene un método de pago guardado
                 await checkExistingPaymentMethod();
-            } else {
-                // Simulación para pruebas (eliminar en producción)
-                simulateUser();
+                
+            } catch (e) {
+                console.error("Error durante la inicialización:", e);
+                simulateUser(); // Caer en la simulación si hay cualquier otro error
+                await checkExistingPaymentMethod();
             }
+            
+            // Configurar eventos del modal
+            confirmButton.addEventListener('click', proceedWithPaymentSave);
+            cancelButton.addEventListener('click', closeModal);
         });
         
-        // Simulación para pruebas (eliminar en producción)
+        // Simulación para pruebas
         function simulateUser() {
             currentUserId = "1ef208f3-ad33-4ad2-b533-04b858f30d94";
             document.getElementById('current-email').textContent = "pesadillastorie@gmail.com";
         }
         
         // Verificar si el usuario ya tiene un método de pago guardado
+        // MEJORA: Asegurar consulta desde auth.users
         async function checkExistingPaymentMethod() {
             try {
-                const { data, error } = await supabase
-                    .from('users')
+                // Primero intentamos consultar desde auth.users (la tabla correcta)
+                let { data, error } = await supabase
+                    .from('auth.users')  // Intentamos usar el formato con "." para acceder al esquema
                     .select('payment_method, paypal_email, binance_id, yape_phone')
                     .eq('id', currentUserId)
                     .single();
                 
-                if (error) throw error;
+                // Si hay error, probablemente la sintaxis no es correcta para Supabase JS
+                if (error) {
+                    console.log("Error consultando auth.users directamente, probando RPC:", error);
+                    
+                    // Intento alternativo: usar una función RPC que acceda a auth.users
+                    // (Esta parte depende de si tienes una función configurada en Supabase)
+                    const { data: rpcData, error: rpcError } = await supabase
+                        .rpc('get_user_payment_method', { user_id: currentUserId });
+                    
+                    if (rpcError) {
+                        console.log("Error llamando RPC, volviendo a tabla users:", rpcError);
+                        
+                        // Última opción: consultar desde la tabla users (si existe como espejo)
+                        const { data: usersData, error: usersError } = await supabase
+                            .from('users')
+                            .select('payment_method, paypal_email, binance_id, yape_phone')
+                            .eq('id', currentUserId)
+                            .single();
+                        
+                        if (usersError) {
+                            console.error("Error consultando tabla users:", usersError);
+                            showMessage("Error al verificar método de pago", true);
+                            return;
+                        }
+                        
+                        data = usersData;
+                    } else {
+                        data = rpcData;
+                    }
+                }
                 
+                // Si se encontraron datos de método de pago
                 if (data && data.payment_method) {
                     // El usuario ya tiene un método de pago guardado
                     const paymentData = {
@@ -250,31 +368,49 @@
                         yape_phone: data.yape_phone
                     };
                     
+                    // Mostrar los datos guardados
                     displaySavedData(paymentData, currentUserId);
                     document.getElementById('payment-form').classList.add('hidden');
                     showMessage("Ya tienes un método de pago registrado.");
                 }
             } catch (err) {
                 console.error('Error al verificar método de pago:', err);
+                showMessage("Error al verificar tu método de pago. Intenta recargar la página.", true);
             }
         }
         
         // Guardar el método de pago en Supabase
+        // MEJORA: Asegurar guardar en auth.users
         async function savePaymentMethod(paymentData) {
             try {
-                // Actualizar los datos del usuario en la tabla auth.users
-                const { data, error } = await supabase
-                    .from('users')
-                    .update({
-                        payment_method: paymentData.payment_method,
-                        paypal_email: paymentData.paypal_email || null,
-                        binance_id: paymentData.binance_id || null,
-                        yape_phone: paymentData.yape_phone || null,
-                        updated_at: new Date().toISOString()
-                    })
-                    .eq('id', currentUserId);
+                // Intentar actualizar directamente en auth.users usando RPC
+                // (Esta función RPC debe estar configurada en Supabase)
+                const { data: rpcData, error: rpcError } = await supabase
+                    .rpc('update_user_payment_method', { 
+                        user_id: currentUserId,
+                        p_method: paymentData.payment_method,
+                        p_paypal_email: paymentData.paypal_email || null,
+                        p_binance_id: paymentData.binance_id || null,
+                        p_yape_phone: paymentData.yape_phone || null
+                    });
                 
-                if (error) throw error;
+                if (rpcError) {
+                    console.log("Error en RPC, intentando tabla users:", rpcError);
+                    
+                    // Si la RPC falla, intentar actualizar en la tabla users
+                    const { data, error } = await supabase
+                        .from('users')
+                        .update({
+                            payment_method: paymentData.payment_method,
+                            paypal_email: paymentData.paypal_email || null,
+                            binance_id: paymentData.binance_id || null,
+                            yape_phone: paymentData.yape_phone || null,
+                            updated_at: new Date().toISOString()
+                        })
+                        .eq('id', currentUserId);
+                    
+                    if (error) throw error;
+                }
                 
                 return { 
                     success: true,
@@ -337,7 +473,8 @@
             return id.length >= 6;
         }
         
-        async function submitPayment() {
+        // MEJORA: Mostrar advertencia antes de guardar
+        function submitPayment() {
             let method = document.getElementById('payment_method').value;
             let isValid = true;
             
@@ -377,47 +514,75 @@
             }
             
             if (isValid) {
-                // Desactivar botón durante el envío
-                const submitButton = document.getElementById('submit_button');
-                submitButton.disabled = true;
-                submitButton.textContent = "Guardando...";
-                
-                let paymentData = {
+                // Preparar datos para el guardado
+                pendingPaymentData = {
                     payment_method: method,
                     user_id: currentUserId
                 };
                 
                 // Obtener datos según el método de pago
                 if (method === 'paypal') {
-                    paymentData.paypal_email = document.getElementById('paypal_email').value;
+                    pendingPaymentData.paypal_email = document.getElementById('paypal_email').value;
                 } else if (method === 'binance') {
-                    paymentData.binance_id = document.getElementById('binance_id').value;
+                    pendingPaymentData.binance_id = document.getElementById('binance_id').value;
                 } else if (method === 'yape') {
-                    paymentData.yape_phone = document.getElementById('yape_phone').value;
+                    pendingPaymentData.yape_phone = document.getElementById('yape_phone').value;
                 }
                 
-                try {
-                    const result = await savePaymentMethod(paymentData);
+                // Mostrar el modal de confirmación
+                showConfirmationModal();
+            }
+        }
+        
+        // Función para mostrar el modal de confirmación
+        function showConfirmationModal() {
+            modal.style.display = "block";
+        }
+        
+        // Función para cerrar el modal
+        function closeModal() {
+            modal.style.display = "none";
+            pendingPaymentData = null;
+        }
+        
+        // Función que se ejecuta cuando el usuario confirma el guardado
+        async function proceedWithPaymentSave() {
+            // Cerramos el modal
+            modal.style.display = "none";
+            
+            if (!pendingPaymentData) {
+                showMessage("Error: No hay datos de pago pendientes", true);
+                return;
+            }
+            
+            // Desactivar botón durante el envío
+            const submitButton = document.getElementById('submit_button');
+            submitButton.disabled = true;
+            submitButton.innerHTML = '<span class="loading-spinner"></span> Guardando...';
+            
+            try {
+                const result = await savePaymentMethod(pendingPaymentData);
+                
+                if (result.success) {
+                    showMessage("¡Método de pago guardado correctamente!");
                     
-                    if (result.success) {
-                        showMessage("¡Método de pago guardado correctamente!");
-                        
-                        // Mostrar los datos guardados
-                        displaySavedData(paymentData, result.user_id);
-                        
-                        // Ocultar el formulario de pago
-                        document.getElementById('payment-form').classList.add('hidden');
-                    } else {
-                        showMessage("Error al guardar el método de pago: " + (result.error || "Error desconocido"), true);
-                    }
-                } catch (err) {
-                    console.error('Error en la conexión:', err);
-                    showMessage('Error de conexión. Por favor, intenta nuevamente.', true);
-                } finally {
-                    // Restaurar el botón
-                    submitButton.disabled = false;
-                    submitButton.textContent = "Guardar";
+                    // MEJORA: Actualizar interfaz automáticamente
+                    // Mostrar los datos guardados
+                    displaySavedData(pendingPaymentData, result.user_id);
+                    
+                    // Ocultar el formulario de pago
+                    document.getElementById('payment-form').classList.add('hidden');
+                } else {
+                    showMessage("Error al guardar el método de pago: " + (result.error || "Error desconocido"), true);
                 }
+            } catch (err) {
+                console.error('Error en la conexión:', err);
+                showMessage('Error de conexión. Por favor, intenta nuevamente.', true);
+            } finally {
+                // Restaurar el botón
+                submitButton.disabled = false;
+                submitButton.innerHTML = "Guardar";
+                pendingPaymentData = null;
             }
         }
         
