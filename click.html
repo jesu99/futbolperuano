@@ -3,173 +3,61 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Anuncios Pagados</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <title>Contador de Clics</title>
     <style>
         body {
             font-family: Arial, sans-serif;
             text-align: center;
             margin: 20px;
         }
-        .timer {
-            margin-top: 20px;
-            font-weight: bold;
-        }
-        .dashboard-btn {
-            display: block;
-            margin: 20px auto;
-            padding: 10px;
+        .click-box {
+            display: inline-block;
+            width: 200px;
+            height: 200px;
             background-color: #007bff;
             color: white;
-            text-decoration: none;
-            border-radius: 5px;
-            width: 200px;
-        }
-        .disabled {
-            pointer-events: none;
-            opacity: 0.5;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            cursor: pointer;
+            border-radius: 10px;
+            margin-top: 20px;
         }
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
-    <h2>Anuncios Pagados</h2>
+    <h2>Contador de Clics</h2>
     <p>Usuario: <span id="user-email">Cargando...</span></p>
-    <p>Clics restantes: <span id="click-count">Cargando...</span></p>
-    <p class="timer">Próximo reinicio en: <span id="timer">Cargando...</span></p>
-    
-    <script async data-cfasync="false" src="//pl26063295.effectiveratecpm.com/2537ae2ea8b16bc9e554273a94dfd098/invoke.js"></script>
-    <div id="container-2537ae2ea8b16bc9e554273a94dfd098" onclick="registerClick()"></div>
-    
-    <a href="dashboard.html" class="dashboard-btn">Volver al Dashboard</a>
-    
+    <p>Clics: <span id="click-count">0</span></p>
+    <p>Total ganado: $<span id="earnings">0.000</span></p>
+    <div class="click-box" onclick="registerClick()">Haz clic aquí</div>
+
     <script>
         const SUPABASE_URL = "https://srormesvqserhrfugrls.supabase.co";
-        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNyb3JtZXN2cXNlcmhyZnVncmxzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDMzNTk0MzUsImV4cCI6MjA1ODkzNTQzNX0.zGjT9CbTd6jb1lEBzK3OrsZJIgZSqJH9zfLXzWvLTlM"; // ⚠️ NO EXPONGAS TU CLAVE PRIVADA
+        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNyb3JtZXN2cXNlcmhyZnVncmxzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDMzNTk0MzUsImV4cCI6MjA1ODkzNTQzNX0.zGjT9CbTd6jb1lEBzK3OrsZJIgZSqJH9zfLXzWvLTlM";
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         
         let userId = null;
-        let clicksRestantes = 3;
-        let tiempoRestante = 0;
-        let intervalo = null;
+        let clickCount = 0;
+        let earnings = 0.000;
 
         document.addEventListener("DOMContentLoaded", async function () {
-            try {
-                const { data: { user }, error } = await supabase.auth.getUser();
-                if (error || !user) {
-                    window.location.href = "index.html";
-                    return;
-                }
-                userId = user.id;
-                document.getElementById("user-email").textContent = user.email;
-                await cargarEstadoUsuario();
-            } catch (error) {
-                console.error("Error al obtener el usuario:", error);
+            const { data: { user }, error } = await supabase.auth.getUser();
+            if (error || !user) {
+                window.location.href = "index.html";
+                return;
             }
+            userId = user.id;
+            document.getElementById("user-email").textContent = user.email;
         });
 
-        async function cargarEstadoUsuario() {
-            try {
-                const { data, error } = await supabase
-                    .from('users')
-                    .select('click_count, last_click_time')
-                    .eq('id', userId)
-                    .single();
-
-                if (error) throw error;
-
-                clicksRestantes = data?.click_count ?? 3;
-                let lastClickTime = data?.last_click_time ? new Date(data.last_click_time).getTime() : 0;
-                let ahora = Date.now();
-                let diferencia = (ahora - lastClickTime) / 1000;
-
-                if (diferencia >= 10800) {
-                    clicksRestantes = 3;
-                    await actualizarClicks(3, true);
-                } else {
-                    tiempoRestante = 10800 - diferencia;
-                    iniciarCronometro();
-                }
-                actualizarUI();
-            } catch (error) {
-                console.error("Error al cargar estado del usuario:", error);
-            }
-        }
-
-        async function registerClick() {
-            if (!userId) return;
-            
-            if (clicksRestantes > 0) {
-                clicksRestantes--;
-                actualizarUI();
-                try {
-                    await supabase.from('users').update({
-                        click_count: clicksRestantes,
-                        last_click_time: new Date().toISOString()
-                    }).eq('id', userId);
-                    
-                    await guardarClick(userId);
-
-                    if (clicksRestantes === 0) {
-                        tiempoRestante = 10800;
-                        iniciarCronometro();
-                    }
-                } catch (error) {
-                    console.error("Error al registrar el clic:", error);
-                }
-            } else {
-                alert("Has alcanzado el límite de clics. Espera 3 horas.");
-            }
-        }
-
-        async function guardarClick(userId) {
-            if (!userId) return;
-
-            try {
-                const { error } = await supabase.from('clicks').insert([{ user_id: userId, amount: 0.001 }]);
-                if (error) throw error;
-            } catch (error) {
-                console.error("Error al guardar el clic:", error);
-            }
-        }
-
-        function iniciarCronometro() {
-            if (intervalo) return;
-            intervalo = setInterval(() => {
-                if (tiempoRestante > 0) {
-                    tiempoRestante--;
-                    let horas = Math.floor(tiempoRestante / 3600);
-                    let minutos = Math.floor((tiempoRestante % 3600) / 60);
-                    let segundos = tiempoRestante % 60;
-                    document.getElementById("timer").textContent = `${horas.toString().padStart(2, '0')}:${minutos.toString().padStart(2, '0')}:${segundos.toString().padStart(2, '0')}`;
-                } else {
-                    clearInterval(intervalo);
-                    intervalo = null;
-                    clicksRestantes = 3;
-                    actualizarClicks(3, false);
-                }
-            }, 1000);
-        }
-
-        async function actualizarClicks(nuevosClicks, resetTiempo) {
-            try {
-                await supabase.from('users').update({
-                    click_count: nuevosClicks,
-                    last_click_time: resetTiempo ? null : new Date().toISOString()
-                }).eq('id', userId);
-                actualizarUI();
-            } catch (error) {
-                console.error("Error al actualizar los clics:", error);
-            }
-        }
-
-        function actualizarUI() {
-            document.getElementById("click-count").textContent = clicksRestantes;
-            const container = document.getElementById("container-2537ae2ea8b16bc9e554273a94dfd098");
-            if (clicksRestantes === 0) {
-                container.classList.add("disabled");
-            } else {
-                container.classList.remove("disabled");
-            }
+        function registerClick() {
+            clickCount++;
+            earnings += 0.001;
+            document.getElementById("click-count").textContent = clickCount;
+            document.getElementById("earnings").textContent = earnings.toFixed(3);
         }
     </script>
 </body>
