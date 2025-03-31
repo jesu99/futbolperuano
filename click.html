@@ -33,7 +33,6 @@
     <p>Clics: <span id="click-count">0</span></p>
     <p>Total ganado: $<span id="earnings">0.000</span></p>
     <div class="click-box" onclick="registerClick()">Haz clic aquí</div>
-
     <script>
         const SUPABASE_URL = "https://srormesvqserhrfugrls.supabase.co";
         const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNyb3JtZXN2cXNlcmhyZnVncmxzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDMzNTk0MzUsImV4cCI6MjA1ODkzNTQzNX0.zGjT9CbTd6jb1lEBzK3OrsZJIgZSqJH9zfLXzWvLTlM";
@@ -44,60 +43,112 @@
         let earnings = 0.000;
 
         document.addEventListener("DOMContentLoaded", async function () {
-            // Destruir sesión al recargar la página
-            await supabase.auth.signOut();
-            
-            const { data: { user }, error } = await supabase.auth.getUser();
-
-            if (error || !user) {
-                window.location.href = "index.html";
-                return;
+            try {
+                // PROBLEMA 1: No deberías cerrar la sesión al cargar la página
+                // await supabase.auth.signOut(); - Esta línea fue eliminada
+                
+                const { data: { user }, error } = await supabase.auth.getUser();
+                if (error) {
+                    console.error("Error al obtener usuario:", error);
+                    window.location.href = "index.html";
+                    return;
+                }
+                
+                if (!user) {
+                    console.log("No hay usuario autenticado");
+                    window.location.href = "index.html";
+                    return;
+                }
+                
+                userId = user.id;
+                document.getElementById("user-email").textContent = user.email;
+                // Cargar datos del usuario
+                await loadUserData();
+            } catch (error) {
+                console.error("Error en inicialización:", error);
             }
-            
-            userId = user.id;
-            document.getElementById("user-email").textContent = user.email;
-
-            // Cargar datos del usuario
-            await loadUserData();
         });
 
         async function loadUserData() {
-            const { data, error } = await supabase
-                .from("users")
-                .select("click_count, balance")
-                .eq("id", userId)
-                .single();
-
-            if (error) {
-                console.error("Error al cargar los datos:", error);
-                return;
+            try {
+                // PROBLEMA 2: Verificar los nombres correctos de las columnas
+                const { data, error } = await supabase
+                    .from("users")
+                    // Estos deben coincidir exactamente con los nombres de columnas en tu tabla
+                    .select("click_count, balance")
+                    .eq("id", userId)
+                    .single();
+                    
+                if (error) {
+                    console.error("Error al cargar los datos:", error);
+                    // Mostrar detalles específicos del error para depuración
+                    console.log("Detalles del error:", JSON.stringify(error));
+                    return;
+                }
+                
+                if (data) {
+                    clickCount = data.click_count || 0;
+                    earnings = parseFloat(data.balance) || 0.000;
+                    document.getElementById("click-count").textContent = clickCount;
+                    document.getElementById("earnings").textContent = earnings.toFixed(3);
+                } else {
+                    console.log("No se encontraron datos para el usuario");
+                    // Crear el registro si no existe
+                    await createUserRecord();
+                }
+            } catch (error) {
+                console.error("Error en loadUserData:", error);
             }
-
-            if (data) {
-                clickCount = data.click_count || 0;
-                earnings = parseFloat(data.balance) || 0.000;
-                document.getElementById("click-count").textContent = clickCount;
-                document.getElementById("earnings").textContent = earnings.toFixed(3);
+        }
+        
+        async function createUserRecord() {
+            try {
+                const { error } = await supabase
+                    .from("users")
+                    .insert([
+                        { 
+                            id: userId, 
+                            click_count: 0, 
+                            balance: 0.000 
+                        }
+                    ]);
+                    
+                if (error) {
+                    console.error("Error al crear registro de usuario:", error);
+                }
+            } catch (error) {
+                console.error("Error en createUserRecord:", error);
             }
         }
 
         async function registerClick() {
-            if (!userId) return;
-
-            clickCount++;
-            earnings += 0.001;
-
-            document.getElementById("click-count").textContent = clickCount;
-            document.getElementById("earnings").textContent = earnings.toFixed(3);
-
-            // Guardar en Supabase
-            const { error } = await supabase
-                .from("users")
-                .update({ click_count: clickCount, balance: earnings })
-                .eq("id", userId);
-
-            if (error) {
-                console.error("Error al actualizar los datos:", error);
+            try {
+                if (!userId) {
+                    console.error("No hay ID de usuario");
+                    return;
+                }
+                
+                clickCount++;
+                earnings += 0.001;
+                
+                document.getElementById("click-count").textContent = clickCount;
+                document.getElementById("earnings").textContent = earnings.toFixed(3);
+                
+                // Guardar en Supabase
+                const { error } = await supabase
+                    .from("users")
+                    .update({ 
+                        click_count: clickCount, 
+                        balance: earnings.toFixed(3) // Asegurar formato correcto
+                    })
+                    .eq("id", userId);
+                    
+                if (error) {
+                    console.error("Error al actualizar los datos:", error);
+                    console.log("Detalles del error:", JSON.stringify(error));
+                }
+            } catch (error) {
+                console.error("Error en registerClick:", error);
             }
         }
     </script>
