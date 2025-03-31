@@ -134,12 +134,22 @@
             margin-right: 5px;
             color: white;
         }
+        .user-email {
+            background-color: #222;
+            padding: 10px;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <h2>Selecciona tu método de pago</h2>
         <div id="status-message"></div>
+        
+        <div id="user-info" class="user-email">
+            <p>Usuario: <strong id="current-email">Cargando...</strong></p>
+        </div>
         
         <div id="payment-form">
             <label for="payment_method">Método de Pago:</label>
@@ -182,20 +192,101 @@
     </div>
     
     <script>
-        // Simula un ID de usuario para demostración
-        const userId = "user_" + Math.random().toString(36).substr(2, 9);
+        // Inicializar Supabase cliente (reemplaza con tus credenciales reales)
+        const SUPABASE_URL = 'https://srormesvqserhrfugrls.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNyb3JtZXN2cXNlcmhyZnVncmxzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDMzNTk0MzUsImV4cCI6MjA1ODkzNTQzNX0.zGjT9CbTd6jb1lEBzK3OrsZJIgZSqJH9zfLXzWvLTlM';
+        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         
-        // Esta función debería ejecutarse en el servidor o mediante una función segura
-        // Las credenciales de Supabase no deberían estar expuestas en el cliente
-        async function savePaymentMethod(paymentData) {
-            // En un entorno real, se enviaría este objeto a un endpoint de backend
-            // que manejaría la autenticación segura con Supabase y guardaría los datos en auth.users
+        // Variables para el usuario actual
+        let currentUser = null;
+        let currentUserId = null;
+        
+        // Función que se ejecuta al cargar la página
+        document.addEventListener('DOMContentLoaded', async function() {
+            // Verificar si hay una sesión activa
+            const { data: { session }, error } = await supabase.auth.getSession();
             
-            // Simulación de respuesta exitosa
-            return { 
-                success: true,
-                user_id: userId
-            };
+            if (error) {
+                showMessage("Error al verificar la sesión: " + error.message, true);
+                return;
+            }
+            
+            if (session) {
+                currentUser = session.user;
+                currentUserId = currentUser.id;
+                document.getElementById('current-email').textContent = currentUser.email;
+                
+                // Comprobar si el usuario ya tiene un método de pago guardado
+                await checkExistingPaymentMethod();
+            } else {
+                // Simulación para pruebas (eliminar en producción)
+                simulateUser();
+            }
+        });
+        
+        // Simulación para pruebas (eliminar en producción)
+        function simulateUser() {
+            currentUserId = "1ef208f3-ad33-4ad2-b533-04b858f30d94";
+            document.getElementById('current-email').textContent = "pesadillastorie@gmail.com";
+        }
+        
+        // Verificar si el usuario ya tiene un método de pago guardado
+        async function checkExistingPaymentMethod() {
+            try {
+                const { data, error } = await supabase
+                    .from('users')
+                    .select('payment_method, paypal_email, binance_id, yape_phone')
+                    .eq('id', currentUserId)
+                    .single();
+                
+                if (error) throw error;
+                
+                if (data && data.payment_method) {
+                    // El usuario ya tiene un método de pago guardado
+                    const paymentData = {
+                        payment_method: data.payment_method,
+                        paypal_email: data.paypal_email,
+                        binance_id: data.binance_id,
+                        yape_phone: data.yape_phone
+                    };
+                    
+                    displaySavedData(paymentData, currentUserId);
+                    document.getElementById('payment-form').classList.add('hidden');
+                    showMessage("Ya tienes un método de pago registrado.");
+                }
+            } catch (err) {
+                console.error('Error al verificar método de pago:', err);
+            }
+        }
+        
+        // Guardar el método de pago en Supabase
+        async function savePaymentMethod(paymentData) {
+            try {
+                // Actualizar los datos del usuario en la tabla auth.users
+                const { data, error } = await supabase
+                    .from('users')
+                    .update({
+                        payment_method: paymentData.payment_method,
+                        paypal_email: paymentData.paypal_email || null,
+                        binance_id: paymentData.binance_id || null,
+                        yape_phone: paymentData.yape_phone || null,
+                        updated_at: new Date().toISOString()
+                    })
+                    .eq('id', currentUserId);
+                
+                if (error) throw error;
+                
+                return { 
+                    success: true,
+                    user_id: currentUserId
+                };
+            } catch (err) {
+                console.error('Error al guardar método de pago:', err);
+                return {
+                    success: false,
+                    error: err.message
+                };
+            }
         }
         
         function showPaymentField() {
@@ -293,8 +384,7 @@
                 
                 let paymentData = {
                     payment_method: method,
-                    created_at: new Date().toISOString(),
-                    user_id: userId
+                    user_id: currentUserId
                 };
                 
                 // Obtener datos según el método de pago
@@ -307,7 +397,6 @@
                 }
                 
                 try {
-                    // En un entorno real, esta llamada sería a través de fetch a un endpoint de servidor
                     const result = await savePaymentMethod(paymentData);
                     
                     if (result.success) {
@@ -337,13 +426,17 @@
             document.getElementById('saved-method').textContent = getMethodName(paymentData.payment_method);
             
             // Datos específicos según el método
-            if (paymentData.payment_method === 'paypal') {
+            document.getElementById('saved-paypal').classList.add('hidden');
+            document.getElementById('saved-binance').classList.add('hidden');
+            document.getElementById('saved-yape').classList.add('hidden');
+            
+            if (paymentData.payment_method === 'paypal' && paymentData.paypal_email) {
                 document.getElementById('saved-paypal').classList.remove('hidden');
                 document.getElementById('saved-paypal-email').textContent = paymentData.paypal_email;
-            } else if (paymentData.payment_method === 'binance') {
+            } else if (paymentData.payment_method === 'binance' && paymentData.binance_id) {
                 document.getElementById('saved-binance').classList.remove('hidden');
                 document.getElementById('saved-binance-id').textContent = paymentData.binance_id;
-            } else if (paymentData.payment_method === 'yape') {
+            } else if (paymentData.payment_method === 'yape' && paymentData.yape_phone) {
                 document.getElementById('saved-yape').classList.remove('hidden');
                 document.getElementById('saved-yape-phone').textContent = paymentData.yape_phone;
             }
