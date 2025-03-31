@@ -49,6 +49,14 @@
             max-width: 400px;
             margin: auto;
         }
+        .delete-btn {
+            background: red;
+            color: white;
+            border: none;
+            padding: 5px;
+            cursor: pointer;
+            border-radius: 3px;
+        }
     </style>
 </head>
 <body>
@@ -70,8 +78,8 @@
     </div>
     <script>
         const SUPABASE_URL = "https://srormesvqserhrfugrls.supabase.co";
-        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNyb3JtZXN2cXNlcmhyZnVncmxzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDMzNTk0MzUsImV4cCI6MjA1ODkzNTQzNX0.zGjT9CbTd6jb1lEBzK3OrsZJIgZSqJH9zfLXzWvLTlM";
-        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        const SUPABASE_KEY = "TU_SUPABASE_KEY_AQUI";
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         document.addEventListener("DOMContentLoaded", async function() {
             const { data: { user }, error } = await supabase.auth.getUser();
@@ -87,6 +95,24 @@
                 agregarMetodo(user.id);
             });
         });
+
+        function validarEntrada(metodo, valor) {
+            if (!valor.trim()) return false;
+
+            if (metodo === "paypal" && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(valor)) {
+                alert("Ingresa un correo válido para PayPal.");
+                return false;
+            }
+            if (metodo === "binance" && !/^\d+$/.test(valor)) {
+                alert("El ID de Binance solo debe contener números.");
+                return false;
+            }
+            if (metodo === "yape" && !/^\d{9}$/.test(valor)) {
+                alert("El número de Yape debe tener 9 dígitos.");
+                return false;
+            }
+            return true;
+        }
 
         async function verificarOCrearUsuario(userId) {
             const { data, error } = await supabase
@@ -107,53 +133,58 @@
                 .eq('id', userId)
                 .single();
             
-            if (error) {
-                console.error("Error al obtener los métodos:", error);
-                return;
-            }
-            mostrarMetodos(data?.payment_methods || []);
+            if (error) return;
+            mostrarMetodos(data?.payment_methods || [], userId);
         }
 
-        function mostrarMetodos(metodos) {
+        function mostrarMetodos(metodos, userId) {
             const lista = document.getElementById("payment-methods");
             lista.innerHTML = "";
-            metodos.forEach(metodo => {
+            metodos.forEach((metodo, index) => {
                 const item = document.createElement("li");
-                item.textContent = `${metodo.method}: ${metodo.value}`;
+                item.textContent = `${metodo.method}: ${metodo.value} `;
+                
+                const botonEliminar = document.createElement("button");
+                botonEliminar.textContent = "Eliminar";
+                botonEliminar.classList.add("delete-btn");
+                botonEliminar.onclick = async () => {
+                    metodos.splice(index, 1);
+                    await supabase.from('users').update({ payment_methods: metodos }).eq('id', userId);
+                    mostrarMetodos(metodos, userId);
+                };
+                
+                item.appendChild(botonEliminar);
                 lista.appendChild(item);
             });
         }
 
         async function agregarMetodo(userId) {
+            const boton = document.querySelector("#payment-form button");
+            boton.disabled = true;
+            boton.textContent = "Guardando...";
+
             const metodo = document.getElementById("method").value;
             const valor = document.getElementById("value").value.trim();
-            if (!metodo || !valor) {
-                alert("Por favor, completa todos los campos.");
+            if (!validarEntrada(metodo, valor)) {
+                boton.disabled = false;
+                boton.textContent = "Guardar Método";
                 return;
             }
+
             const { data, error } = await supabase
                 .from('users')
                 .select('payment_methods')
                 .eq('id', userId)
                 .single();
-            if (error) {
-                console.error("Error al obtener métodos actuales:", error);
-                return;
-            }
+            
             let metodosActuales = data?.payment_methods || [];
             metodosActuales = metodosActuales.filter(m => m.method !== metodo);
             metodosActuales.push({ method: metodo, value: valor });
-            const { error: updateError } = await supabase
-                .from('users')
-                .update({ payment_methods: metodosActuales })
-                .eq('id', userId);
-            if (updateError) {
-                console.error("Error al guardar método:", updateError);
-                alert("Error al guardar el método.");
-            } else {
-                alert("Método guardado correctamente.");
-                mostrarMetodos(metodosActuales);
-            }
+            await supabase.from('users').update({ payment_methods: metodosActuales }).eq('id', userId);
+            
+            boton.disabled = false;
+            boton.textContent = "Guardar Método";
+            mostrarMetodos(metodosActuales, userId);
         }
     </script>
 </body>
