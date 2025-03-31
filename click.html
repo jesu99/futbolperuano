@@ -89,7 +89,7 @@
         // Configuración de Supabase
         const supabaseUrl = 'https://srormesvqserhrfugrls.supabase.co';
         const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNyb3JtZXN2cXNlcmhyZnVncmxzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDMzNTk0MzUsImV4cCI6MjA1ODkzNTQzNX0.zGjT9CbTd6jb1lEBzK3OrsZJIgZSqJH9zfLXzWvLTlM';
-        const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+        const supabase = supabaseClient.createClient(supabaseUrl, supabaseKey);
 
         // Variables globales
         let currentUser = null;
