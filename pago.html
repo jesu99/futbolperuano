@@ -3,9 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Agregar Métodos de Pago</title>
+    <title>Admin - Sincronizar Usuarios</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <meta http-equiv="Permissions-Policy" content="interest-cohort=()">
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -16,175 +15,90 @@
         h2 {
             text-align: center;
         }
-        form {
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
-            max-width: 400px;
-            margin: auto;
-        }
-        label, select, input, button {
-            display: block;
+        table {
             width: 100%;
-            margin: 10px 0;
+            border-collapse: collapse;
+            background: white;
+        }
+        th, td {
+            border: 1px solid black;
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            background-color: #28a745;
+            color: white;
         }
         button {
-            background: #28a745;
-            color: white;
+            margin-top: 10px;
             padding: 10px;
+            background-color: #007bff;
+            color: white;
             border: none;
             cursor: pointer;
             border-radius: 5px;
         }
         button:hover {
-            background: #218838;
-        }
-        #payment-list {
-            margin-top: 20px;
-            background: white;
-            padding: 10px;
-            border-radius: 5px;
-            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
-            max-width: 400px;
-            margin: auto;
-        }
-        .delete-btn {
-            background: red;
-            color: white;
-            border: none;
-            padding: 5px;
-            cursor: pointer;
-            border-radius: 3px;
+            background-color: #0056b3;
         }
     </style>
 </head>
 <body>
-    <h2>Gestionar Métodos de Pago</h2>
-    <form id="payment-form">
-        <label for="method">Método de Pago:</label>
-        <select id="method">
-            <option value="paypal">PayPal</option>
-            <option value="binance">Binance</option>
-            <option value="yape">Yape</option>
-        </select>
-        <label for="value">Datos del Método:</label>
-        <input type="text" id="value" placeholder="Correo, ID o número">
-        <button type="submit">Guardar Método</button>
-    </form>
-    <div id="payment-list">
-        <h3>Tus Métodos de Pago:</h3>
-        <ul id="payment-methods"></ul>
-    </div>
+    <h2>Panel de Administración - Sincronizar Usuarios</h2>
+    <button onclick="sincronizarUsuarios()">Sincronizar Usuarios</button>
+    <h3>Usuarios en Auth no presentes en Users</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Email</th>
+            </tr>
+        </thead>
+        <tbody id="user-list"></tbody>
+    </table>
+    
     <script>
         const SUPABASE_URL = "https://srormesvqserhrfugrls.supabase.co";
-        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNyb3JtZXN2cXNlcmhyZnVncmxzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDMzNTk0MzUsImV4cCI6MjA1ODkzNTQzNX0.zGjT9CbTd6jb1lEBzK3OrsZJIgZSqJH9zfLXzWvLTlM";
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-        document.addEventListener("DOMContentLoaded", async function() {
-            const { data: { user }, error } = await supabase.auth.getUser();
-            if (error || !user) {
-                alert("Debes iniciar sesión.");
-                window.location.href = "index.html";
+        const SUPABASE_KEY = "TU_SUPABASE_KEY";
+        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        
+        async function sincronizarUsuarios() {
+            const { data: authUsers, error: authError } = await supabase
+                .from('auth.users')
+                .select('id, email');
+            
+            if (authError) {
+                console.error("Error obteniendo usuarios de auth:", authError);
                 return;
             }
-            await verificarOCrearUsuario(user.id);
-            cargarMetodos(user.id);
-            document.getElementById("payment-form").addEventListener("submit", async function(event) {
-                event.preventDefault();
-                agregarMetodo(user.id);
-            });
-        });
-
-        function validarEntrada(metodo, valor) {
-            if (!valor.trim()) return false;
-
-            if (metodo === "paypal" && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(valor)) {
-                alert("Ingresa un correo válido para PayPal.");
-                return false;
-            }
-            if (metodo === "binance" && !/^\d+$/.test(valor)) {
-                alert("El ID de Binance solo debe contener números.");
-                return false;
-            }
-            if (metodo === "yape" && !/^\d{9}$/.test(valor)) {
-                alert("El número de Yape debe tener 9 dígitos.");
-                return false;
-            }
-            return true;
-        }
-
-        async function verificarOCrearUsuario(userId) {
-            const { data, error } = await supabase
-                .from('users')
-                .select('id')
-                .eq('id', userId)
-                .single();
             
-            if (error || !data) {
-                await supabase.from('users').insert([{ id: userId, payment_methods: [] }]);
-            }
-        }
-
-        async function cargarMetodos(userId) {
-            const { data, error } = await supabase
+            const { data: users, error: usersError } = await supabase
                 .from('users')
-                .select('payment_methods')
-                .eq('id', userId)
-                .single();
+                .select('id');
             
-            if (error) return;
-            mostrarMetodos(data?.payment_methods || [], userId);
-        }
-
-        function mostrarMetodos(metodos, userId) {
-            const lista = document.getElementById("payment-methods");
-            lista.innerHTML = "";
-            metodos.forEach((metodo, index) => {
-                const item = document.createElement("li");
-                item.textContent = `${metodo.method}: ${metodo.value} `;
-                
-                const botonEliminar = document.createElement("button");
-                botonEliminar.textContent = "Eliminar";
-                botonEliminar.classList.add("delete-btn");
-                botonEliminar.onclick = async () => {
-                    metodos.splice(index, 1);
-                    await supabase.from('users').update({ payment_methods: metodos }).eq('id', userId);
-                    mostrarMetodos(metodos, userId);
-                };
-                
-                item.appendChild(botonEliminar);
-                lista.appendChild(item);
-            });
-        }
-
-        async function agregarMetodo(userId) {
-            const boton = document.querySelector("#payment-form button");
-            boton.disabled = true;
-            boton.textContent = "Guardando...";
-
-            const metodo = document.getElementById("method").value;
-            const valor = document.getElementById("value").value.trim();
-            if (!validarEntrada(metodo, valor)) {
-                boton.disabled = false;
-                boton.textContent = "Guardar Método";
+            if (usersError) {
+                console.error("Error obteniendo usuarios de users:", usersError);
                 return;
             }
-
-            const { data, error } = await supabase
-                .from('users')
-                .select('payment_methods')
-                .eq('id', userId)
-                .single();
             
-            let metodosActuales = data?.payment_methods || [];
-            metodosActuales = metodosActuales.filter(m => m.method !== metodo);
-            metodosActuales.push({ method: metodo, value: valor });
-            await supabase.from('users').update({ payment_methods: metodosActuales }).eq('id', userId);
+            const userIds = users.map(user => user.id);
+            const missingUsers = authUsers.filter(authUser => !userIds.includes(authUser.id));
             
-            boton.disabled = false;
-            boton.textContent = "Guardar Método";
-            mostrarMetodos(metodosActuales, userId);
+            const userList = document.getElementById("user-list");
+            userList.innerHTML = "";
+            
+            missingUsers.forEach(user => {
+                const row = document.createElement("tr");
+                row.innerHTML = `<td>${user.id}</td><td>${user.email}</td>`;
+                userList.appendChild(row);
+            });
+            
+            if (missingUsers.length > 0) {
+                await supabase.from('users').insert(missingUsers.map(user => ({ id: user.id, email: user.email, balance: 0 })));
+                alert("Usuarios sincronizados correctamente.");
+            } else {
+                alert("Todos los usuarios ya están sincronizados.");
+            }
         }
     </script>
 </body>
