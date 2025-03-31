@@ -44,11 +44,13 @@
         let earnings = 0.000;
 
         document.addEventListener("DOMContentLoaded", async function () {
+            // Destruir sesión al recargar la página
+            await supabase.auth.signOut();
+            
             const { data: { user }, error } = await supabase.auth.getUser();
 
             if (error || !user) {
-                await supabase.auth.signOut(); // Cierra sesión en Supabase
-                window.location.href = "index.html"; // Redirige al login
+                window.location.href = "index.html";
                 return;
             }
             
@@ -60,7 +62,7 @@
         });
 
         async function loadUserData() {
-            let { data, error } = await supabase
+            const { data, error } = await supabase
                 .from("users")
                 .select("click_count, balance")
                 .eq("id", userId)
@@ -72,14 +74,16 @@
             }
 
             if (data) {
-                clickCount = data.click_count ?? 0;
-                earnings = parseFloat(data.balance) ?? 0.000;
+                clickCount = data.click_count || 0;
+                earnings = parseFloat(data.balance) || 0.000;
                 document.getElementById("click-count").textContent = clickCount;
                 document.getElementById("earnings").textContent = earnings.toFixed(3);
             }
         }
 
         async function registerClick() {
+            if (!userId) return;
+
             clickCount++;
             earnings += 0.001;
 
