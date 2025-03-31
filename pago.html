@@ -20,7 +20,7 @@
 
     <script>
         const supabase = supabase.createClient("TU_SUPABASE_URL", "TU_SUPABASE_ANON_KEY");
-        let currentUserId = null;
+        let currentUserEmail = null;
 
         async function getUser() {
             const { data: { user }, error } = await supabase.auth.getUser();
@@ -28,30 +28,49 @@
                 document.getElementById("user-email").innerText = "No autenticado";
                 return;
             }
+
             document.getElementById("user-email").innerText = user.email;
-            currentUserId = user.id;
+            currentUserEmail = user.email;  // Guardamos el email para la consulta
             getUserPaymentMethod();
         }
 
         async function getUserPaymentMethod() {
-            const { data, error } = await supabase.from('users').select('payment_method, payment_info').eq('id', currentUserId).single();
+            if (!currentUserEmail) return;
+            
+            const { data, error } = await supabase
+                .from('users')
+                .select('payment_method, payment_info')
+                .eq('email', currentUserEmail)  // Buscamos por email
+                .single();
+
+            if (error) {
+                console.error("Error al obtener el método de pago:", error);
+                return;
+            }
+
             if (data) {
-                document.getElementById("payment-method").value = data.payment_method;
-                document.getElementById("payment-info").value = data.payment_info;
+                document.getElementById("payment-method").value = data.payment_method || "";
+                document.getElementById("payment-info").value = data.payment_info || "";
             }
         }
 
         async function submitPayment() {
-            if (!currentUserId) {
+            if (!currentUserEmail) {
                 document.getElementById("message").innerText = "Error: Usuario no autenticado";
                 return;
             }
+
             const method = document.getElementById("payment-method").value;
             const info = document.getElementById("payment-info").value;
-            
-            const { error } = await supabase.from('users').update({ payment_method: method, payment_info: info }).eq('id', currentUserId);
+
+            const { error } = await supabase
+                .from('users')
+                .update({ payment_method: method, payment_info: info })
+                .eq('email', currentUserEmail);  // Actualizamos por email
+
             if (error) {
                 document.getElementById("message").innerText = "Error al guardar";
+                console.error("Error al guardar método de pago:", error);
             } else {
                 document.getElementById("message").innerText = "Método de pago guardado con éxito";
             }
