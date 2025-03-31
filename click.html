@@ -24,15 +24,34 @@
             border-radius: 10px;
             margin-top: 20px;
         }
+        #loading {
+            display: block;
+            margin: 20px auto;
+        }
+        #content {
+            display: none;
+        }
+        .error-message {
+            color: red;
+            margin: 10px 0;
+        }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
-    <h2>Contador de Clics</h2>
-    <p>Usuario: <span id="user-email">Cargando...</span></p>
-    <p>Clics: <span id="click-count">0</span></p>
-    <p>Total ganado: $<span id="earnings">0.000</span></p>
-    <div class="click-box" onclick="registerClick()">Haz clic aquí</div>
+    <div id="loading">Cargando sesión...</div>
+    
+    <div id="content">
+        <h2>Contador de Clics</h2>
+        <p>Usuario: <span id="user-email">Cargando...</span></p>
+        <p>Clics: <span id="click-count">0</span></p>
+        <p>Total ganado: $<span id="earnings">0.000</span></p>
+        <div class="click-box" onclick="registerClick()">Haz clic aquí</div>
+        <p><button onclick="logout()">Cerrar sesión</button></p>
+    </div>
+    
+    <div id="error-container" class="error-message"></div>
+    
     <script>
         const SUPABASE_URL = "https://srormesvqserhrfugrls.supabase.co";
         const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNyb3JtZXN2cXNlcmhyZnVncmxzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDMzNTk0MzUsImV4cCI6MjA1ODkzNTQzNX0.zGjT9CbTd6jb1lEBzK3OrsZJIgZSqJH9zfLXzWvLTlM";
@@ -42,47 +61,78 @@
         let clickCount = 0;
         let earnings = 0.000;
 
+        // Mostrar mensaje de error
+        function showError(message) {
+            const errorContainer = document.getElementById("error-container");
+            errorContainer.textContent = message;
+            errorContainer.style.display = "block";
+        }
+
+        // Verificar si hay sesión al cargar la página
         document.addEventListener("DOMContentLoaded", async function () {
             try {
-                // PROBLEMA 1: No deberías cerrar la sesión al cargar la página
-                // await supabase.auth.signOut(); - Esta línea fue eliminada
+                // Verificar si existe una sesión activa
+                const { data: { session }, error: sessionError } = await supabase.auth.getSession();
                 
-                const { data: { user }, error } = await supabase.auth.getUser();
-                if (error) {
-                    console.error("Error al obtener usuario:", error);
+                if (sessionError) {
+                    showError("Error al obtener la sesión: " + sessionError.message);
+                    return;
+                }
+                
+                if (!session) {
+                    console.log("No hay sesión activa. Redirigiendo a login...");
                     window.location.href = "index.html";
+                    return;
+                }
+                
+                // Si hay sesión, obtener datos del usuario
+                const { data: { user }, error } = await supabase.auth.getUser();
+                
+                if (error) {
+                    showError("Error al obtener usuario: " + error.message);
                     return;
                 }
                 
                 if (!user) {
-                    console.log("No hay usuario autenticado");
+                    console.log("No hay usuario autenticado. Redirigiendo a login...");
                     window.location.href = "index.html";
                     return;
                 }
                 
+                // Usuario autenticado, mostrar contenido
                 userId = user.id;
                 document.getElementById("user-email").textContent = user.email;
+                
+                // Ocultar pantalla de carga y mostrar contenido
+                document.getElementById("loading").style.display = "none";
+                document.getElementById("content").style.display = "block";
+                
                 // Cargar datos del usuario
                 await loadUserData();
             } catch (error) {
-                console.error("Error en inicialización:", error);
+                showError("Error en inicialización: " + error.message);
+                console.error("Error completo:", error);
             }
         });
 
         async function loadUserData() {
             try {
-                // PROBLEMA 2: Verificar los nombres correctos de las columnas
                 const { data, error } = await supabase
                     .from("users")
-                    // Estos deben coincidir exactamente con los nombres de columnas en tu tabla
                     .select("click_count, balance")
                     .eq("id", userId)
                     .single();
                     
                 if (error) {
-                    console.error("Error al cargar los datos:", error);
-                    // Mostrar detalles específicos del error para depuración
-                    console.log("Detalles del error:", JSON.stringify(error));
+                    if (error.code === "PGRST116") {
+                        // Registro no encontrado, crear uno nuevo
+                        console.log("Creando nuevo registro para el usuario");
+                        await createUserRecord();
+                        return;
+                    }
+                    
+                    showError("Error al cargar datos: " + error.message);
+                    console.error("Detalles del error:", error);
                     return;
                 }
                 
@@ -93,11 +143,11 @@
                     document.getElementById("earnings").textContent = earnings.toFixed(3);
                 } else {
                     console.log("No se encontraron datos para el usuario");
-                    // Crear el registro si no existe
                     await createUserRecord();
                 }
             } catch (error) {
-                console.error("Error en loadUserData:", error);
+                showError("Error al cargar datos: " + error.message);
+                console.error("Error completo:", error);
             }
         }
         
@@ -114,17 +164,26 @@
                     ]);
                     
                 if (error) {
-                    console.error("Error al crear registro de usuario:", error);
+                    showError("Error al crear registro: " + error.message);
+                    console.error("Error completo:", error);
+                    return;
                 }
+                
+                // Inicializar contadores
+                clickCount = 0;
+                earnings = 0.000;
+                document.getElementById("click-count").textContent = clickCount;
+                document.getElementById("earnings").textContent = earnings.toFixed(3);
             } catch (error) {
-                console.error("Error en createUserRecord:", error);
+                showError("Error al crear registro: " + error.message);
+                console.error("Error completo:", error);
             }
         }
 
         async function registerClick() {
             try {
                 if (!userId) {
-                    console.error("No hay ID de usuario");
+                    showError("No hay ID de usuario");
                     return;
                 }
                 
@@ -144,11 +203,21 @@
                     .eq("id", userId);
                     
                 if (error) {
-                    console.error("Error al actualizar los datos:", error);
-                    console.log("Detalles del error:", JSON.stringify(error));
+                    showError("Error al actualizar datos: " + error.message);
+                    console.error("Detalles del error:", error);
                 }
             } catch (error) {
-                console.error("Error en registerClick:", error);
+                showError("Error al registrar clic: " + error.message);
+                console.error("Error completo:", error);
+            }
+        }
+        
+        async function logout() {
+            try {
+                await supabase.auth.signOut();
+                window.location.href = "index.html";
+            } catch (error) {
+                showError("Error al cerrar sesión: " + error.message);
             }
         }
     </script>
