@@ -34,6 +34,17 @@
         .error-message {
             color: red;
             margin: 10px 0;
+            word-break: break-word;
+        }
+        .debug-info {
+            background-color: #f5f5f5;
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin-top: 20px;
+            text-align: left;
+            font-family: monospace;
+            max-height: 200px;
+            overflow-y: auto;
         }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -52,6 +63,12 @@
     
     <div id="error-container" class="error-message"></div>
     
+    <!-- Sección de depuración -->
+    <div id="debug-container" class="debug-info" style="display: none;">
+        <h3>Información de depuración</h3>
+        <pre id="debug-info"></pre>
+    </div>
+    
     <script>
         const SUPABASE_URL = "https://srormesvqserhrfugrls.supabase.co";
         const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNyb3JtZXN2cXNlcmhyZnVncmxzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDMzNTk0MzUsImV4cCI6MjA1ODkzNTQzNX0.zGjT9CbTd6jb1lEBzK3OrsZJIgZSqJH9zfLXzWvLTlM";
@@ -60,48 +77,70 @@
         let userId = null;
         let clickCount = 0;
         let earnings = 0.000;
+        
+        // Añadir información de depuración
+        function addDebugInfo(info) {
+            const debugInfo = document.getElementById("debug-info");
+            const timestamp = new Date().toLocaleTimeString();
+            debugInfo.innerHTML += `[${timestamp}] ${info}\n`;
+            document.getElementById("debug-container").style.display = "block";
+        }
 
         // Mostrar mensaje de error
-        function showError(message) {
+        function showError(message, errorObject = null) {
             const errorContainer = document.getElementById("error-container");
             errorContainer.textContent = message;
-            errorContainer.style.display = "block";
+            
+            // Si tenemos un objeto de error, mostrar detalles para depuración
+            if (errorObject) {
+                try {
+                    // Intentar mostrar información detallada del error
+                    addDebugInfo(`Error detallado: ${JSON.stringify(errorObject)}`);
+                } catch (e) {
+                    addDebugInfo(`Error no serializable: ${errorObject}`);
+                }
+            }
         }
 
         // Verificar si hay sesión al cargar la página
         document.addEventListener("DOMContentLoaded", async function () {
             try {
+                addDebugInfo("Iniciando verificación de sesión...");
+                
                 // Verificar si existe una sesión activa
-                const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+                const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
                 
                 if (sessionError) {
-                    showError("Error al obtener la sesión: " + sessionError.message);
+                    showError("Error al obtener la sesión: " + sessionError.message, sessionError);
                     return;
                 }
                 
-                if (!session) {
-                    console.log("No hay sesión activa. Redirigiendo a login...");
+                addDebugInfo(`Sesión obtenida: ${sessionData ? "Sí" : "No"}`);
+                
+                if (!sessionData || !sessionData.session) {
+                    addDebugInfo("No hay sesión activa. Redirigiendo a login...");
                     window.location.href = "index.html";
                     return;
                 }
                 
                 // Si hay sesión, obtener datos del usuario
-                const { data: { user }, error } = await supabase.auth.getUser();
+                const { data: userData, error: userError } = await supabase.auth.getUser();
                 
-                if (error) {
-                    showError("Error al obtener usuario: " + error.message);
+                if (userError) {
+                    showError("Error al obtener usuario: " + userError.message, userError);
                     return;
                 }
                 
-                if (!user) {
-                    console.log("No hay usuario autenticado. Redirigiendo a login...");
+                if (!userData || !userData.user) {
+                    addDebugInfo("No hay usuario autenticado. Redirigiendo a login...");
                     window.location.href = "index.html";
                     return;
                 }
                 
                 // Usuario autenticado, mostrar contenido
-                userId = user.id;
-                document.getElementById("user-email").textContent = user.email;
+                userId = userData.user.id;
+                addDebugInfo(`Usuario autenticado: ${userData.user.email} (ID: ${userId})`);
+                document.getElementById("user-email").textContent = userData.user.email;
                 
                 // Ocultar pantalla de carga y mostrar contenido
                 document.getElementById("loading").style.display = "none";
@@ -110,36 +149,73 @@
                 // Cargar datos del usuario
                 await loadUserData();
             } catch (error) {
-                showError("Error en inicialización: " + error.message);
-                console.error("Error completo:", error);
+                showError("Error en inicialización: " + (error.message || "Desconocido"), error);
             }
         });
 
         async function loadUserData() {
             try {
+                addDebugInfo("Cargando datos del usuario...");
+                
+                // Verificar estructura de la tabla primero
+                const { data: tableInfo, error: tableError } = await supabase
+                    .from("users")
+                    .select("*")
+                    .limit(1);
+                    
+                if (tableError) {
+                    showError("Error al verificar tabla: " + tableError.message, tableError);
+                    return;
+                }
+                
+                addDebugInfo(`Estructura de tabla verificada: ${JSON.stringify(tableInfo)}`);
+                
+                // Ahora intentar obtener los datos del usuario específico
                 const { data, error } = await supabase
                     .from("users")
-                    .select("click_count, balance")
+                    .select("*")  // Cambiar a select(*) para ver todos los campos
                     .eq("id", userId)
                     .single();
                     
                 if (error) {
-                    // Si hay error al cargar los datos, mostrar el mensaje
-                    showError("Error al cargar datos: " + error.message);
-                    console.error("Detalles del error:", error);
+                    showError("Error al cargar datos: " + error.message, error);
                     return;
                 }
                 
-                // Dado que tenemos el trigger SQL, siempre debería existir un registro
-                // Solo necesitamos verificar si los campos específicos existen
-                clickCount = data.click_count !== null ? data.click_count : 0;
-                earnings = data.balance !== null ? parseFloat(data.balance) : 0.000;
+                addDebugInfo(`Datos del usuario obtenidos: ${JSON.stringify(data)}`);
                 
-                document.getElementById("click-count").textContent = clickCount;
-                document.getElementById("earnings").textContent = earnings.toFixed(3);
+                // Verificar qué nombres de columnas existen realmente
+                if (data) {
+                    const columnNames = Object.keys(data);
+                    addDebugInfo(`Columnas disponibles: ${columnNames.join(", ")}`);
+                    
+                    // Usar los nombres correctos de las columnas (que pueden variar)
+                    const clickCountColumn = columnNames.find(name => 
+                        name.toLowerCase().includes("click") || name.toLowerCase().includes("count"));
+                    const balanceColumn = columnNames.find(name => 
+                        name.toLowerCase().includes("balance") || name.toLowerCase().includes("earn"));
+                    
+                    // Asignar valores con comprobación de tipo
+                    if (clickCountColumn) {
+                        clickCount = typeof data[clickCountColumn] === 'number' ? data[clickCountColumn] : 0;
+                    }
+                    
+                    if (balanceColumn) {
+                        // Asegurar que sea un número
+                        const rawBalance = data[balanceColumn];
+                        earnings = typeof rawBalance === 'number' ? rawBalance : 
+                                   typeof rawBalance === 'string' ? parseFloat(rawBalance) || 0 : 0;
+                    }
+                    
+                    document.getElementById("click-count").textContent = clickCount;
+                    document.getElementById("earnings").textContent = earnings.toFixed(3);
+                    
+                    addDebugInfo(`Valores asignados: clicks=${clickCount}, earnings=${earnings}`);
+                } else {
+                    showError("No se encontraron datos del usuario");
+                }
             } catch (error) {
-                showError("Error al cargar datos: " + error.message);
-                console.error("Error completo:", error);
+                showError("Error al cargar datos: " + (error.message || "Desconocido"), error);
             }
         }
 
@@ -156,22 +232,51 @@
                 document.getElementById("click-count").textContent = clickCount;
                 document.getElementById("earnings").textContent = earnings.toFixed(3);
                 
+                addDebugInfo(`Registro de clic: clicks=${clickCount}, earnings=${earnings.toFixed(3)}`);
+                
+                // Obtener estructura de tabla primero para verificar nombres de columnas
+                const { data: userData } = await supabase
+                    .from("users")
+                    .select("*")
+                    .eq("id", userId)
+                    .single();
+                
+                if (!userData) {
+                    showError("No se encontró el registro del usuario");
+                    return;
+                }
+                
+                // Crear objeto de actualización usando los nombres de columnas correctos
+                const columnNames = Object.keys(userData);
+                const clickCountColumn = columnNames.find(name => 
+                    name.toLowerCase().includes("click") || name.toLowerCase().includes("count"));
+                const balanceColumn = columnNames.find(name => 
+                    name.toLowerCase().includes("balance") || name.toLowerCase().includes("earn"));
+                
+                if (!clickCountColumn || !balanceColumn) {
+                    showError("No se encontraron las columnas correctas en la tabla");
+                    return;
+                }
+                
+                const updateData = {};
+                updateData[clickCountColumn] = clickCount;
+                updateData[balanceColumn] = parseFloat(earnings.toFixed(3));
+                
+                addDebugInfo(`Datos a actualizar: ${JSON.stringify(updateData)}`);
+                
                 // Guardar en Supabase
                 const { error } = await supabase
                     .from("users")
-                    .update({ 
-                        click_count: clickCount, 
-                        balance: earnings.toFixed(3) // Asegurar formato correcto
-                    })
+                    .update(updateData)
                     .eq("id", userId);
                     
                 if (error) {
-                    showError("Error al actualizar datos: " + error.message);
-                    console.error("Detalles del error:", error);
+                    showError("Error al actualizar datos: " + error.message, error);
+                } else {
+                    addDebugInfo("Actualización exitosa");
                 }
             } catch (error) {
-                showError("Error al registrar clic: " + error.message);
-                console.error("Error completo:", error);
+                showError("Error al registrar clic: " + (error.message || "Desconocido"), error);
             }
         }
         
@@ -180,7 +285,7 @@
                 await supabase.auth.signOut();
                 window.location.href = "index.html";
             } catch (error) {
-                showError("Error al cerrar sesión: " + error.message);
+                showError("Error al cerrar sesión: " + (error.message || "Desconocido"), error);
             }
         }
     </script>
