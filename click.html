@@ -21,53 +21,114 @@
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         
         let userId = null;
+        let currentClickCount = 0;
         
         async function checkSession() {
+            // Obtener datos del usuario actual
             const { data: { user }, error } = await supabase.auth.getUser();
+            
             if (error || !user) {
+                console.error("Error en la sesión:", error);
                 window.location.href = "index.html"; // Redirigir si no está autenticado
                 return;
             }
+            
+            // Guardar el ID del usuario y mostrar su email
             userId = user.id;
             document.getElementById("user-email").textContent = user.email;
-            loadClickCount();
+            
+            console.log("Usuario autenticado:", userId, user.email);
+            
+            // Cargar el contador de clics
+            await loadClickCount();
         }
         
         async function loadClickCount() {
-            const { data, error } = await supabase
-                .from("users")
-                .select("click_count")
-                .eq("id", userId)
-                .single();
-            if (error) {
-                console.error("Error al obtener el conteo de clics:", error);
-                return;
+            try {
+                // Verificar si el usuario existe en la tabla users
+                const { data, error } = await supabase
+                    .from("users")
+                    .select("*")
+                    .eq("id", userId)
+                    .single();
+                
+                if (error) {
+                    console.error("Error al obtener el conteo de clics:", error);
+                    // Si hay un error, podría ser porque el usuario no existe en la tabla
+                    await createUserIfNotExists();
+                    return;
+                }
+                
+                // Si el usuario existe, actualizar el contador con el valor almacenado
+                currentClickCount = data.click_count || 0;
+                document.getElementById("click-count").textContent = currentClickCount;
+                console.log("Contador cargado:", currentClickCount);
+            } catch (err) {
+                console.error("Error en loadClickCount:", err);
             }
-            document.getElementById("click-count").textContent = data.click_count || 0;
+        }
+        
+        async function createUserIfNotExists() {
+            try {
+                // Obtener información del usuario
+                const { data: { user } } = await supabase.auth.getUser();
+                
+                if (!user) return;
+                
+                // Intentar insertar el usuario si no existe
+                const { data, error } = await supabase
+                    .from("users")
+                    .upsert({
+                        id: user.id,
+                        email: user.email,
+                        click_count: 0,
+                        created_at: new Date().toISOString(),
+                        updated_at: new Date().toISOString()
+                    }, { onConflict: 'id' });
+                
+                if (error) {
+                    console.error("Error al crear usuario:", error);
+                } else {
+                    console.log("Usuario creado o actualizado");
+                    currentClickCount = 0;
+                    document.getElementById("click-count").textContent = currentClickCount;
+                }
+            } catch (err) {
+                console.error("Error en createUserIfNotExists:", err);
+            }
         }
         
         async function registerClick() {
-            const { data, error } = await supabase
-                .from("users")
-                .select("click_count")
-                .eq("id", userId)
-                .single();
-            if (error) {
-                console.error("Error al obtener datos:", error);
-                return;
-            }
-            const newClickCount = (data.click_count || 0) + 1;
-            const { error: updateError } = await supabase
-                .from("users")
-                .update({
-                    click_count: newClickCount,
-                    last_click_time: new Date().toISOString()
-                })
-                .eq("id", userId);
-            if (updateError) {
-                console.error("Error al actualizar clics:", updateError);
-            } else {
-                document.getElementById("click-count").textContent = newClickCount;
+            try {
+                if (!userId) {
+                    console.error("No hay usuario identificado");
+                    return;
+                }
+                
+                // Incrementar el contador
+                currentClickCount++;
+                document.getElementById("click-count").textContent = currentClickCount;
+                
+                // Actualizar en la base de datos
+                const { error } = await supabase
+                    .from("users")
+                    .update({
+                        click_count: currentClickCount,
+                        last_click_time: new Date().toISOString(),
+                        updated_at: new Date().toISOString()
+                    })
+                    .eq("id", userId);
+                
+                if (error) {
+                    console.error("Error al actualizar clics:", error);
+                    // Revertir el incremento local si hubo error
+                    currentClickCount--;
+                    document.getElementById("click-count").textContent = currentClickCount;
+                } else {
+                    console.log("Clic registrado correctamente. Total:", currentClickCount);
+                }
+            } catch (err) {
+                console.error("Error en registerClick:", err);
             }
         }
         
@@ -78,9 +139,14 @@
         
         // Inicializar los eventos después de que el DOM esté completamente cargado
         document.addEventListener("DOMContentLoaded", () => {
+            // Verificar sesión y cargar datos
             checkSession();
+            
+            // Asignar eventos a los botones
             document.getElementById("click-button").addEventListener("click", registerClick);
             document.getElementById("logout").addEventListener("click", logout);
+            
+            console.log("Eventos inicializados");
         });
     </script>
 </body>
