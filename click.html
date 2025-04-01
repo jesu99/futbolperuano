@@ -3,360 +3,86 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Anuncios</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-            line-height: 1.6;
-        }
-        
-        .ad-section {
-            margin: 30px 0;
-            padding: 10px;
-            border: 1px solid #eee;
-            border-radius: 5px;
-        }
-        
-        .user-info {
-            background-color: #f8f9fa;
-            padding: 15px;
-            border-radius: 5px;
-            margin-bottom: 20px;
-        }
-        
-        .timer-display {
-            margin-top: 10px;
-            padding: 8px;
-            background-color: #e9f7fe;
-            border-radius: 4px;
-            text-align: center;
-        }
-        
-        .balance-display {
-            font-weight: bold;
-            margin-top: 10px;
-        }
-        
-        .click-info {
-            margin-top: 10px;
-            color: #555;
-        }
-        
-        .logout-btn {
-            background-color: #f44336;
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 4px;
-            cursor: pointer;
-            margin-top: 10px;
-        }
-        
-        .logout-btn:hover {
-            background-color: #d32f2f;
-        }
-    </style>
+    <title>Prueba de Clics con Supabase</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
 </head>
 <body>
-    <!-- Información del usuario -->
-    <div class="user-info">
-        <h2>Bienvenido, <span id="user-email">Usuario</span></h2>
-        <div id="balance-display" class="balance-display">Saldo: $0.000</div>
-        <button id="logout-btn" class="logout-btn">Cerrar Sesión</button>
-    </div>
-    
-    <h3>Gana dinero viendo anuncios</h3>
-    <p>Haz clic en el anuncio y mantén el enfoque durante 20 segundos para ganar $0.001 por cada visualización.</p>
-    <p>Puedes hacer hasta 3 clics cada 3 horas.</p>
-    
-    <!-- Sección de anuncios -->
-    <div class="ad-section">
-        <div id="click-info" class="click-info">Clics disponibles: 3/3</div>
-        <div id="timer-display" class="timer-display" style="display: none;"></div>
-        
-        <!-- Script del anuncio -->
-        <script async="async" data-cfasync="false" src="//pl26063295.effectiveratecpm.com/2537ae2ea8b16bc9e554273a94dfd098/invoke.js"></script>
-        <div id="container-2537ae2ea8b16bc9e554273a94dfd098"></div>
-    </div>
-    
-    <!-- Scripts de Supabase -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
-    
+    <h1>Prueba de Clics con Supabase</h1>
+    <p><strong>Usuario:</strong> <span id="user-email">Cargando...</span></p>
+    <p><strong>Total de Clics:</strong> <span id="click-count">0</span></p>
+    <button id="click-button">Haz Clic Aquí</button>
+    <button id="logout">Cerrar Sesión</button>
+
     <script>
-        // Configuración de Supabase
-        const supabaseUrl = 'https://srormesvqserhrfugrls.supabase.co';
-        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNyb3JtZXN2cXNlcmhyZnVncmxzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDMzNTk0MzUsImV4cCI6MjA1ODkzNTQzNX0.zGjT9CbTd6jb1lEBzK3OrsZJIgZSqJH9zfLXzWvLTlM';
-        const supabase = supabaseClient.createClient(supabaseUrl, supabaseKey);
+        // Configurar Supabase
+        const SUPABASE_URL = "https://srormesvqserhrfugrls.supabase.co"; // Reemplaza con tu URL
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNyb3JtZXN2cXNlcmhyZnVncmxzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDMzNTk0MzUsImV4cCI6MjA1ODkzNTQzNX0.zGjT9CbTd6jb1lEBzK3OrsZJIgZSqJH9zfLXzWvLTlM"; // Reemplaza con tu API key
+        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        // Variables globales
-        let currentUser = null;
-        let clickCount = 0;
-        let lastClickTime = null;
-        let focusTimer = null;
-        let waitTimer = null;
-        let canClick = true;
-        let focusStartTime = null;
-        let requiredFocusTime = 20; // segundos
+        let userId = null;
 
-        // Elementos DOM
-        const adContainer = document.getElementById('container-2537ae2ea8b16bc9e554273a94dfd098');
-        const clickInfoDisplay = document.getElementById('click-info');
-        const timerDisplay = document.getElementById('timer-display');
-        const balanceDisplay = document.getElementById('balance-display');
-        const userEmailDisplay = document.getElementById('user-email');
-
-        // Inicialización cuando el DOM está listo
-        document.addEventListener('DOMContentLoaded', async function() {
-            // Verificar autenticación
+        async function checkSession() {
             const { data: { user }, error } = await supabase.auth.getUser();
-            
             if (error || !user) {
-                window.location.href = "index.html";
+                window.location.href = "index.html"; // Redirigir si no está autenticado
                 return;
             }
-            
-            currentUser = user;
-            userEmailDisplay.textContent = user.email;
-            
-            // Cargar datos del usuario desde la base de datos
-            await loadUserData();
-            
-            // Agregar evento de clic al anuncio
-            if (adContainer) {
-                // Usamos MutationObserver para detectar cuando se carga el anuncio
-                const observer = new MutationObserver((mutations, obs) => {
-                    const adLoaded = adContainer.children.length > 0;
-                    
-                    if (adLoaded) {
-                        adContainer.addEventListener('click', handleAdClick);
-                        
-                        // Agregar eventos para detectar si el usuario mantiene el enfoque
-                        adContainer.addEventListener('mouseleave', handleAdBlur);
-                        obs.disconnect(); // Detener la observación una vez que el anuncio está cargado
-                    }
-                });
-                
-                observer.observe(adContainer, { childList: true, subtree: true });
-                
-                // Eventos globales de enfoque
-                window.addEventListener('blur', handleAdBlur);
-                document.addEventListener('visibilitychange', () => {
-                    if (document.visibilityState !== 'visible') {
-                        handleAdBlur();
-                    }
-                });
-            } else {
-                console.error('No se encontró el contenedor del anuncio');
-            }
-            
-            // Configurar botón de cierre de sesión
-            document.getElementById('logout-btn').addEventListener('click', async function() {
-                const { error } = await supabase.auth.signOut();
-                if (!error) {
-                    window.location.href = 'index.html';
-                }
-            });
-        });
-
-        // Cargar datos del usuario desde Supabase
-        async function loadUserData() {
-            try {
-                const { data, error } = await supabase
-                    .from('users')
-                    .select('click_count, last_click_time, balance')
-                    .eq('id', currentUser.id)
-                    .single();
-                    
-                if (error) throw error;
-                
-                if (data) {
-                    // Actualizar variables con datos de la base de datos
-                    clickCount = data.click_count || 0;
-                    lastClickTime = data.last_click_time ? new Date(data.last_click_time) : null;
-                    
-                    // Verificar si el usuario puede hacer clic según el tiempo transcurrido
-                    checkClickAvailability();
-                    
-                    // Actualizar la interfaz
-                    updateClickDisplay();
-                    updateBalanceDisplay(data.balance || 0);
-                }
-            } catch (error) {
-                console.error('Error al cargar datos del usuario:', error);
-            }
+            userId = user.id;
+            document.getElementById("user-email").textContent = user.email;
+            loadClickCount();
         }
 
-        // Manejar clic en el anuncio
-        function handleAdClick() {
-            // Verificar si el usuario puede hacer clic
-            if (!canClick) {
-                alert('Has alcanzado el límite de clics. Por favor espera hasta que se reinicie el contador.');
+        async function loadClickCount() {
+            const { data, error } = await supabase
+                .from("users")
+                .select("click_count")
+                .eq("id", userId)
+                .single();
+
+            if (error) {
+                console.error("Error al obtener el conteo de clics:", error);
                 return;
             }
-            
-            // Iniciar el temporizador de enfoque
-            focusStartTime = new Date();
-            
-            // Mostrar temporizador de enfoque
-            timerDisplay.style.display = 'block';
-            timerDisplay.innerHTML = `Mantén el enfoque por ${requiredFocusTime} segundos...`;
-            
-            // Iniciar temporizador de enfoque
-            if (focusTimer) clearInterval(focusTimer);
-            
-            focusTimer = setInterval(() => {
-                const elapsedSeconds = Math.floor((new Date() - focusStartTime) / 1000);
-                const remainingSeconds = requiredFocusTime - elapsedSeconds;
-                
-                if (remainingSeconds <= 0) {
-                    // El usuario mantuvo el enfoque por el tiempo requerido
-                    clearInterval(focusTimer);
-                    focusTimer = null;
-                    registerClick();
-                    timerDisplay.style.display = 'none';
-                } else {
-                    timerDisplay.innerHTML = `Mantén el enfoque por ${remainingSeconds} segundos más...`;
-                }
-            }, 1000);
+            document.getElementById("click-count").textContent = data.click_count || 0;
         }
 
-        // Manejar cuando el usuario pierde el enfoque del anuncio
-        function handleAdBlur() {
-            if (focusTimer) {
-                clearInterval(focusTimer);
-                focusTimer = null;
-                timerDisplay.style.display = 'none';
-                timerDisplay.innerHTML = '';
-            }
-        }
-
-        // Registrar un clic válido
         async function registerClick() {
-            try {
-                // Actualizar contador local
-                clickCount++;
-                lastClickTime = new Date();
-                
-                // Actualizar la interfaz
-                updateClickDisplay();
-                
-                // Verificar si se alcanzó el límite de clics
-                if (clickCount >= 3) {
-                    canClick = false;
-                    startWaitTimer();
-                }
-                
-                // Calcular nuevo saldo
-                const clickValue = 0.001; // $0.001 por clic
-                
-                // Actualizar en la base de datos
-                const { data, error } = await supabase
-                    .from('users')
-                    .update({
-                        click_count: clickCount,
-                        last_click_time: lastClickTime.toISOString(),
-                        balance: supabase.rpc('increment_balance', { increment_amount: clickValue })
-                    })
-                    .eq('id', currentUser.id)
-                    .select('balance');
-                    
-                if (error) throw error;
-                
-                if (data && data[0]) {
-                    updateBalanceDisplay(data[0].balance);
-                }
-            } catch (error) {
-                console.error('Error al registrar el clic:', error);
-            }
-        }
+            const { data, error } = await supabase
+                .from("users")
+                .select("click_count")
+                .eq("id", userId)
+                .single();
 
-        // Verificar si el usuario puede hacer clics según el tiempo transcurrido
-        function checkClickAvailability() {
-            if (!lastClickTime || clickCount < 3) {
-                canClick = true;
+            if (error) {
+                console.error("Error al obtener datos:", error);
                 return;
             }
-            
-            const currentTime = new Date();
-            const timeSinceLastClick = (currentTime - lastClickTime) / 1000 / 60 / 60; // en horas
-            
-            if (timeSinceLastClick >= 3) {
-                // Han pasado 3 horas desde el último clic, reiniciar contador
-                resetClickCounter();
-                canClick = true;
+
+            const newClickCount = (data.click_count || 0) + 1;
+
+            const { error: updateError } = await supabase
+                .from("users")
+                .update({
+                    click_count: newClickCount,
+                    last_click_time: new Date().toISOString()
+                })
+                .eq("id", userId);
+
+            if (updateError) {
+                console.error("Error al actualizar clics:", updateError);
             } else {
-                // No han pasado 3 horas, mostrar temporizador
-                canClick = false;
-                startWaitTimer();
+                document.getElementById("click-count").textContent = newClickCount;
             }
         }
 
-        // Iniciar temporizador de espera
-        function startWaitTimer() {
-            const resetTime = new Date(lastClickTime.getTime() + (3 * 60 * 60 * 1000)); // 3 horas después del último clic
-            
-            // Mostrar el temporizador
-            timerDisplay.style.display = 'block';
-            
-            // Actualizar temporizador cada segundo
-            if (waitTimer) clearInterval(waitTimer);
-            
-            waitTimer = setInterval(() => {
-                const currentTime = new Date();
-                const timeRemaining = resetTime - currentTime;
-                
-                if (timeRemaining <= 0) {
-                    // Tiempo cumplido, reiniciar contador
-                    clearInterval(waitTimer);
-                    waitTimer = null;
-                    resetClickCounter();
-                    timerDisplay.style.display = 'none';
-                } else {
-                    // Mostrar tiempo restante
-                    const hours = Math.floor(timeRemaining / (1000 * 60 * 60));
-                    const minutes = Math.floor((timeRemaining % (1000 * 60 * 60)) / (1000 * 60));
-                    const seconds = Math.floor((timeRemaining % (1000 * 60)) / 1000);
-                    
-                    timerDisplay.innerHTML = `Tiempo restante: ${hours}h ${minutes}m ${seconds}s`;
-                }
-            }, 1000);
+        async function logout() {
+            await supabase.auth.signOut();
+            window.location.href = "index.html";
         }
 
-        // Reiniciar contador de clics
-        async function resetClickCounter() {
-            clickCount = 0;
-            canClick = true;
-            
-            // Actualizar la interfaz
-            updateClickDisplay();
-            
-            // Actualizar en la base de datos
-            try {
-                const { error } = await supabase
-                    .from('users')
-                    .update({
-                        click_count: 0
-                    })
-                    .eq('id', currentUser.id);
-                    
-                if (error) throw error;
-            } catch (error) {
-                console.error('Error al reiniciar el contador de clics:', error);
-            }
-        }
-
-        // Actualizar la visualización del contador de clics
-        function updateClickDisplay() {
-            clickInfoDisplay.innerHTML = `Clics disponibles: ${Math.max(0, 3 - clickCount)}/3`;
-        }
-
-        // Actualizar la visualización del saldo
-        function updateBalanceDisplay(balance) {
-            balanceDisplay.innerHTML = `Saldo: $${balance.toFixed(3)}`;
-        }
+        document.addEventListener("DOMContentLoaded", checkSession);
+        document.getElementById("click-button").addEventListener("click", registerClick);
+        document.getElementById("logout").addEventListener("click", logout);
     </script>
 </body>
 </html>
