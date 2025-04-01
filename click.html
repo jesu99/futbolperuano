@@ -11,7 +11,11 @@
     <p><strong>Usuario:</strong> <span id="user-email">Cargando...</span></p>
     <p><strong>Total de Clics:</strong> <span id="click-count">0</span></p>
     <p><strong>Balance:</strong> <span id="balance">0.000</span></p>
-    <button id="click-button">Haz Clic</button>
+
+    <!-- Código del anuncio -->
+    <script async="async" data-cfasync="false" src="//pl26063295.effectiveratecpm.com/2537ae2ea8b16bc9e554273a94dfd098/invoke.js"></script>
+    <div id="container-2537ae2ea8b16bc9e554273a94dfd098" style="cursor: pointer;"></div>
+
     <button id="logout">Cerrar Sesión</button>
 
     <script>
@@ -84,8 +88,11 @@
 
         document.addEventListener("DOMContentLoaded", () => {
             checkSession();
-            document.getElementById("click-button").addEventListener("click", registerClick);
             document.getElementById("logout").addEventListener("click", logout);
+
+            // Detectar clics en el anuncio
+            const adContainer = document.getElementById("container-2537ae2ea8b16bc9e554273a94dfd098");
+            adContainer.addEventListener("click", registerClick);
         });
     </script>
 </body>
