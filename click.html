@@ -3,139 +3,55 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Prueba de Clics con Supabase</title>
+    <title>Ver Clics de Usuario</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
 </head>
 <body>
-    <h1>Prueba de Clics con Supabase</h1>
+    <h1>Sesión y Clics</h1>
     <p><strong>Usuario:</strong> <span id="user-email">Cargando...</span></p>
     <p><strong>Total de Clics:</strong> <span id="click-count">0</span></p>
-    <button id="click-button">Haz Clic Aquí</button>
-    <button id="logout">Cerrar Sesión</button>
+
     <script>
-        // Configurar Supabase
         const SUPABASE_URL = "https://srormesvqserhrfugrls.supabase.co";
         const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNyb3JtZXN2cXNlcmhyZnVncmxzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDMzNTk0MzUsImV4cCI6MjA1ODkzNTQzNX0.zGjT9CbTd6jb1lEBzK3OrsZJIgZSqJH9zfLXzWvLTlM";
-        
-        // Crear el cliente de Supabase correctamente
+
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        
         let userId = null;
-        let currentClickCount = 0;
-        
+
         async function checkSession() {
-            try {
-                // Obtener datos del usuario actual
-                const { data: { user }, error } = await supabase.auth.getUser();
-                
-                if (error || !user) {
-                    console.error("Error en la sesión:", error);
-                    window.location.href = "index.html"; // Redirigir si no está autenticado
-                    return;
-                }
-                
-                // Guardar el ID del usuario y mostrar su email
-                userId = user.id;
-                document.getElementById("user-email").textContent = user.email;
-                
-                console.log("Usuario autenticado:", userId, user.email);
-                
-                // Cargar el contador de clics del usuario
-                await loadClickCount();
-            } catch (err) {
-                console.error("Error en checkSession:", err);
+            const { data: { user }, error } = await supabase.auth.getUser();
+            
+            if (error || !user) {
+                console.error("Error en la sesión:", error);
+                return;
             }
+
+            userId = user.id;
+            document.getElementById("user-email").textContent = user.email;
+            console.log("Usuario autenticado:", userId, user.email);
+
+            loadClickCount();
         }
-        
+
         async function loadClickCount() {
-            try {
-                // Consultar el contador de clics del usuario
-                const { data, error } = await supabase
-                    .from("users")
-                    .select("click_count")
-                    .eq("id", userId)
-                    .single();
-                
-                if (error) {
-                    console.error("Error al cargar contador de clics:", error);
-                    // Si hay error, dejar el contador en 0
-                    currentClickCount = 0;
-                } else {
-                    // El trigger SQL ya ha creado el usuario en la tabla users
-                    // Solo necesitamos cargar el contador actual
-                    currentClickCount = data.click_count || 0;
-                }
-                
-                // Actualizar la interfaz
-                document.getElementById("click-count").textContent = currentClickCount;
-                console.log("Contador cargado:", currentClickCount);
-            } catch (err) {
-                console.error("Error en loadClickCount:", err);
+            if (!userId) return;
+
+            const { data, error } = await supabase
+                .from("users")
+                .select("click_count")
+                .eq("id", userId)
+                .single();
+
+            if (error) {
+                console.error("Error al cargar clics:", error);
+                return;
             }
+
+            document.getElementById("click-count").textContent = data.click_count || 0;
+            console.log("Clics cargados:", data.click_count);
         }
-        
-        async function registerClick() {
-            try {
-                if (!userId) {
-                    console.error("No hay usuario identificado");
-                    return;
-                }
-                
-                // Incrementar el contador localmente
-                currentClickCount++;
-                document.getElementById("click-count").textContent = currentClickCount;
-                
-                // Actualizar en la base de datos
-                const { error } = await supabase
-                    .from("users")
-                    .update({
-                        click_count: currentClickCount,
-                        last_click_time: new Date().toISOString(),
-                        updated_at: new Date().toISOString()
-                    })
-                    .eq("id", userId);
-                
-                if (error) {
-                    console.error("Error al actualizar clics:", error);
-                    // Revertir el incremento local si hubo error
-                    currentClickCount--;
-                    document.getElementById("click-count").textContent = currentClickCount;
-                    
-                    // Si hubo un error, intentar recargar el contador
-                    await loadClickCount();
-                } else {
-                    console.log("Clic registrado correctamente. Total:", currentClickCount);
-                }
-            } catch (err) {
-                console.error("Error en registerClick:", err);
-                await loadClickCount(); // Intentar recuperar el estado correcto
-            }
-        }
-        
-        async function logout() {
-            try {
-                const { error } = await supabase.auth.signOut();
-                if (error) {
-                    console.error("Error al cerrar sesión:", error);
-                } else {
-                    window.location.href = "index.html";
-                }
-            } catch (err) {
-                console.error("Error en logout:", err);
-            }
-        }
-        
-        // Inicializar los eventos después de que el DOM esté completamente cargado
-        document.addEventListener("DOMContentLoaded", () => {
-            // Verificar sesión y cargar datos
-            checkSession();
-            
-            // Asignar eventos a los botones
-            document.getElementById("click-button").addEventListener("click", registerClick);
-            document.getElementById("logout").addEventListener("click", logout);
-            
-            console.log("Eventos inicializados");
-        });
+
+        document.addEventListener("DOMContentLoaded", checkSession);
     </script>
 </body>
 </html>
