@@ -14,8 +14,8 @@
     <button id="logout">Cerrar Sesión</button>
     <script>
         // Configurar Supabase
-        const SUPABASE_URL = "https://srormesvqserhrfugrls.supabase.co"; // Reemplaza con tu URL
-        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNyb3JtZXN2cXNlcmhyZnVncmxzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDMzNTk0MzUsImV4cCI6MjA1ODkzNTQzNX0.zGjT9CbTd6jb1lEBzK3OrsZJIgZSqJH9zfLXzWvLTlM"; // Reemplaza con tu API key
+        const SUPABASE_URL = "https://srormesvqserhrfugrls.supabase.co";
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNyb3JtZXN2cXNlcmhyZnVncmxzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDMzNTk0MzUsImV4cCI6MjA1ODkzNTQzNX0.zGjT9CbTd6jb1lEBzK3OrsZJIgZSqJH9zfLXzWvLTlM";
         
         // Crear el cliente de Supabase correctamente
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -24,58 +24,46 @@
         let currentClickCount = 0;
         
         async function checkSession() {
-            // Obtener datos del usuario actual
-            const { data: { user }, error } = await supabase.auth.getUser();
-            
-            if (error || !user) {
-                console.error("Error en la sesión:", error);
-                window.location.href = "index.html"; // Redirigir si no está autenticado
-                return;
-            }
-            
-            // Guardar el ID del usuario y mostrar su email
-            userId = user.id;
-            document.getElementById("user-email").textContent = user.email;
-            
-            console.log("Usuario autenticado:", userId, user.email);
-            
-            // Cargar el contador de clics
-            await loadClickCount();
-        }
-        
-        async function loadClickCount() {
             try {
-                // Verificar si el usuario existe en la tabla users
-                const { data, error } = await supabase
-                    .from("users")
-                    .select("*")
-                    .eq("id", userId)
-                    .single();
+                // Obtener datos del usuario actual
+                const { data: { user }, error } = await supabase.auth.getUser();
                 
-                if (error) {
-                    console.error("Error al obtener el conteo de clics:", error);
-                    // Si hay un error, podría ser porque el usuario no existe en la tabla
-                    await createUserIfNotExists();
+                if (error || !user) {
+                    console.error("Error en la sesión:", error);
+                    window.location.href = "index.html"; // Redirigir si no está autenticado
                     return;
                 }
                 
-                // Si el usuario existe, actualizar el contador con el valor almacenado
-                currentClickCount = data.click_count || 0;
-                document.getElementById("click-count").textContent = currentClickCount;
-                console.log("Contador cargado:", currentClickCount);
+                // Guardar el ID del usuario y mostrar su email
+                userId = user.id;
+                document.getElementById("user-email").textContent = user.email;
+                
+                console.log("Usuario autenticado:", userId, user.email);
+                
+                // Primero verificar si el usuario existe en la tabla users
+                const { data, error: fetchError } = await supabase
+                    .from("users")
+                    .select("click_count")
+                    .eq("id", userId)
+                    .single();
+                
+                if (fetchError) {
+                    console.log("Usuario no encontrado, creando nuevo registro:", fetchError.message);
+                    await createUserRecord(user);
+                } else {
+                    // Usuario encontrado, actualizar el contador
+                    currentClickCount = data.click_count || 0;
+                    document.getElementById("click-count").textContent = currentClickCount;
+                    console.log("Contador cargado:", currentClickCount);
+                }
             } catch (err) {
-                console.error("Error en loadClickCount:", err);
+                console.error("Error en checkSession:", err);
             }
         }
         
-        async function createUserIfNotExists() {
+        async function createUserRecord(user) {
             try {
-                // Obtener información del usuario
-                const { data: { user } } = await supabase.auth.getUser();
-                
-                if (!user) return;
-                
-                // Intentar insertar el usuario si no existe
+                // Intentar insertar el usuario
                 const { data, error } = await supabase
                     .from("users")
                     .upsert({
@@ -84,17 +72,20 @@
                         click_count: 0,
                         created_at: new Date().toISOString(),
                         updated_at: new Date().toISOString()
-                    }, { onConflict: 'id' });
+                    }, { 
+                        onConflict: 'id',
+                        ignoreDuplicates: false // Asegurarse de que se actualice si ya existe
+                    });
                 
                 if (error) {
                     console.error("Error al crear usuario:", error);
                 } else {
-                    console.log("Usuario creado o actualizado");
+                    console.log("Usuario creado correctamente");
                     currentClickCount = 0;
                     document.getElementById("click-count").textContent = currentClickCount;
                 }
             } catch (err) {
-                console.error("Error en createUserIfNotExists:", err);
+                console.error("Error en createUserRecord:", err);
             }
         }
         
@@ -105,7 +96,7 @@
                     return;
                 }
                 
-                // Incrementar el contador
+                // Incrementar el contador localmente
                 currentClickCount++;
                 document.getElementById("click-count").textContent = currentClickCount;
                 
@@ -124,11 +115,33 @@
                     // Revertir el incremento local si hubo error
                     currentClickCount--;
                     document.getElementById("click-count").textContent = currentClickCount;
+                    
+                    // Intentar volver a cargar el contador desde la base de datos
+                    await refreshClickCount();
                 } else {
                     console.log("Clic registrado correctamente. Total:", currentClickCount);
                 }
             } catch (err) {
                 console.error("Error en registerClick:", err);
+                await refreshClickCount(); // Intentar recuperar el estado correcto
+            }
+        }
+        
+        async function refreshClickCount() {
+            try {
+                const { data, error } = await supabase
+                    .from("users")
+                    .select("click_count")
+                    .eq("id", userId)
+                    .single();
+                
+                if (!error && data) {
+                    currentClickCount = data.click_count || 0;
+                    document.getElementById("click-count").textContent = currentClickCount;
+                    console.log("Contador actualizado desde BD:", currentClickCount);
+                }
+            } catch (err) {
+                console.error("Error al refrescar contador:", err);
             }
         }
         
