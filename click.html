@@ -40,52 +40,89 @@
                 
                 console.log("Usuario autenticado:", userId, user.email);
                 
-                // Primero verificar si el usuario existe en la tabla users
-                const { data, error: fetchError } = await supabase
-                    .from("users")
-                    .select("click_count")
-                    .eq("id", userId)
-                    .single();
-                
-                if (fetchError) {
-                    console.log("Usuario no encontrado, creando nuevo registro:", fetchError.message);
-                    await createUserRecord(user);
-                } else {
-                    // Usuario encontrado, actualizar el contador
-                    currentClickCount = data.click_count || 0;
-                    document.getElementById("click-count").textContent = currentClickCount;
-                    console.log("Contador cargado:", currentClickCount);
-                }
+                // Buscar o crear el perfil del usuario en la tabla 'users'
+                await getOrCreateUserProfile(user);
             } catch (err) {
                 console.error("Error en checkSession:", err);
             }
         }
         
+        async function getOrCreateUserProfile(user) {
+            try {
+                // Primero verificar si el usuario existe en la tabla users
+                const { data, error: fetchError } = await supabase
+                    .from("users")
+                    .select("click_count")
+                    .eq("id", user.id)
+                    .single();
+                
+                if (fetchError && fetchError.code === 'PGRST116') { // Error 'no rows returned'
+                    console.log("Usuario no encontrado en tabla 'users', creando perfil...");
+                    await createUserRecord(user);
+                } else if (fetchError) {
+                    console.error("Error al buscar usuario:", fetchError);
+                } else {
+                    // Usuario encontrado, actualizar el contador local
+                    currentClickCount = data.click_count || 0;
+                    document.getElementById("click-count").textContent = currentClickCount;
+                    console.log("Contador cargado:", currentClickCount);
+                }
+            } catch (err) {
+                console.error("Error en getOrCreateUserProfile:", err);
+            }
+        }
+        
         async function createUserRecord(user) {
             try {
-                // Intentar insertar el usuario
+                // Crear el perfil del usuario en la tabla 'users'
                 const { data, error } = await supabase
                     .from("users")
-                    .upsert({
+                    .insert({
                         id: user.id,
                         email: user.email,
                         click_count: 0,
                         created_at: new Date().toISOString(),
                         updated_at: new Date().toISOString()
-                    }, { 
-                        onConflict: 'id',
-                        ignoreDuplicates: false // Asegurarse de que se actualice si ya existe
                     });
                 
                 if (error) {
-                    console.error("Error al crear usuario:", error);
+                    // Si hay un error de conflicto (el usuario ya existe), intentar actualizar
+                    if (error.code === '23505') { // Código PostgreSQL para violación de unicidad
+                        console.log("Usuario ya existe, actualizando datos...");
+                        await updateUserRecord(user);
+                    } else {
+                        console.error("Error al crear perfil de usuario:", error);
+                    }
                 } else {
-                    console.log("Usuario creado correctamente");
+                    console.log("Perfil de usuario creado correctamente");
                     currentClickCount = 0;
                     document.getElementById("click-count").textContent = currentClickCount;
                 }
             } catch (err) {
                 console.error("Error en createUserRecord:", err);
+            }
+        }
+        
+        async function updateUserRecord(user) {
+            try {
+                const { data, error } = await supabase
+                    .from("users")
+                    .update({
+                        email: user.email,
+                        updated_at: new Date().toISOString()
+                    })
+                    .eq("id", user.id)
+                    .select("click_count");
+                
+                if (error) {
+                    console.error("Error al actualizar perfil de usuario:", error);
+                } else if (data && data.length > 0) {
+                    currentClickCount = data[0].click_count || 0;
+                    document.getElementById("click-count").textContent = currentClickCount;
+                    console.log("Perfil actualizado y contador cargado:", currentClickCount);
+                }
+            } catch (err) {
+                console.error("Error en updateUserRecord:", err);
             }
         }
         
@@ -112,12 +149,22 @@
                 
                 if (error) {
                     console.error("Error al actualizar clics:", error);
-                    // Revertir el incremento local si hubo error
-                    currentClickCount--;
-                    document.getElementById("click-count").textContent = currentClickCount;
                     
-                    // Intentar volver a cargar el contador desde la base de datos
-                    await refreshClickCount();
+                    if (error.code === 'PGRST116') { // 'No rows updated' 
+                        // Si el usuario no existe en la tabla users, intentar crearlo
+                        console.log("El perfil no existe, intentando crear...");
+                        const { data: userData } = await supabase.auth.getUser();
+                        if (userData && userData.user) {
+                            await createUserRecord(userData.user);
+                            // Reintentar registrar el clic
+                            await registerClick();
+                        }
+                    } else {
+                        // Revertir el incremento local para otros errores
+                        currentClickCount--;
+                        document.getElementById("click-count").textContent = currentClickCount;
+                        await refreshClickCount();
+                    }
                 } else {
                     console.log("Clic registrado correctamente. Total:", currentClickCount);
                 }
@@ -139,6 +186,13 @@
                     currentClickCount = data.click_count || 0;
                     document.getElementById("click-count").textContent = currentClickCount;
                     console.log("Contador actualizado desde BD:", currentClickCount);
+                } else if (error && error.code === 'PGRST116') {
+                    // Si no existe el perfil, intentar crearlo
+                    console.log("Perfil no encontrado al refrescar, intentando crear...");
+                    const { data: userData } = await supabase.auth.getUser();
+                    if (userData && userData.user) {
+                        await createUserRecord(userData.user);
+                    }
                 }
             } catch (err) {
                 console.error("Error al refrescar contador:", err);
