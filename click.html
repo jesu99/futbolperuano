@@ -3,86 +3,60 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Prueba de Clics con Supabase</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+    <title>Prueba de Clicks</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
-    <h1>Prueba de Clics con Supabase</h1>
-    <p><strong>Usuario:</strong> <span id="user-email">Cargando...</span></p>
-    <p><strong>Total de Clics:</strong> <span id="click-count">0</span></p>
-    <button id="click-button">Haz Clic Aquí</button>
-    <button id="logout">Cerrar Sesión</button>
+    <h1>Bienvenido</h1>
+    <p>Clicks: <span id="click-count">0</span></p>
+    <button id="click-button">Hacer Click</button>
 
     <script>
-        // Configurar Supabase
-        const SUPABASE_URL = "https://srormesvqserhrfugrls.supabase.co"; // Reemplaza con tu URL
-        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNyb3JtZXN2cXNlcmhyZnVncmxzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDMzNTk0MzUsImV4cCI6MjA1ODkzNTQzNX0.zGjT9CbTd6jb1lEBzK3OrsZJIgZSqJH9zfLXzWvLTlM"; // Reemplaza con tu API key
-        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        // Inicializar Supabase
+        const supabaseUrl = "https://srormesvqserhrfugrls.supabase.co";
+        const supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNyb3JtZXN2cXNlcmhyZnVncmxzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDMzNTk0MzUsImV4cCI6MjA1ODkzNTQzNX0.zGjT9CbTd6jb1lEBzK3OrsZJIgZSqJH9zfLXzWvLTlM";
+        const supabase = supabase.createClient(supabaseUrl, supabaseAnonKey);
 
-        let userId = null;
-
-        async function checkSession() {
+        document.addEventListener("DOMContentLoaded", async function () {
             const { data: { user }, error } = await supabase.auth.getUser();
+
             if (error || !user) {
                 window.location.href = "index.html"; // Redirigir si no está autenticado
                 return;
             }
-            userId = user.id;
-            document.getElementById("user-email").textContent = user.email;
-            loadClickCount();
-        }
 
-        async function loadClickCount() {
-            const { data, error } = await supabase
+            const userId = user.id;
+            const clickCountElement = document.getElementById("click-count");
+
+            // Obtener el número de clics almacenados
+            const { data, error: fetchError } = await supabase
                 .from("users")
                 .select("click_count")
                 .eq("id", userId)
                 .single();
 
-            if (error) {
-                console.error("Error al obtener el conteo de clics:", error);
-                return;
-            }
-            document.getElementById("click-count").textContent = data.click_count || 0;
-        }
-
-        async function registerClick() {
-            const { data, error } = await supabase
-                .from("users")
-                .select("click_count")
-                .eq("id", userId)
-                .single();
-
-            if (error) {
-                console.error("Error al obtener datos:", error);
-                return;
-            }
-
-            const newClickCount = (data.click_count || 0) + 1;
-
-            const { error: updateError } = await supabase
-                .from("users")
-                .update({
-                    click_count: newClickCount,
-                    last_click_time: new Date().toISOString()
-                })
-                .eq("id", userId);
-
-            if (updateError) {
-                console.error("Error al actualizar clics:", updateError);
+            if (fetchError) {
+                console.error("Error obteniendo clicks:", fetchError);
             } else {
-                document.getElementById("click-count").textContent = newClickCount;
+                clickCountElement.textContent = data.click_count || 0;
             }
-        }
 
-        async function logout() {
-            await supabase.auth.signOut();
-            window.location.href = "index.html";
-        }
+            // Manejar el botón de clicks
+            document.getElementById("click-button").addEventListener("click", async function () {
+                let currentClicks = parseInt(clickCountElement.textContent) + 1;
+                clickCountElement.textContent = currentClicks;
 
-        document.addEventListener("DOMContentLoaded", checkSession);
-        document.getElementById("click-button").addEventListener("click", registerClick);
-        document.getElementById("logout").addEventListener("click", logout);
+                // Guardar en Supabase
+                const { error: updateError } = await supabase
+                    .from("users")
+                    .update({ click_count: currentClicks })
+                    .eq("id", userId);
+
+                if (updateError) {
+                    console.error("Error guardando click:", updateError);
+                }
+            });
+        });
     </script>
 </body>
 </html>
