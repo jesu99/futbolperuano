@@ -11,13 +11,10 @@
     <p><strong>Usuario:</strong> <span id="user-email">Cargando...</span></p>
     <p><strong>Total de Clics:</strong> <span id="click-count">0</span></p>
     <p><strong>Balance:</strong> <span id="balance">0.000</span></p>
-
     <!-- Código del anuncio -->
     <script async="async" data-cfasync="false" src="//pl26063295.effectiveratecpm.com/2537ae2ea8b16bc9e554273a94dfd098/invoke.js"></script>
     <div id="container-2537ae2ea8b16bc9e554273a94dfd098" style="cursor: pointer;"></div>
-
     <button id="logout">Cerrar Sesión</button>
-
     <script>
         const SUPABASE_URL = "https://srormesvqserhrfugrls.supabase.co";
         const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNyb3JtZXN2cXNlcmhyZnVncmxzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDMzNTk0MzUsImV4cCI6MjA1ODkzNTQzNX0.zGjT9CbTd6jb1lEBzK3OrsZJIgZSqJH9zfLXzWvLTlM";
@@ -27,7 +24,7 @@
         let userId = null;
         let currentClickCount = 0;
         let currentBalance = 0;
-
+        
         async function checkSession() {
             const { data: { user }, error } = await supabase.auth.getUser();
             
@@ -36,60 +33,95 @@
                 window.location.href = "index.html"; // Redirigir si no está autenticado
                 return;
             }
-
             userId = user.id;
             document.getElementById("user-email").textContent = user.email;
+            ensureUserDataInitialized();
+        }
+        
+        async function ensureUserDataInitialized() {
+            const { data, error } = await supabase
+                .from("users")
+                .select("click_count, balance")
+                .eq("id", userId)
+                .single();
+            
+            if (error) {
+                console.error("Error al verificar datos de usuario:", error);
+                return;
+            }
+            
+            // Si alguno de los campos es nulo, inicialízalos
+            if (data.click_count === null || data.balance === null) {
+                const updateData = {};
+                if (data.click_count === null) updateData.click_count = 0;
+                if (data.balance === null) updateData.balance = 0;
+                
+                const { error: updateError } = await supabase
+                    .from("users")
+                    .update(updateData)
+                    .eq("id", userId);
+                
+                if (updateError) {
+                    console.error("Error al inicializar datos del usuario:", updateError);
+                }
+            }
+            
+            // Cargar los datos actualizados
             loadUserData();
         }
-
+        
         async function loadUserData() {
             const { data, error } = await supabase
                 .from("users")
                 .select("click_count, balance")
                 .eq("id", userId)
                 .single();
-
+            
             if (error) {
                 console.error("Error al cargar datos:", error);
                 return;
             }
-
-            currentClickCount = data.click_count || 0;
-            currentBalance = data.balance || 0;
-
+            
+            // Usar valores predeterminados explícitos si son nulos
+            currentClickCount = data.click_count !== null ? data.click_count : 0;
+            currentBalance = data.balance !== null ? data.balance : 0;
+            
             document.getElementById("click-count").textContent = currentClickCount;
             document.getElementById("balance").textContent = currentBalance.toFixed(3);
         }
-
+        
         async function registerClick() {
             if (!userId) return;
-
+            
             currentClickCount++;
             currentBalance += 0.001; // Suma 0.001 al balance
-
+            
             document.getElementById("click-count").textContent = currentClickCount;
             document.getElementById("balance").textContent = currentBalance.toFixed(3);
-
+            
             const { error } = await supabase
                 .from("users")
-                .update({ click_count: currentClickCount, balance: currentBalance })
+                .update({ 
+                    click_count: currentClickCount, 
+                    balance: currentBalance,
+                    last_click_time: new Date().toISOString() 
+                })
                 .eq("id", userId);
-
+                
             if (error) {
                 console.error("Error al actualizar datos:", error);
                 loadUserData(); // Recarga valores en caso de error
             }
         }
-
+        
         async function logout() {
             await supabase.auth.signOut();
             window.location.href = "index.html";
         }
-
+        
         document.addEventListener("DOMContentLoaded", () => {
             checkSession();
             document.getElementById("logout").addEventListener("click", logout);
-
             // Detectar clics en el anuncio
             const adContainer = document.getElementById("container-2537ae2ea8b16bc9e554273a94dfd098");
             adContainer.addEventListener("click", registerClick);
