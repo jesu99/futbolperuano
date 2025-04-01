@@ -10,6 +10,7 @@
     <h1>Contador de Clics</h1>
     <p><strong>Usuario:</strong> <span id="user-email">Cargando...</span></p>
     <p><strong>Total de Clics:</strong> <span id="click-count">0</span></p>
+    <p><strong>Balance:</strong> <span id="balance">0.000</span></p>
     <button id="click-button">Haz Clic</button>
     <button id="logout">Cerrar Sesión</button>
 
@@ -21,6 +22,7 @@
         
         let userId = null;
         let currentClickCount = 0;
+        let currentBalance = 0;
 
         async function checkSession() {
             const { data: { user }, error } = await supabase.auth.getUser();
@@ -33,39 +35,45 @@
 
             userId = user.id;
             document.getElementById("user-email").textContent = user.email;
-            loadClickCount();
+            loadUserData();
         }
 
-        async function loadClickCount() {
+        async function loadUserData() {
             const { data, error } = await supabase
                 .from("users")
-                .select("click_count")
+                .select("click_count, balance")
                 .eq("id", userId)
                 .single();
 
             if (error) {
-                console.error("Error al cargar clics:", error);
+                console.error("Error al cargar datos:", error);
                 return;
             }
 
             currentClickCount = data.click_count || 0;
+            currentBalance = data.balance || 0;
+
             document.getElementById("click-count").textContent = currentClickCount;
+            document.getElementById("balance").textContent = currentBalance.toFixed(3);
         }
 
         async function registerClick() {
             if (!userId) return;
 
             currentClickCount++;
+            currentBalance += 0.001; // Suma 0.001 al balance
+
             document.getElementById("click-count").textContent = currentClickCount;
+            document.getElementById("balance").textContent = currentBalance.toFixed(3);
 
             const { error } = await supabase
                 .from("users")
-                .update({ click_count: currentClickCount })
+                .update({ click_count: currentClickCount, balance: currentBalance })
                 .eq("id", userId);
 
             if (error) {
-                console.error("Error al actualizar clics:", error);
-                loadClickCount();
+                console.error("Error al actualizar datos:", error);
+                loadUserData(); // Recarga valores en caso de error
             }
         }
 
