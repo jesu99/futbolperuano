@@ -62,6 +62,19 @@
             border-radius: 4px;
             color: #0c5460;
         }
+        .validation-timer {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #ffeeba;
+            border-radius: 4px;
+            color: #856404;
+            font-weight: bold;
+            display: none;
+        }
+        .validation-warning {
+            margin-top: 5px;
+            font-size: 0.9em;
+        }
         .debug-info {
             margin-top: 20px;
             padding: 10px;
@@ -79,6 +92,13 @@
     <p><strong>Clics disponibles:</strong> <span id="available-clicks">3</span> de 3</p>
     <div id="timer-info" class="timer-info" style="display: none;">
         Próximo reinicio de clics en: <span id="time-remaining">--:--:--</span>
+    </div>
+    
+    <div id="validation-timer" class="validation-timer">
+        Esperando validación: <span id="validation-countdown">20</span> segundos
+        <div class="validation-warning">
+            ⚠ <strong>No cierres ni cambies de pestaña.</strong> Si abandonas antes de completar el tiempo mínimo, el sistema puede marcar tu acción como inválida.
+        </div>
     </div>
     
     <!-- Código del anuncio -->
@@ -101,6 +121,7 @@
         const MAX_CLICKS_PER_PERIOD = 3;
         const PERIOD_HOURS = 3;  // Confirmar que son 3 horas, no 7
         const PERIOD_MS = PERIOD_HOURS * 60 * 60 * 1000; // 3 horas en milisegundos
+        const VALIDATION_TIME_SECONDS = 20; // Tiempo de validación después de un clic
         
         // Global variables
         let userId = null;
@@ -111,6 +132,10 @@
         let lastClickTime = null;
         let nextResetTime = null;
         let timerInterval = null;
+        let validationInterval = null;
+        let validationInProgress = false;
+        let validationTimeRemaining = 0;
+        let tabFocused = true;
         
         // Debug logging function
         function debugLog(message, data = null) {
@@ -180,7 +205,117 @@
             }
         }
         
-        // Check if user is authenticated
+        // Track tab focus/blur events
+        function handleVisibilityChange() {
+            if (document.hidden) {
+                tabFocused = false;
+                debugLog('Tab perdió el foco');
+                
+                // If validation is in progress, show warning
+                if (validationInProgress) {
+                    showStatus('⚠️ Has abandonado la página durante la validación. Tu clic podría ser invalidado.', 'warning');
+                }
+            } else {
+                tabFocused = true;
+                debugLog('Tab recuperó el foco');
+            }
+        }
+        
+        // Start validation timer
+        function startValidationTimer() {
+            const validationTimerElement = document.getElementById('validation-timer');
+            const countdownElement = document.getElementById('validation-countdown');
+            
+            // Initialize validation state
+            validationInProgress = true;
+            validationTimeRemaining = VALIDATION_TIME_SECONDS;
+            countdownElement.textContent = validationTimeRemaining;
+            validationTimerElement.style.display = 'block';
+            
+            // Disable ad container during validation
+            const adContainer = document.getElementById('container-2537ae2ea8b16bc9e554273a94dfd098');
+            adContainer.style.pointerEvents = 'none';
+            adContainer.style.opacity = '0.5';
+            
+            // Start countdown
+            validationInterval = setInterval(() => {
+                validationTimeRemaining--;
+                countdownElement.textContent = validationTimeRemaining;
+                
+                // Check if validation completed
+                if (validationTimeRemaining <= 0) {
+                    completeValidation(true);
+                }
+            }, 1000);
+            
+            debugLog('Temporizador de validación iniciado');
+        }
+        
+        // Complete validation process
+        async function completeValidation(success) {
+            // Clear validation interval
+            clearInterval(validationInterval);
+            validationInterval = null;
+            
+            // Hide validation timer
+            document.getElementById('validation-timer').style.display = 'none';
+            
+            // Update validation state
+            validationInProgress = false;
+            
+            // Check if validation successful
+            if (success) {
+                debugLog('Validación completada con éxito');
+                showStatus('¡Validación completada! Clic registrado correctamente.', 'success');
+                
+                // Actually commit the click to the database
+                try {
+                    // Update database
+                    const { error } = await supabase
+                        .from("users")
+                        .update({ 
+                            click_count: currentClickCount, 
+                            balance: currentBalance,
+                            clicks_in_period: clicksInPeriod,
+                            last_click_time: lastClickTime.toISOString(),
+                            updated_at: new Date().toISOString()
+                        })
+                        .eq("id", userId);
+                        
+                    if (error) {
+                        debugLog('Error al actualizar datos:', error);
+                        showStatus('Error al registrar clic: ' + error.message, 'error');
+                        
+                        // Reload data in case of error
+                        await loadUserData();
+                    }
+                } catch (e) {
+                    debugLog('Excepción en completeValidation:', e);
+                    showStatus('Error al validar clic: ' + e.message, 'error');
+                    await loadUserData(); // Reload data in case of error
+                }
+            } else {
+                debugLog('Validación fallida');
+                showStatus('La validación ha fallado. El clic no se registrará.', 'error');
+                
+                // Undo the local click changes since it wasn't validated
+                currentClickCount--;
+                currentBalance -= 0.001;
+                clicksInPeriod--;
+                
+                // Update UI with reverted values
+                document.getElementById("click-count").textContent = currentClickCount;
+                document.getElementById("balance").textContent = currentBalance.toFixed(3);
+                
+                // Reload user data to ensure everything is in sync
+                await loadUserData();
+            }
+            
+            // Re-enable ad container based on available clicks
+            updateClickAvailability();
+        }
+        
+        // Check session
         async function checkSession() {
             debugLog('Verificando sesión...');
             
@@ -366,7 +501,7 @@
             // Enable/disable ad container
             const adContainer = document.getElementById('container-2537ae2ea8b16bc9e554273a94dfd098');
             
-            if (availableClicks <= 0) {
+            if (availableClicks <= 0 || validationInProgress) {
                 adContainer.style.pointerEvents = 'none';
                 adContainer.style.opacity = '0.5';
             } else {
@@ -458,10 +593,16 @@
                 return;
             }
             
-            debugLog('Registrando clic para usuario:', userId);
+            // Check if validation is already in progress
+            if (validationInProgress) {
+                showStatus('Espera a que termine la validación actual.', 'warning');
+                return;
+            }
+            
+            debugLog('Iniciando proceso de clic para usuario:', userId);
             
             try {
-                // Update local values
+                // Update local values first (will be committed to database after validation)
                 currentClickCount++;
                 currentBalance += 0.001; // Add 0.001 to balance
                 clicksInPeriod++;
@@ -473,39 +614,16 @@
                     debugLog('Tercer clic alcanzado, temporizador iniciado para:', nextResetTime);
                 }
                 
-                // Update UI
+                // Update UI immediately to show the click
                 document.getElementById("click-count").textContent = currentClickCount;
                 document.getElementById("balance").textContent = currentBalance.toFixed(3);
                 updateClickAvailability();
                 
-                // Update database
-                const { error } = await supabase
-                    .from("users")
-                    .update({ 
-                        click_count: currentClickCount, 
-                        balance: currentBalance,
-                        clicks_in_period: clicksInPeriod,
-                        last_click_time: lastClickTime.toISOString(),
-                        updated_at: new Date().toISOString()
-                    })
-                    .eq("id", userId);
-                    
-                if (error) {
-                    debugLog('Error al actualizar datos:', error);
-                    showStatus('Error al registrar clic: ' + error.message, 'error');
-                    
-                    // Reload data in case of error
-                    await loadUserData();
-                } else {
-                    debugLog('Clic registrado exitosamente');
-                    
-                    const remainingClicks = MAX_CLICKS_PER_PERIOD - clicksInPeriod;
-                    if (remainingClicks === 0) {
-                        showStatus('¡Clic registrado! Has alcanzado el límite de clics para este período. El contador de 3 horas ha iniciado.', 'warning');
-                    } else {
-                        showStatus(`¡Clic registrado con éxito! Te quedan ${remainingClicks} clics disponibles.`);
-                    }
-                }
+                // Start validation timer
+                startValidationTimer();
+                
+                const remainingClicks = MAX_CLICKS_PER_PERIOD - clicksInPeriod;
+                showStatus(`Clic registrado. Por favor, permanece en la página durante 20 segundos para validar. Te quedan ${remainingClicks} clics disponibles después de validar.`, 'warning');
                 
             } catch (e) {
                 debugLog('Excepción en registerClick:', e);
@@ -519,17 +637,38 @@
             debugLog('Cerrando sesión...');
             
             try {
-                // Clear interval if running
-                if (timerInterval) {
-                    clearInterval(timerInterval);
-                    timerInterval = null;
+                // Check if validation is in progress
+                if (validationInProgress) {
+                    if (confirm('Tienes una validación en curso. Si cierras sesión ahora, perderás ese clic. ¿Deseas continuar?')) {
+                        // User confirmed, proceed with logout
+                        clearAllTimers();
+                        await supabase.auth.signOut();
+                        window.location.href = "index.html";
+                    }
+                } else {
+                    // No validation in progress, just logout
+                    clearAllTimers();
+                    await supabase.auth.signOut();
+                    window.location.href = "index.html";
                 }
-                
-                await supabase.auth.signOut();
-                window.location.href = "index.html";
             } catch (e) {
                 debugLog('Error al cerrar sesión:', e);
                 showStatus('Error al cerrar sesión: ' + e.message, 'error');
+            }
+        }
+        
+        // Clear all timers
+        function clearAllTimers() {
+            // Clear period timer if running
+            if (timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+            }
+            
+            // Clear validation timer if running
+            if (validationInterval) {
+                clearInterval(validationInterval);
+                validationInterval = null;
             }
         }
         
@@ -537,6 +676,9 @@
         document.addEventListener("DOMContentLoaded", () => {
             // Check session when page loads
             checkSession();
+            
+            // Set up tab visibility monitoring
+            document.addEventListener('visibilitychange', handleVisibilityChange);
             
             // Event listeners
             document.getElementById("logout").addEventListener("click", logout);
