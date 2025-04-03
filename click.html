@@ -48,11 +48,7 @@
             color: #721c24;
         }
         .debug-info {
-            margin-top: 20px;
-            padding: 10px;
-            background-color: #f8f9fa;
-            border: 1px solid #ddd;
-            display: none;
+            display: none !important;
         }
     </style>
 </head>
@@ -66,11 +62,12 @@
     <script async="async" data-cfasync="false" src="//pl26063295.effectiveratecpm.com/2537ae2ea8b16bc9e554273a94dfd098/invoke.js"></script>
     <div id="container-2537ae2ea8b16bc9e554273a94dfd098" style="cursor: pointer;"></div>
     
-    <button id="manual-click">Simular Clic (Prueba)</button>
+    <!-- Test button hidden in production -->
+    <button id="manual-click" style="display: none;">Simular Clic (Prueba)</button>
     <button id="logout">Cerrar Sesión</button>
     <div id="status-message" class="status" style="display: none;"></div>
     
-    <!-- Debug info (only visible in development) -->
+    <!-- Debug info (completely hidden in production) -->
     <div class="debug-info" id="debug-info">
         <h3>Información de Depuración</h3>
         <p><strong>User ID:</strong> <span id="debug-user-id">-</span></p>
@@ -79,8 +76,8 @@
     </div>
 
     <script>
-        // Debug mode (set to false in production)
-        const DEBUG_MODE = true;
+        // Debug mode disabled in production
+        const DEBUG_MODE = false;
         
         // Supabase initialization
         const SUPABASE_URL = "https://srormesvqserhrfugrls.supabase.co";
@@ -93,7 +90,7 @@
         let currentClickCount = 0;
         let currentBalance = 0;
         
-        // Debug logging function
+        // Debug logging function (doesn't display in production)
         function debugLog(message, data = null) {
             if (!DEBUG_MODE) return;
             
@@ -109,11 +106,15 @@
             
             // Add to debug log element
             const debugLog = document.getElementById('debug-log');
-            debugLog.textContent = logMessage + '\n' + debugLog.textContent;
+            if (debugLog) {
+                debugLog.textContent = logMessage + '\n' + debugLog.textContent;
+            }
         }
         
         // Show status messages
         function showStatus(message, isError = false) {
+            if (!DEBUG_MODE) return; // Don't show status messages in production
+            
             const statusDiv = document.getElementById('status-message');
             statusDiv.textContent = message;
             statusDiv.className = isError ? 'status error' : 'status success';
@@ -150,18 +151,12 @@
                 
                 debugLog('Usuario autenticado:', { id: userId, email: userEmail });
                 
-                if (DEBUG_MODE) {
-                    document.getElementById('debug-info').style.display = 'block';
-                    document.getElementById('debug-user-id').textContent = userId;
-                    document.getElementById('debug-user-status').textContent = 'Autenticado';
-                }
-                
                 // Initialize user data
                 await ensureUserDataInitialized();
                 
             } catch (e) {
                 debugLog('Excepción en checkSession:', e);
-                showStatus('Error al verificar sesión: ' + e.message, true);
+                window.location.href = "index.html"; // Redirect on any error
             }
         }
         
@@ -196,7 +191,6 @@
                     
                     if (insertError) {
                         debugLog('Error al crear usuario:', insertError);
-                        showStatus('Error al inicializar cuenta: ' + insertError.message, true);
                         return false;
                     }
                     
@@ -223,7 +217,6 @@
                         
                         if (updateError) {
                             debugLog('Error al inicializar campos:', updateError);
-                            showStatus('Error al inicializar datos: ' + updateError.message, true);
                         }
                     }
                 }
@@ -234,7 +227,6 @@
                 
             } catch (e) {
                 debugLog('Excepción en ensureUserDataInitialized:', e);
-                showStatus('Error al inicializar datos: ' + e.message, true);
                 return false;
             }
         }
@@ -252,7 +244,6 @@
                 
                 if (error) {
                     debugLog('Error al cargar datos:', error);
-                    showStatus('Error al cargar datos de usuario: ' + error.message, true);
                     return;
                 }
                 
@@ -267,7 +258,6 @@
                 
             } catch (e) {
                 debugLog('Excepción en loadUserData:', e);
-                showStatus('Error al cargar datos: ' + e.message, true);
             }
         }
         
@@ -302,18 +292,15 @@
                     
                 if (error) {
                     debugLog('Error al actualizar datos:', error);
-                    showStatus('Error al registrar clic: ' + error.message, true);
                     
                     // Reload data in case of error
                     await loadUserData();
                 } else {
                     debugLog('Clic registrado exitosamente');
-                    showStatus('¡Clic registrado con éxito!');
                 }
                 
             } catch (e) {
                 debugLog('Excepción en registerClick:', e);
-                showStatus('Error al registrar clic: ' + e.message, true);
                 await loadUserData(); // Reload data in case of error
             }
         }
@@ -327,7 +314,7 @@
                 window.location.href = "index.html";
             } catch (e) {
                 debugLog('Error al cerrar sesión:', e);
-                showStatus('Error al cerrar sesión: ' + e.message, true);
+                window.location.href = "index.html"; // Redirect anyway
             }
         }
         
@@ -338,18 +325,12 @@
             
             // Event listeners
             document.getElementById("logout").addEventListener("click", logout);
-            document.getElementById("manual-click").addEventListener("click", registerClick);
             
-            // Ad container click listener
+            // Ad container click listener - this is the only clickable element
             const adContainer = document.getElementById("container-2537ae2ea8b16bc9e554273a94dfd098");
             adContainer.addEventListener("click", registerClick);
             
             debugLog('Página inicializada');
-            
-            // Only show debug info in debug mode
-            if (DEBUG_MODE) {
-                document.getElementById('debug-info').style.display = 'block';
-            }
         });
     </script>
 </body>
