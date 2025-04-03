@@ -62,18 +62,13 @@
             border-radius: 4px;
             color: #0c5460;
         }
-        .validation-timer {
+        .ad-timer {
             margin-top: 10px;
             padding: 10px;
-            background-color: #ffeeba;
+            background-color: #e8f5e9;
             border-radius: 4px;
-            color: #856404;
-            font-weight: bold;
+            color: #2e7d32;
             display: none;
-        }
-        .validation-warning {
-            margin-top: 5px;
-            font-size: 0.9em;
         }
         .debug-info {
             margin-top: 20px;
@@ -94,11 +89,8 @@
         Próximo reinicio de clics en: <span id="time-remaining">--:--:--</span>
     </div>
     
-    <div id="validation-timer" class="validation-timer">
-        Esperando validación: <span id="validation-countdown">20</span> segundos
-        <div class="validation-warning">
-            ⚠ <strong>No cierres ni cambies de pestaña.</strong> Si abandonas antes de completar el tiempo mínimo, el sistema puede marcar tu acción como inválida.
-        </div>
+    <div id="ad-timer" class="ad-timer">
+        Por favor, permanece en la página del anunciante durante: <span id="ad-time-remaining">20</span> segundos
     </div>
     
     <!-- Código del anuncio -->
@@ -121,7 +113,7 @@
         const MAX_CLICKS_PER_PERIOD = 3;
         const PERIOD_HOURS = 3;  // Confirmar que son 3 horas, no 7
         const PERIOD_MS = PERIOD_HOURS * 60 * 60 * 1000; // 3 horas en milisegundos
-        const VALIDATION_TIME_SECONDS = 20; // Tiempo de validación después de un clic
+        const AD_VIEW_TIME_SECONDS = 20; // Tiempo de permanencia en el anuncio
         
         // Global variables
         let userId = null;
@@ -132,10 +124,11 @@
         let lastClickTime = null;
         let nextResetTime = null;
         let timerInterval = null;
-        let validationInterval = null;
-        let validationInProgress = false;
-        let validationTimeRemaining = 0;
-        let tabFocused = true;
+        let adTimerInterval = null;
+        let adClickTime = null;
+        let adTimerActive = false;
+        let adDestinationUrl = null;
+        let adWindowReference = null;
         
         // Debug logging function
         function debugLog(message, data = null) {
@@ -205,114 +198,52 @@
             }
         }
         
-        // Track tab focus/blur events
-        function handleVisibilityChange() {
-            if (document.hidden) {
-                tabFocused = false;
-                debugLog('Tab perdió el foco');
+        // Start ad view timer
+        function startAdViewTimer() {
+            adClickTime = new Date();
+            adTimerActive = true;
+            let secondsRemaining = AD_VIEW_TIME_SECONDS;
+            
+            // Show timer
+            const adTimerElement = document.getElementById('ad-timer');
+            const adTimeRemainingElement = document.getElementById('ad-time-remaining');
+            adTimeRemainingElement.textContent = secondsRemaining;
+            adTimerElement.style.display = 'block';
+            
+            // Start timer countdown
+            adTimerInterval = setInterval(() => {
+                secondsRemaining--;
+                adTimeRemainingElement.textContent = secondsRemaining;
                 
-                // If validation is in progress, show warning
-                if (validationInProgress) {
-                    showStatus('⚠️ Has abandonado la página durante la validación. Tu clic podría ser invalidado.', 'warning');
-                }
-            } else {
-                tabFocused = true;
-                debugLog('Tab recuperó el foco');
-            }
-        }
-        
-        // Start validation timer
-        function startValidationTimer() {
-            const validationTimerElement = document.getElementById('validation-timer');
-            const countdownElement = document.getElementById('validation-countdown');
-            
-            // Initialize validation state
-            validationInProgress = true;
-            validationTimeRemaining = VALIDATION_TIME_SECONDS;
-            countdownElement.textContent = validationTimeRemaining;
-            validationTimerElement.style.display = 'block';
-            
-            // Disable ad container during validation
-            const adContainer = document.getElementById('container-2537ae2ea8b16bc9e554273a94dfd098');
-            adContainer.style.pointerEvents = 'none';
-            adContainer.style.opacity = '0.5';
-            
-            // Start countdown
-            validationInterval = setInterval(() => {
-                validationTimeRemaining--;
-                countdownElement.textContent = validationTimeRemaining;
-                
-                // Check if validation completed
-                if (validationTimeRemaining <= 0) {
-                    completeValidation(true);
+                // Check if timer has completed
+                if (secondsRemaining <= 0) {
+                    clearInterval(adTimerInterval);
+                    adTimerInterval = null;
+                    adTimerActive = false;
+                    adTimerElement.style.display = 'none';
+                    
+                    // Register the click now that time requirement is met
+                    registerClick();
+                    
+                    // Show success message
+                    showStatus('¡Gracias por ver el anuncio! Se ha registrado tu clic correctamente.', 'success');
                 }
             }, 1000);
-            
-            debugLog('Temporizador de validación iniciado');
         }
         
-        // Complete validation process
-        async function completeValidation(success) {
-            // Clear validation interval
-            clearInterval(validationInterval);
-            validationInterval = null;
-            
-            // Hide validation timer
-            document.getElementById('validation-timer').style.display = 'none';
-            
-            // Update validation state
-            validationInProgress = false;
-            
-            // Check if validation successful
-            if (success) {
-                debugLog('Validación completada con éxito');
-                showStatus('¡Validación completada! Clic registrado correctamente.', 'success');
-                
-                // Actually commit the click to the database
-                try {
-                    // Update database
-                    const { error } = await supabase
-                        .from("users")
-                        .update({ 
-                            click_count: currentClickCount, 
-                            balance: currentBalance,
-                            clicks_in_period: clicksInPeriod,
-                            last_click_time: lastClickTime.toISOString(),
-                            updated_at: new Date().toISOString()
-                        })
-                        .eq("id", userId);
-                        
-                    if (error) {
-                        debugLog('Error al actualizar datos:', error);
-                        showStatus('Error al registrar clic: ' + error.message, 'error');
-                        
-                        // Reload data in case of error
-                        await loadUserData();
-                    }
-                } catch (e) {
-                    debugLog('Excepción en completeValidation:', e);
-                    showStatus('Error al validar clic: ' + e.message, 'error');
-                    await loadUserData(); // Reload data in case of error
+        // Check if ad window is still open
+        function checkAdWindowStatus() {
+            if (adWindowReference && adWindowReference.closed) {
+                // User closed the ad window before timer completed
+                if (adTimerActive) {
+                    clearInterval(adTimerInterval);
+                    adTimerInterval = null;
+                    adTimerActive = false;
+                    document.getElementById('ad-timer').style.display = 'none';
+                    
+                    showStatus('Has cerrado la página del anunciante antes de completar el tiempo requerido. No se registrará el clic.', 'warning');
                 }
-            } else {
-                debugLog('Validación fallida');
-                showStatus('La validación ha fallado. El clic no se registrará.', 'error');
-                
-                // Undo the local click changes since it wasn't validated
-                currentClickCount--;
-                currentBalance -= 0.001;
-                clicksInPeriod--;
-                
-                // Update UI with reverted values
-                document.getElementById("click-count").textContent = currentClickCount;
-                document.getElementById("balance").textContent = currentBalance.toFixed(3);
-                
-                // Reload user data to ensure everything is in sync
-                await loadUserData();
             }
-            
-            // Re-enable ad container based on available clicks
-            updateClickAvailability();
         }
         
         // Check session
@@ -501,7 +432,7 @@
             // Enable/disable ad container
             const adContainer = document.getElementById('container-2537ae2ea8b16bc9e554273a94dfd098');
             
-            if (availableClicks <= 0 || validationInProgress) {
+            if (availableClicks <= 0) {
                 adContainer.style.pointerEvents = 'none';
                 adContainer.style.opacity = '0.5';
             } else {
@@ -580,6 +511,49 @@
             }
         }
         
+        // Handle ad click
+        function handleAdClick(event) {
+            // Check if user has available clicks
+            if (clicksInPeriod >= MAX_CLICKS_PER_PERIOD) {
+                showStatus('Has alcanzado el límite de clics para este período. Espera a que se reinicie el contador.', 'warning');
+                return;
+            }
+            
+            // Prevent default click behavior
+            event.preventDefault();
+            event.stopPropagation();
+            
+            // Get link from event target or its parent
+            let linkElement = event.target;
+            while (linkElement && linkElement.tagName !== 'A' && linkElement !== event.currentTarget) {
+                linkElement = linkElement.parentElement;
+            }
+            
+            if (linkElement && linkElement.tagName === 'A') {
+                adDestinationUrl = linkElement.href;
+                
+                // Open the ad in a new window
+                adWindowReference = window.open(adDestinationUrl, '_blank');
+                
+                // Start checking if window is closed
+                const checkWindowInterval = setInterval(() => {
+                    if (adWindowReference.closed) {
+                        clearInterval(checkWindowInterval);
+                        checkAdWindowStatus();
+                    }
+                }, 500);
+                
+                // Start the timer for 20 seconds
+                startAdViewTimer();
+                
+                debugLog('Anuncio abierto, temporizador iniciado', { url: adDestinationUrl });
+                
+            } else {
+                debugLog('No se encontró un enlace en el contenedor del anuncio');
+                showStatus('Error al abrir el anuncio. Por favor, intenta de nuevo.', 'error');
+            }
+        }
+        
         // Register click and update database
         async function registerClick() {
             if (!userId) {
@@ -593,16 +567,10 @@
                 return;
             }
             
-            // Check if validation is already in progress
-            if (validationInProgress) {
-                showStatus('Espera a que termine la validación actual.', 'warning');
-                return;
-            }
-            
-            debugLog('Iniciando proceso de clic para usuario:', userId);
+            debugLog('Registrando clic para usuario:', userId);
             
             try {
-                // Update local values first (will be committed to database after validation)
+                // Update local values
                 currentClickCount++;
                 currentBalance += 0.001; // Add 0.001 to balance
                 clicksInPeriod++;
@@ -614,16 +582,39 @@
                     debugLog('Tercer clic alcanzado, temporizador iniciado para:', nextResetTime);
                 }
                 
-                // Update UI immediately to show the click
+                // Update UI
                 document.getElementById("click-count").textContent = currentClickCount;
                 document.getElementById("balance").textContent = currentBalance.toFixed(3);
                 updateClickAvailability();
                 
-                // Start validation timer
-                startValidationTimer();
-                
-                const remainingClicks = MAX_CLICKS_PER_PERIOD - clicksInPeriod;
-                showStatus(`Clic registrado. Por favor, permanece en la página durante 20 segundos para validar. Te quedan ${remainingClicks} clics disponibles después de validar.`, 'warning');
+                // Update database
+                const { error } = await supabase
+                    .from("users")
+                    .update({ 
+                        click_count: currentClickCount, 
+                        balance: currentBalance,
+                        clicks_in_period: clicksInPeriod,
+                        last_click_time: lastClickTime.toISOString(),
+                        updated_at: new Date().toISOString()
+                    })
+                    .eq("id", userId);
+                    
+                if (error) {
+                    debugLog('Error al actualizar datos:', error);
+                    showStatus('Error al registrar clic: ' + error.message, 'error');
+                    
+                    // Reload data in case of error
+                    await loadUserData();
+                } else {
+                    debugLog('Clic registrado exitosamente');
+                    
+                    const remainingClicks = MAX_CLICKS_PER_PERIOD - clicksInPeriod;
+                    if (remainingClicks === 0) {
+                        showStatus('¡Clic registrado! Has alcanzado el límite de clics para este período. El contador de 3 horas ha iniciado.', 'warning');
+                    } else {
+                        showStatus(`¡Clic registrado con éxito! Te quedan ${remainingClicks} clics disponibles.`);
+                    }
+                }
                 
             } catch (e) {
                 debugLog('Excepción en registerClick:', e);
@@ -632,43 +623,118 @@
             }
         }
         
+        // Modificar el comportamiento de los enlaces de anuncios mediante MutationObserver
+        function setupAdLinkHandlers() {
+            const adContainer = document.getElementById('container-2537ae2ea8b16bc9e554273a94dfd098');
+            
+            // Create a MutationObserver to watch for changes to the ad container
+            const observer = new MutationObserver((mutations) => {
+                // Look for any newly added links
+                mutations.forEach((mutation) => {
+                    if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
+                        // Check each added node
+                        mutation.addedNodes.forEach((node) => {
+                            // If it's an element, look for links
+                            if (node.nodeType === Node.ELEMENT_NODE) {
+                                // Find all links in this node
+                                const links = node.querySelectorAll('a');
+                                
+                                // Modify each link
+                                links.forEach((link) => {
+                                    // Only modify if not already modified
+                                    if (!link.dataset.modified) {
+                                        // Store original click handler
+                                        link.dataset.modified = 'true';
+                                        
+                                        // Add our custom click handler
+                                        link.addEventListener('click', (e) => {
+                                            handleAdClick(e);
+                                        });
+                                        
+                                        debugLog('Modificado enlace en anuncio', link.href);
+                                    }
+                                });
+                                
+                                // Also check for iframes that might contain ads
+                                const iframes = node.querySelectorAll('iframe');
+                                iframes.forEach((iframe) => {
+                                    // Try to add load event to iframe
+                                    iframe.addEventListener('load', () => {
+                                        try {
+                                            // Access iframe document if from same origin
+                                            const iframeLinks = iframe.contentDocument.querySelectorAll('a');
+                                            iframeLinks.forEach((link) => {
+                                                link.addEventListener('click', (e) => {
+                                                    handleAdClick(e);
+                                                });
+                                            });
+                                            debugLog('Modificados enlaces en iframe', iframeLinks.length);
+                                        } catch (e) {
+                                            // Cross-origin iframe, can't modify directly
+                                            debugLog('No se pueden modificar enlaces en iframe cross-origin', e);
+                                        }
+                                    });
+                                });
+                            }
+                        });
+                    }
+                });
+            });
+            
+            // Start observing the ad container
+            observer.observe(adContainer, { childList: true, subtree: true });
+            
+            // Also handle direct clicks on the container (for cases where links might be missed)
+            adContainer.addEventListener('click', (e) => {
+                // Check if what was clicked is a link or inside a link
+                let target = e.target;
+                while (target && target !== adContainer) {
+                    if (target.tagName === 'A') {
+                        // Link was clicked, but let the link handler deal with it
+                        return;
+                    }
+                    target = target.parentElement;
+                }
+                
+                // If we got here, a non-link element was clicked
+                // Try to find the closest link in the container
+                const links = adContainer.querySelectorAll('a');
+                if (links.length > 0) {
+                    // Use the first link
+                    e.preventDefault();
+                    handleAdClick({
+                        preventDefault: () => {},
+                        stopPropagation: () => {},
+                        target: links[0],
+                        currentTarget: adContainer
+                    });
+                }
+            });
+            
+            debugLog('Configurado observador de enlaces de anuncios');
+        }
+        
         // Logout function
         async function logout() {
             debugLog('Cerrando sesión...');
             
             try {
-                // Check if validation is in progress
-                if (validationInProgress) {
-                    if (confirm('Tienes una validación en curso. Si cierras sesión ahora, perderás ese clic. ¿Deseas continuar?')) {
-                        // User confirmed, proceed with logout
-                        clearAllTimers();
-                        await supabase.auth.signOut();
-                        window.location.href = "index.html";
-                    }
-                } else {
-                    // No validation in progress, just logout
-                    clearAllTimers();
-                    await supabase.auth.signOut();
-                    window.location.href = "index.html";
+                // Clear interval if running
+                if (timerInterval) {
+                    clearInterval(timerInterval);
+                    timerInterval = null;
                 }
+                
+                if (adTimerInterval) {
+                    clearInterval(adTimerInterval);
+                    adTimerInterval = null;
+                }
+                
+                await supabase.auth.signOut();
+                window.location.href = "index.html";
             } catch (e) {
                 debugLog('Error al cerrar sesión:', e);
                 showStatus('Error al cerrar sesión: ' + e.message, 'error');
-            }
-        }
-        
-        // Clear all timers
-        function clearAllTimers() {
-            // Clear period timer if running
-            if (timerInterval) {
-                clearInterval(timerInterval);
-                timerInterval = null;
-            }
-            
-            // Clear validation timer if running
-            if (validationInterval) {
-                clearInterval(validationInterval);
-                validationInterval = null;
             }
         }
         
@@ -677,15 +743,11 @@
             // Check session when page loads
             checkSession();
             
-            // Set up tab visibility monitoring
-            document.addEventListener('visibilitychange', handleVisibilityChange);
-            
             // Event listeners
             document.getElementById("logout").addEventListener("click", logout);
             
-            // Ad container click listener
-            const adContainer = document.getElementById("container-2537ae2ea8b16bc9e554273a94dfd098");
-            adContainer.addEventListener("click", registerClick);
+            // Setup link handlers for ad container
+            setupAdLinkHandlers();
             
             debugLog('Página inicializada');
         });
