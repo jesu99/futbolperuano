@@ -69,6 +69,14 @@
             border: 1px solid #ddd;
             display: none;
         }
+        .ad-timer {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #ffe4e1;
+            border-radius: 4px;
+            color: #d63384;
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -79,6 +87,11 @@
     <p><strong>Clics disponibles:</strong> <span id="available-clicks">3</span> de 3</p>
     <div id="timer-info" class="timer-info" style="display: none;">
         Próximo reinicio de clics en: <span id="time-remaining">--:--:--</span>
+    </div>
+    
+    <!-- Timer para contar 20 segundos en el anuncio -->
+    <div id="ad-timer" class="ad-timer" style="display: none;">
+        Debes permanecer <span id="seconds-remaining">20</span> segundos más para registrar este clic
     </div>
     
     <!-- Código del anuncio -->
@@ -101,6 +114,7 @@
         const MAX_CLICKS_PER_PERIOD = 3;
         const PERIOD_HOURS = 3;
         const PERIOD_MS = PERIOD_HOURS * 60 * 60 * 1000; // 3 hours in milliseconds
+        const AD_VISIT_SECONDS = 20; // Tiempo requerido de permanencia en el anuncio
         
         // Global variables
         let userId = null;
@@ -111,6 +125,11 @@
         let lastClickTime = null;
         let nextResetTime = null;
         let timerInterval = null;
+        let adTimerInterval = null;
+        let adTimerRunning = false;
+        let adWindowReference = null;
+        let adSecondsRemaining = AD_VISIT_SECONDS;
+        let pendingAdClick = false;
         
         // Debug logging function
         function debugLog(message, data = null) {
@@ -179,6 +198,75 @@
                 resetClickPeriod();
             }
         }
+        
+        // Iniciar temporizador para el anuncio
+        function startAdTimer() {
+            if (adTimerRunning) return; // Evitar iniciar múltiples temporizadores
+            
+            adTimerRunning = true;
+            adSecondsRemaining = AD_VISIT_SECONDS;
+            pendingAdClick = true;
+            
+            // Mostrar el temporizador del anuncio
+            const adTimerElement = document.getElementById('ad-timer');
+            adTimerElement.style.display = 'block';
+            document.getElementById('seconds-remaining').textContent = adSecondsRemaining;
+            
+            // Iniciar el temporizador
+            adTimerInterval = setInterval(() => {
+                adSecondsRemaining--;
+                document.getElementById('seconds-remaining').textContent = adSecondsRemaining;
+                
+                if (adSecondsRemaining <= 0) {
+                    completeAdView();
+                }
+            }, 1000);
+            
+            debugLog('Temporizador de anuncio iniciado', { segundos: adSecondsRemaining });
+        }
+        
+        // Completar la visualización del anuncio
+        function completeAdView() {
+            // Detener y limpiar el temporizador
+            clearInterval(adTimerInterval);
+            adTimerInterval = null;
+            adTimerRunning = false;
+            
+            // Ocultar el temporizador
+            document.getElementById('ad-timer').style.display = 'none';
+            
+            // Completar el clic si está pendiente
+            if (pendingAdClick) {
+                pendingAdClick = false;
+                registerClick();
+                debugLog('Visualización de anuncio completada, registrando clic');
+            }
+        }
+        
+        // Cancelar la visualización del anuncio
+        function cancelAdView() {
+            if (!adTimerRunning) return;
+            
+            // Detener y limpiar el temporizador
+            clearInterval(adTimerInterval);
+            adTimerInterval = null;
+            adTimerRunning = false;
+            pendingAdClick = false;
+            
+            // Ocultar el temporizador
+            document.getElementById('ad-timer').style.display = 'none';
+            
+            debugLog('Visualización de anuncio cancelada');
+            showStatus('La visualización del anuncio fue cancelada. No se registró el clic.', 'warning');
+        }
+        
+        // Manejar el evento de visibilidad del navegador para cancelar el temporizador si el usuario cambia de pestaña
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'hidden' && adTimerRunning) {
+                cancelAdView();
+                showStatus('Has cambiado de pestaña. La visualización del anuncio fue cancelada.', 'warning');
+            }
+        });
         
         // Check if user is authenticated
         async function checkSession() {
@@ -513,6 +601,23 @@
             }
         }
         
+        // Iniciar proceso de visualización de anuncio
+        function handleAdClick() {
+            // Verificar si el usuario tiene clics disponibles
+            if (clicksInPeriod >= MAX_CLICKS_PER_PERIOD) {
+                showStatus('Has alcanzado el límite de clics para este período. Espera a que se reinicie el contador.', 'warning');
+                return;
+            }
+            
+            // Iniciar el temporizador
+            startAdTimer();
+            
+            // Mostrar mensaje
+            showStatus(`Permanece en esta página durante ${AD_VISIT_SECONDS} segundos para registrar el clic.`, 'warning');
+            
+            debugLog('Clic en anuncio iniciado, temporizador activado');
+        }
+        
         // Logout function
         async function logout() {
             debugLog('Cerrando sesión...');
@@ -522,6 +627,11 @@
                 if (timerInterval) {
                     clearInterval(timerInterval);
                     timerInterval = null;
+                }
+                
+                // Cancelar cualquier temporizador de anuncio en progreso
+                if (adTimerRunning) {
+                    cancelAdView();
                 }
                 
                 await supabase.auth.signOut();
@@ -540,9 +650,9 @@
             // Event listeners
             document.getElementById("logout").addEventListener("click", logout);
             
-            // Ad container click listener
+            // Ad container click listener (changed to handleAdClick)
             const adContainer = document.getElementById("container-2537ae2ea8b16bc9e554273a94dfd098");
-            adContainer.addEventListener("click", registerClick);
+            adContainer.addEventListener("click", handleAdClick);
             
             debugLog('Página inicializada');
         });
