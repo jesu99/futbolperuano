@@ -5,126 +5,351 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Contador de Clics con Supabase</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1 {
+            color: #333;
+        }
+        #container-2537ae2ea8b16bc9e554273a94dfd098 {
+            margin: 20px 0;
+            padding: 10px;
+            border: 1px solid #ddd;
+            background-color: #f9f9f9;
+            text-align: center;
+            min-height: 100px;
+        }
+        button {
+            padding: 8px 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .status {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        .debug-info {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border: 1px solid #ddd;
+            display: none;
+        }
+    </style>
 </head>
 <body>
     <h1>Contador de Clics</h1>
     <p><strong>Usuario:</strong> <span id="user-email">Cargando...</span></p>
     <p><strong>Total de Clics:</strong> <span id="click-count">0</span></p>
     <p><strong>Balance:</strong> <span id="balance">0.000</span></p>
+    
     <!-- Código del anuncio -->
     <script async="async" data-cfasync="false" src="//pl26063295.effectiveratecpm.com/2537ae2ea8b16bc9e554273a94dfd098/invoke.js"></script>
     <div id="container-2537ae2ea8b16bc9e554273a94dfd098" style="cursor: pointer;"></div>
+    
+    <button id="manual-click">Simular Clic (Prueba)</button>
     <button id="logout">Cerrar Sesión</button>
+    <div id="status-message" class="status" style="display: none;"></div>
+    
+    <!-- Debug info (only visible in development) -->
+    <div class="debug-info" id="debug-info">
+        <h3>Información de Depuración</h3>
+        <p><strong>User ID:</strong> <span id="debug-user-id">-</span></p>
+        <p><strong>User Status:</strong> <span id="debug-user-status">-</span></p>
+        <pre id="debug-log"></pre>
+    </div>
+
     <script>
+        // Debug mode (set to false in production)
+        const DEBUG_MODE = true;
+        
+        // Supabase initialization
         const SUPABASE_URL = "https://srormesvqserhrfugrls.supabase.co";
         const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNyb3JtZXN2cXNlcmhyZnVncmxzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDMzNTk0MzUsImV4cCI6MjA1ODkzNTQzNX0.zGjT9CbTd6jb1lEBzK3OrsZJIgZSqJH9zfLXzWvLTlM";
-        
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         
+        // Global variables
         let userId = null;
+        let userEmail = null;
         let currentClickCount = 0;
         let currentBalance = 0;
         
+        // Debug logging function
+        function debugLog(message, data = null) {
+            if (!DEBUG_MODE) return;
+            
+            const timestamp = new Date().toISOString().split('T')[1].split('.')[0];
+            let logMessage = `[${timestamp}] ${message}`;
+            
+            if (data) {
+                console.log(logMessage, data);
+                logMessage += ' ' + JSON.stringify(data, null, 2);
+            } else {
+                console.log(logMessage);
+            }
+            
+            // Add to debug log element
+            const debugLog = document.getElementById('debug-log');
+            debugLog.textContent = logMessage + '\n' + debugLog.textContent;
+        }
+        
+        // Show status messages
+        function showStatus(message, isError = false) {
+            const statusDiv = document.getElementById('status-message');
+            statusDiv.textContent = message;
+            statusDiv.className = isError ? 'status error' : 'status success';
+            statusDiv.style.display = 'block';
+            
+            // Hide after 5 seconds
+            setTimeout(() => {
+                statusDiv.style.display = 'none';
+            }, 5000);
+        }
+        
+        // Check if user is authenticated
         async function checkSession() {
-            const { data: { user }, error } = await supabase.auth.getUser();
+            debugLog('Verificando sesión...');
             
-            if (error || !user) {
-                console.error("Error en la sesión:", error);
-                window.location.href = "index.html"; // Redirigir si no está autenticado
-                return;
-            }
-            userId = user.id;
-            document.getElementById("user-email").textContent = user.email;
-            ensureUserDataInitialized();
-        }
-        
-        async function ensureUserDataInitialized() {
-            const { data, error } = await supabase
-                .from("users")
-                .select("click_count, balance")
-                .eq("id", userId)
-                .single();
-            
-            if (error) {
-                console.error("Error al verificar datos de usuario:", error);
-                return;
-            }
-            
-            // Si alguno de los campos es nulo, inicialízalos
-            if (data.click_count === null || data.balance === null) {
-                const updateData = {};
-                if (data.click_count === null) updateData.click_count = 0;
-                if (data.balance === null) updateData.balance = 0;
+            try {
+                const { data: { user }, error } = await supabase.auth.getUser();
                 
-                const { error: updateError } = await supabase
-                    .from("users")
-                    .update(updateData)
-                    .eq("id", userId);
-                
-                if (updateError) {
-                    console.error("Error al inicializar datos del usuario:", updateError);
+                if (error) {
+                    debugLog('Error al obtener usuario', error);
+                    window.location.href = "index.html"; // Redirect if error
+                    return;
                 }
+                
+                if (!user) {
+                    debugLog('No hay usuario autenticado');
+                    window.location.href = "index.html"; // Redirect if not authenticated
+                    return;
+                }
+                
+                userId = user.id;
+                userEmail = user.email;
+                document.getElementById("user-email").textContent = userEmail;
+                
+                debugLog('Usuario autenticado:', { id: userId, email: userEmail });
+                
+                if (DEBUG_MODE) {
+                    document.getElementById('debug-info').style.display = 'block';
+                    document.getElementById('debug-user-id').textContent = userId;
+                    document.getElementById('debug-user-status').textContent = 'Autenticado';
+                }
+                
+                // Initialize user data
+                await ensureUserDataInitialized();
+                
+            } catch (e) {
+                debugLog('Excepción en checkSession:', e);
+                showStatus('Error al verificar sesión: ' + e.message, true);
             }
-            
-            // Cargar los datos actualizados
-            loadUserData();
         }
         
-        async function loadUserData() {
-            const { data, error } = await supabase
-                .from("users")
-                .select("click_count, balance")
-                .eq("id", userId)
-                .single();
+        // Create or ensure user data exists
+        async function ensureUserDataInitialized() {
+            debugLog('Inicializando datos de usuario...');
             
-            if (error) {
-                console.error("Error al cargar datos:", error);
+            try {
+                // First, check if user exists in the users table
+                const { data, error } = await supabase
+                    .from("users")
+                    .select("click_count, balance")
+                    .eq("id", userId)
+                    .single();
+                
+                // Handle case where user doesn't exist in users table
+                if (error || !data) {
+                    debugLog('Usuario no encontrado en tabla users, creando nuevo registro...', error);
+                    
+                    // Create new user record
+                    const { data: insertData, error: insertError } = await supabase
+                        .from("users")
+                        .insert({ 
+                            id: userId, 
+                            email: userEmail,
+                            click_count: 0, 
+                            balance: 0,
+                            created_at: new Date().toISOString(),
+                            updated_at: new Date().toISOString()
+                        })
+                        .select();
+                    
+                    if (insertError) {
+                        debugLog('Error al crear usuario:', insertError);
+                        showStatus('Error al inicializar cuenta: ' + insertError.message, true);
+                        return false;
+                    }
+                    
+                    debugLog('Usuario creado correctamente', insertData);
+                    currentClickCount = 0;
+                    currentBalance = 0;
+                    
+                } else {
+                    // User exists, initialize any null fields
+                    debugLog('Usuario encontrado en la tabla users', data);
+                    
+                    // Check if any fields are null and need to be initialized
+                    if (data.click_count === null || data.balance === null) {
+                        debugLog('Inicializando campos nulos');
+                        
+                        const updateData = {};
+                        if (data.click_count === null) updateData.click_count = 0;
+                        if (data.balance === null) updateData.balance = 0;
+                        
+                        const { error: updateError } = await supabase
+                            .from("users")
+                            .update(updateData)
+                            .eq("id", userId);
+                        
+                        if (updateError) {
+                            debugLog('Error al inicializar campos:', updateError);
+                            showStatus('Error al inicializar datos: ' + updateError.message, true);
+                        }
+                    }
+                }
+                
+                // Load user data
+                await loadUserData();
+                return true;
+                
+            } catch (e) {
+                debugLog('Excepción en ensureUserDataInitialized:', e);
+                showStatus('Error al inicializar datos: ' + e.message, true);
+                return false;
+            }
+        }
+        
+        // Load user data from database
+        async function loadUserData() {
+            debugLog('Cargando datos de usuario...');
+            
+            try {
+                const { data, error } = await supabase
+                    .from("users")
+                    .select("click_count, balance")
+                    .eq("id", userId)
+                    .single();
+                
+                if (error) {
+                    debugLog('Error al cargar datos:', error);
+                    showStatus('Error al cargar datos de usuario: ' + error.message, true);
+                    return;
+                }
+                
+                // Use default values if null
+                currentClickCount = data.click_count !== null ? data.click_count : 0;
+                currentBalance = data.balance !== null ? data.balance : 0;
+                
+                document.getElementById("click-count").textContent = currentClickCount;
+                document.getElementById("balance").textContent = currentBalance.toFixed(3);
+                
+                debugLog('Datos cargados correctamente', { clicks: currentClickCount, balance: currentBalance });
+                
+            } catch (e) {
+                debugLog('Excepción en loadUserData:', e);
+                showStatus('Error al cargar datos: ' + e.message, true);
+            }
+        }
+        
+        // Register click and update database
+        async function registerClick() {
+            if (!userId) {
+                debugLog('No hay ID de usuario al registrar clic');
                 return;
             }
             
-            // Usar valores predeterminados explícitos si son nulos
-            currentClickCount = data.click_count !== null ? data.click_count : 0;
-            currentBalance = data.balance !== null ? data.balance : 0;
+            debugLog('Registrando clic para usuario:', userId);
             
-            document.getElementById("click-count").textContent = currentClickCount;
-            document.getElementById("balance").textContent = currentBalance.toFixed(3);
-        }
-        
-        async function registerClick() {
-            if (!userId) return;
-            
-            currentClickCount++;
-            currentBalance += 0.001; // Suma 0.001 al balance
-            
-            document.getElementById("click-count").textContent = currentClickCount;
-            document.getElementById("balance").textContent = currentBalance.toFixed(3);
-            
-            const { error } = await supabase
-                .from("users")
-                .update({ 
-                    click_count: currentClickCount, 
-                    balance: currentBalance,
-                    last_click_time: new Date().toISOString() 
-                })
-                .eq("id", userId);
+            try {
+                // Update local values
+                currentClickCount++;
+                currentBalance += 0.001; // Add 0.001 to balance
                 
-            if (error) {
-                console.error("Error al actualizar datos:", error);
-                loadUserData(); // Recarga valores en caso de error
+                // Update UI
+                document.getElementById("click-count").textContent = currentClickCount;
+                document.getElementById("balance").textContent = currentBalance.toFixed(3);
+                
+                // Update database
+                const { error } = await supabase
+                    .from("users")
+                    .update({ 
+                        click_count: currentClickCount, 
+                        balance: currentBalance,
+                        last_click_time: new Date().toISOString(),
+                        updated_at: new Date().toISOString()
+                    })
+                    .eq("id", userId);
+                    
+                if (error) {
+                    debugLog('Error al actualizar datos:', error);
+                    showStatus('Error al registrar clic: ' + error.message, true);
+                    
+                    // Reload data in case of error
+                    await loadUserData();
+                } else {
+                    debugLog('Clic registrado exitosamente');
+                    showStatus('¡Clic registrado con éxito!');
+                }
+                
+            } catch (e) {
+                debugLog('Excepción en registerClick:', e);
+                showStatus('Error al registrar clic: ' + e.message, true);
+                await loadUserData(); // Reload data in case of error
             }
         }
         
+        // Logout function
         async function logout() {
-            await supabase.auth.signOut();
-            window.location.href = "index.html";
+            debugLog('Cerrando sesión...');
+            
+            try {
+                await supabase.auth.signOut();
+                window.location.href = "index.html";
+            } catch (e) {
+                debugLog('Error al cerrar sesión:', e);
+                showStatus('Error al cerrar sesión: ' + e.message, true);
+            }
         }
         
+        // Initialize the page
         document.addEventListener("DOMContentLoaded", () => {
+            // Check session when page loads
             checkSession();
+            
+            // Event listeners
             document.getElementById("logout").addEventListener("click", logout);
-            // Detectar clics en el anuncio
+            document.getElementById("manual-click").addEventListener("click", registerClick);
+            
+            // Ad container click listener
             const adContainer = document.getElementById("container-2537ae2ea8b16bc9e554273a94dfd098");
             adContainer.addEventListener("click", registerClick);
+            
+            debugLog('Página inicializada');
+            
+            // Only show debug info in debug mode
+            if (DEBUG_MODE) {
+                document.getElementById('debug-info').style.display = 'block';
+            }
         });
     </script>
 </body>
