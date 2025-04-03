@@ -85,7 +85,6 @@
     <script async="async" data-cfasync="false" src="//pl26063295.effectiveratecpm.com/2537ae2ea8b16bc9e554273a94dfd098/invoke.js"></script>
     <div id="container-2537ae2ea8b16bc9e554273a94dfd098" style="cursor: pointer;"></div>
     
-    <button id="manual-click">Simular Clic (Prueba)</button>
     <button id="logout">Cerrar Sesión</button>
     <div id="status-message" class="status" style="display: none;"></div>
     
@@ -389,16 +388,13 @@
                 }
             }
             
-            // Enable/disable click button
-            const clickButton = document.getElementById('manual-click');
+            // Enable/disable ad container
             const adContainer = document.getElementById('container-2537ae2ea8b16bc9e554273a94dfd098');
             
             if (availableClicks <= 0) {
-                clickButton.disabled = true;
                 adContainer.style.pointerEvents = 'none';
                 adContainer.style.opacity = '0.5';
             } else {
-                clickButton.disabled = false;
                 adContainer.style.pointerEvents = 'auto';
                 adContainer.style.opacity = '1';
             }
@@ -576,7 +572,6 @@
             
             // Event listeners
             document.getElementById("logout").addEventListener("click", logout);
-            document.getElementById("manual-click").addEventListener("click", registerClick);
             
             // Ad container click listener
             const adContainer = document.getElementById("container-2537ae2ea8b16bc9e554273a94dfd098");
