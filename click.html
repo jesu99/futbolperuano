@@ -87,17 +87,6 @@
     
     <button id="logout">Cerrar Sesión</button>
     <div id="status-message" class="status" style="display: none;"></div>
-    
-    <!-- Debug info (only visible in development) -->
-    <div class="debug-info" id="debug-info">
-        <h3>Información de Depuración</h3>
-        <p><strong>User ID:</strong> <span id="debug-user-id">-</span></p>
-        <p><strong>User Status:</strong> <span id="debug-user-status">-</span></p>
-        <p><strong>Clicks in Period:</strong> <span id="debug-clicks-in-period">-</span></p>
-        <p><strong>Last Click Time:</strong> <span id="debug-last-click-time">-</span></p>
-        <p><strong>Next Reset Time:</strong> <span id="debug-next-reset-time">-</span></p>
-        <pre id="debug-log"></pre>
-    </div>
 
     <script>
         // Debug mode (set to false in production)
@@ -136,10 +125,6 @@
             } else {
                 console.log(logMessage);
             }
-            
-            // Add to debug log element
-            const debugLog = document.getElementById('debug-log');
-            debugLog.textContent = logMessage + '\n' + debugLog.textContent;
         }
         
         // Show status messages
@@ -188,10 +173,6 @@
             const timerElement = document.getElementById('time-remaining');
             timerElement.textContent = formatTime(secondsRemaining);
             
-            if (DEBUG_MODE) {
-                document.getElementById('debug-next-reset-time').textContent = nextResetTime.toLocaleString();
-            }
-            
             // If time has expired, reset the click counter
             if (timeRemaining <= 0) {
                 debugLog('Período de tiempo expirado, reiniciando contador');
@@ -223,12 +204,6 @@
                 document.getElementById("user-email").textContent = userEmail;
                 
                 debugLog('Usuario autenticado:', { id: userId, email: userEmail });
-                
-                if (DEBUG_MODE) {
-                    document.getElementById('debug-info').style.display = 'block';
-                    document.getElementById('debug-user-id').textContent = userId;
-                    document.getElementById('debug-user-status').textContent = 'Autenticado';
-                }
                 
                 // Initialize user data
                 await ensureUserDataInitialized();
@@ -398,10 +373,6 @@
                 adContainer.style.pointerEvents = 'auto';
                 adContainer.style.opacity = '1';
             }
-            
-            if (DEBUG_MODE) {
-                document.getElementById('debug-clicks-in-period').textContent = clicksInPeriod;
-            }
         }
         
         // Check if we need to reset the period based on time elapsed
@@ -452,10 +423,6 @@
                 // Update UI
                 document.getElementById("click-count").textContent = currentClickCount;
                 document.getElementById("balance").textContent = currentBalance.toFixed(3);
-                
-                if (DEBUG_MODE && lastClickTime) {
-                    document.getElementById('debug-last-click-time').textContent = lastClickTime.toLocaleString();
-                }
                 
                 // Check if we need to reset period
                 if (data.last_click_time && checkPeriodReset(data.last_click_time)) {
@@ -578,11 +545,6 @@
             adContainer.addEventListener("click", registerClick);
             
             debugLog('Página inicializada');
-            
-            // Only show debug info in debug mode
-            if (DEBUG_MODE) {
-                document.getElementById('debug-info').style.display = 'block';
-            }
         });
     </script>
 </body>
