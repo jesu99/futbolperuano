@@ -34,6 +34,10 @@
         button:hover {
             background-color: #45a049;
         }
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
         .status {
             margin-top: 10px;
             padding: 10px;
@@ -47,8 +51,23 @@
             background-color: #f8d7da;
             color: #721c24;
         }
+        .warning {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+        .timer-info {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #e2f3f8;
+            border-radius: 4px;
+            color: #0c5460;
+        }
         .debug-info {
-            display: none !important;
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border: 1px solid #ddd;
+            display: none;
         }
     </style>
 </head>
@@ -57,40 +76,55 @@
     <p><strong>Usuario:</strong> <span id="user-email">Cargando...</span></p>
     <p><strong>Total de Clics:</strong> <span id="click-count">0</span></p>
     <p><strong>Balance:</strong> <span id="balance">0.000</span></p>
+    <p><strong>Clics disponibles:</strong> <span id="available-clicks">3</span> de 3</p>
+    <div id="timer-info" class="timer-info" style="display: none;">
+        Próximo reinicio de clics en: <span id="time-remaining">--:--:--</span>
+    </div>
     
     <!-- Código del anuncio -->
     <script async="async" data-cfasync="false" src="//pl26063295.effectiveratecpm.com/2537ae2ea8b16bc9e554273a94dfd098/invoke.js"></script>
     <div id="container-2537ae2ea8b16bc9e554273a94dfd098" style="cursor: pointer;"></div>
     
-    <!-- Test button hidden in production -->
-    <button id="manual-click" style="display: none;">Simular Clic (Prueba)</button>
+    <button id="manual-click">Simular Clic (Prueba)</button>
     <button id="logout">Cerrar Sesión</button>
     <div id="status-message" class="status" style="display: none;"></div>
     
-    <!-- Debug info (completely hidden in production) -->
+    <!-- Debug info (only visible in development) -->
     <div class="debug-info" id="debug-info">
         <h3>Información de Depuración</h3>
         <p><strong>User ID:</strong> <span id="debug-user-id">-</span></p>
         <p><strong>User Status:</strong> <span id="debug-user-status">-</span></p>
+        <p><strong>Clicks in Period:</strong> <span id="debug-clicks-in-period">-</span></p>
+        <p><strong>Last Click Time:</strong> <span id="debug-last-click-time">-</span></p>
+        <p><strong>Next Reset Time:</strong> <span id="debug-next-reset-time">-</span></p>
         <pre id="debug-log"></pre>
     </div>
 
     <script>
-        // Debug mode disabled in production
-        const DEBUG_MODE = false;
+        // Debug mode (set to false in production)
+        const DEBUG_MODE = true;
         
         // Supabase initialization
         const SUPABASE_URL = "https://srormesvqserhrfugrls.supabase.co";
         const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNyb3JtZXN2cXNlcmhyZnVncmxzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDMzNTk0MzUsImV4cCI6MjA1ODkzNTQzNX0.zGjT9CbTd6jb1lEBzK3OrsZJIgZSqJH9zfLXzWvLTlM";
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         
+        // Constants for click limitation
+        const MAX_CLICKS_PER_PERIOD = 3;
+        const PERIOD_HOURS = 3;
+        const PERIOD_MS = PERIOD_HOURS * 60 * 60 * 1000; // 3 hours in milliseconds
+        
         // Global variables
         let userId = null;
         let userEmail = null;
         let currentClickCount = 0;
         let currentBalance = 0;
+        let clicksInPeriod = 0;
+        let lastClickTime = null;
+        let nextResetTime = null;
+        let timerInterval = null;
         
-        // Debug logging function (doesn't display in production)
+        // Debug logging function
         function debugLog(message, data = null) {
             if (!DEBUG_MODE) return;
             
@@ -106,24 +140,64 @@
             
             // Add to debug log element
             const debugLog = document.getElementById('debug-log');
-            if (debugLog) {
-                debugLog.textContent = logMessage + '\n' + debugLog.textContent;
-            }
+            debugLog.textContent = logMessage + '\n' + debugLog.textContent;
         }
         
         // Show status messages
-        function showStatus(message, isError = false) {
-            if (!DEBUG_MODE) return; // Don't show status messages in production
-            
+        function showStatus(message, type = 'success') {
             const statusDiv = document.getElementById('status-message');
             statusDiv.textContent = message;
-            statusDiv.className = isError ? 'status error' : 'status success';
+            
+            // Remove all classes
+            statusDiv.classList.remove('success', 'error', 'warning');
+            
+            // Add appropriate class
+            if (type === 'error') {
+                statusDiv.classList.add('error');
+            } else if (type === 'warning') {
+                statusDiv.classList.add('warning');
+            } else {
+                statusDiv.classList.add('success');
+            }
+            
             statusDiv.style.display = 'block';
             
             // Hide after 5 seconds
             setTimeout(() => {
                 statusDiv.style.display = 'none';
             }, 5000);
+        }
+        
+        // Format time (seconds) to HH:MM:SS
+        function formatTime(seconds) {
+            const hrs = Math.floor(seconds / 3600);
+            const mins = Math.floor((seconds % 3600) / 60);
+            const secs = Math.floor(seconds % 60);
+            
+            return `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        }
+        
+        // Calculate and update timer display
+        function updateTimerDisplay() {
+            if (!nextResetTime) return;
+            
+            const now = new Date();
+            const timeRemaining = Math.max(0, nextResetTime.getTime() - now.getTime());
+            const secondsRemaining = Math.ceil(timeRemaining / 1000);
+            
+            // Update timer display
+            const timerElement = document.getElementById('time-remaining');
+            timerElement.textContent = formatTime(secondsRemaining);
+            
+            if (DEBUG_MODE) {
+                document.getElementById('debug-next-reset-time').textContent = nextResetTime.toLocaleString();
+            }
+            
+            // If time has expired, reset the click counter
+            if (timeRemaining <= 0) {
+                debugLog('Período de tiempo expirado, reiniciando contador');
+                resetClickPeriod();
+            }
         }
         
         // Check if user is authenticated
@@ -151,12 +225,18 @@
                 
                 debugLog('Usuario autenticado:', { id: userId, email: userEmail });
                 
+                if (DEBUG_MODE) {
+                    document.getElementById('debug-info').style.display = 'block';
+                    document.getElementById('debug-user-id').textContent = userId;
+                    document.getElementById('debug-user-status').textContent = 'Autenticado';
+                }
+                
                 // Initialize user data
                 await ensureUserDataInitialized();
                 
             } catch (e) {
                 debugLog('Excepción en checkSession:', e);
-                window.location.href = "index.html"; // Redirect on any error
+                showStatus('Error al verificar sesión: ' + e.message, 'error');
             }
         }
         
@@ -168,7 +248,7 @@
                 // First, check if user exists in the users table
                 const { data, error } = await supabase
                     .from("users")
-                    .select("click_count, balance")
+                    .select("click_count, balance, last_click_time, clicks_in_period")
                     .eq("id", userId)
                     .single();
                 
@@ -184,6 +264,7 @@
                             email: userEmail,
                             click_count: 0, 
                             balance: 0,
+                            clicks_in_period: 0,
                             created_at: new Date().toISOString(),
                             updated_at: new Date().toISOString()
                         })
@@ -191,24 +272,27 @@
                     
                     if (insertError) {
                         debugLog('Error al crear usuario:', insertError);
+                        showStatus('Error al inicializar cuenta: ' + insertError.message, 'error');
                         return false;
                     }
                     
                     debugLog('Usuario creado correctamente', insertData);
                     currentClickCount = 0;
                     currentBalance = 0;
+                    clicksInPeriod = 0;
                     
                 } else {
                     // User exists, initialize any null fields
                     debugLog('Usuario encontrado en la tabla users', data);
                     
                     // Check if any fields are null and need to be initialized
-                    if (data.click_count === null || data.balance === null) {
+                    if (data.click_count === null || data.balance === null || data.clicks_in_period === null) {
                         debugLog('Inicializando campos nulos');
                         
                         const updateData = {};
                         if (data.click_count === null) updateData.click_count = 0;
                         if (data.balance === null) updateData.balance = 0;
+                        if (data.clicks_in_period === null) updateData.clicks_in_period = 0;
                         
                         const { error: updateError } = await supabase
                             .from("users")
@@ -217,6 +301,7 @@
                         
                         if (updateError) {
                             debugLog('Error al inicializar campos:', updateError);
+                            showStatus('Error al inicializar datos: ' + updateError.message, 'error');
                         }
                     }
                 }
@@ -227,8 +312,122 @@
                 
             } catch (e) {
                 debugLog('Excepción en ensureUserDataInitialized:', e);
+                showStatus('Error al inicializar datos: ' + e.message, 'error');
                 return false;
             }
+        }
+        
+        // Reset click period for user
+        async function resetClickPeriod() {
+            debugLog('Reiniciando período de clics');
+            
+            try {
+                // Reset clicks_in_period to 0
+                const { error } = await supabase
+                    .from("users")
+                    .update({ 
+                        clicks_in_period: 0,
+                        updated_at: new Date().toISOString()
+                    })
+                    .eq("id", userId);
+                
+                if (error) {
+                    debugLog('Error al reiniciar período de clics:', error);
+                    showStatus('Error al reiniciar período: ' + error.message, 'error');
+                    return;
+                }
+                
+                // Update local data
+                clicksInPeriod = 0;
+                nextResetTime = null;
+                
+                // Update UI
+                updateClickAvailability();
+                
+                showStatus('¡Período de clics reiniciado! Tienes 3 clics disponibles.', 'success');
+                
+                // Reload user data to ensure everything is in sync
+                await loadUserData();
+                
+            } catch (e) {
+                debugLog('Excepción en resetClickPeriod:', e);
+                showStatus('Error al reiniciar período: ' + e.message, 'error');
+            }
+        }
+        
+        // Update click availability UI
+        function updateClickAvailability() {
+            const availableClicks = MAX_CLICKS_PER_PERIOD - clicksInPeriod;
+            document.getElementById("available-clicks").textContent = Math.max(0, availableClicks);
+            
+            // Update timer display
+            const timerInfoElement = document.getElementById('timer-info');
+            
+            // Check if period is active
+            if (lastClickTime && clicksInPeriod > 0) {
+                // Calculate next reset time if not already set
+                if (!nextResetTime) {
+                    nextResetTime = new Date(lastClickTime.getTime() + PERIOD_MS);
+                }
+                
+                // Show timer if clicks have been used
+                timerInfoElement.style.display = 'block';
+                updateTimerDisplay();
+                
+                // Start or ensure timer is running
+                if (!timerInterval) {
+                    timerInterval = setInterval(updateTimerDisplay, 1000);
+                }
+            } else {
+                // Hide timer if no clicks used
+                timerInfoElement.style.display = 'none';
+                
+                // Clear interval if it exists
+                if (timerInterval) {
+                    clearInterval(timerInterval);
+                    timerInterval = null;
+                }
+            }
+            
+            // Enable/disable click button
+            const clickButton = document.getElementById('manual-click');
+            const adContainer = document.getElementById('container-2537ae2ea8b16bc9e554273a94dfd098');
+            
+            if (availableClicks <= 0) {
+                clickButton.disabled = true;
+                adContainer.style.pointerEvents = 'none';
+                adContainer.style.opacity = '0.5';
+            } else {
+                clickButton.disabled = false;
+                adContainer.style.pointerEvents = 'auto';
+                adContainer.style.opacity = '1';
+            }
+            
+            if (DEBUG_MODE) {
+                document.getElementById('debug-clicks-in-period').textContent = clicksInPeriod;
+            }
+        }
+        
+        // Check if we need to reset the period based on time elapsed
+        function checkPeriodReset(lastClickTimeStr) {
+            if (!lastClickTimeStr) return false;
+            
+            const lastClick = new Date(lastClickTimeStr);
+            const now = new Date();
+            const elapsedMs = now.getTime() - lastClick.getTime();
+            
+            if (elapsedMs >= PERIOD_MS) {
+                debugLog('Período de tiempo expirado, reiniciando contador');
+                return true;
+            }
+            
+            // If period is still active, set the next reset time
+            if (clicksInPeriod > 0) {
+                nextResetTime = new Date(lastClick.getTime() + PERIOD_MS);
+                debugLog('Próximo reinicio programado para:', nextResetTime);
+            }
+            
+            return false;
         }
         
         // Load user data from database
@@ -238,26 +437,48 @@
             try {
                 const { data, error } = await supabase
                     .from("users")
-                    .select("click_count, balance")
+                    .select("click_count, balance, last_click_time, clicks_in_period")
                     .eq("id", userId)
                     .single();
                 
                 if (error) {
                     debugLog('Error al cargar datos:', error);
+                    showStatus('Error al cargar datos de usuario: ' + error.message, 'error');
                     return;
                 }
                 
                 // Use default values if null
                 currentClickCount = data.click_count !== null ? data.click_count : 0;
                 currentBalance = data.balance !== null ? data.balance : 0;
+                clicksInPeriod = data.clicks_in_period !== null ? data.clicks_in_period : 0;
+                lastClickTime = data.last_click_time ? new Date(data.last_click_time) : null;
                 
+                // Update UI
                 document.getElementById("click-count").textContent = currentClickCount;
                 document.getElementById("balance").textContent = currentBalance.toFixed(3);
                 
-                debugLog('Datos cargados correctamente', { clicks: currentClickCount, balance: currentBalance });
+                if (DEBUG_MODE && lastClickTime) {
+                    document.getElementById('debug-last-click-time').textContent = lastClickTime.toLocaleString();
+                }
+                
+                // Check if we need to reset period
+                if (data.last_click_time && checkPeriodReset(data.last_click_time)) {
+                    await resetClickPeriod();
+                } else {
+                    // Update click availability
+                    updateClickAvailability();
+                }
+                
+                debugLog('Datos cargados correctamente', { 
+                    clicks: currentClickCount, 
+                    balance: currentBalance,
+                    clicksInPeriod: clicksInPeriod,
+                    lastClickTime: data.last_click_time
+                });
                 
             } catch (e) {
                 debugLog('Excepción en loadUserData:', e);
+                showStatus('Error al cargar datos: ' + e.message, 'error');
             }
         }
         
@@ -268,16 +489,30 @@
                 return;
             }
             
+            // Check if user has available clicks
+            if (clicksInPeriod >= MAX_CLICKS_PER_PERIOD) {
+                showStatus('Has alcanzado el límite de clics para este período. Espera a que se reinicie el contador.', 'warning');
+                return;
+            }
+            
             debugLog('Registrando clic para usuario:', userId);
             
             try {
                 // Update local values
                 currentClickCount++;
                 currentBalance += 0.001; // Add 0.001 to balance
+                clicksInPeriod++;
+                lastClickTime = new Date();
+                
+                // If this is the first click in this period, set the next reset time
+                if (clicksInPeriod === 1) {
+                    nextResetTime = new Date(lastClickTime.getTime() + PERIOD_MS);
+                }
                 
                 // Update UI
                 document.getElementById("click-count").textContent = currentClickCount;
                 document.getElementById("balance").textContent = currentBalance.toFixed(3);
+                updateClickAvailability();
                 
                 // Update database
                 const { error } = await supabase
@@ -285,22 +520,32 @@
                     .update({ 
                         click_count: currentClickCount, 
                         balance: currentBalance,
-                        last_click_time: new Date().toISOString(),
+                        clicks_in_period: clicksInPeriod,
+                        last_click_time: lastClickTime.toISOString(),
                         updated_at: new Date().toISOString()
                     })
                     .eq("id", userId);
                     
                 if (error) {
                     debugLog('Error al actualizar datos:', error);
+                    showStatus('Error al registrar clic: ' + error.message, 'error');
                     
                     // Reload data in case of error
                     await loadUserData();
                 } else {
                     debugLog('Clic registrado exitosamente');
+                    
+                    const remainingClicks = MAX_CLICKS_PER_PERIOD - clicksInPeriod;
+                    if (remainingClicks === 0) {
+                        showStatus('¡Clic registrado! Has alcanzado el límite de clics para este período.', 'warning');
+                    } else {
+                        showStatus(`¡Clic registrado con éxito! Te quedan ${remainingClicks} clics disponibles.`);
+                    }
                 }
                 
             } catch (e) {
                 debugLog('Excepción en registerClick:', e);
+                showStatus('Error al registrar clic: ' + e.message, 'error');
                 await loadUserData(); // Reload data in case of error
             }
         }
@@ -310,11 +555,17 @@
             debugLog('Cerrando sesión...');
             
             try {
+                // Clear interval if running
+                if (timerInterval) {
+                    clearInterval(timerInterval);
+                    timerInterval = null;
+                }
+                
                 await supabase.auth.signOut();
                 window.location.href = "index.html";
             } catch (e) {
                 debugLog('Error al cerrar sesión:', e);
-                window.location.href = "index.html"; // Redirect anyway
+                showStatus('Error al cerrar sesión: ' + e.message, 'error');
             }
         }
         
@@ -325,12 +576,18 @@
             
             // Event listeners
             document.getElementById("logout").addEventListener("click", logout);
+            document.getElementById("manual-click").addEventListener("click", registerClick);
             
-            // Ad container click listener - this is the only clickable element
+            // Ad container click listener
             const adContainer = document.getElementById("container-2537ae2ea8b16bc9e554273a94dfd098");
             adContainer.addEventListener("click", registerClick);
             
             debugLog('Página inicializada');
+            
+            // Only show debug info in debug mode
+            if (DEBUG_MODE) {
+                document.getElementById('debug-info').style.display = 'block';
+            }
         });
     </script>
 </body>
