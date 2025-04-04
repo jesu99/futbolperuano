@@ -15,7 +15,7 @@
 
   <script>
     const storageZoneName = 'mi-pelicula'; // Nombre de tu Storage Zone
-    const accessKey = '38c1795e-dd6e-441c-8ba0d17011c0-484a-4437';     // Reemplaza con tu Access Key real
+    const accessKey = '38c1795e-dd6e-441c-8ba0d17011c0-484a-4437'; // Tu clave de acceso
 
     function uploadFile() {
       const fileInput = document.getElementById('fileInput');
@@ -37,11 +37,13 @@
         },
         body: formData
       })
-      .then(res => {
-        if (res.ok) {
-          document.getElementById('status').innerText = '✅ Archivo subido correctamente';
+      .then(res => res.json())  // Verifica la respuesta en formato JSON
+      .then(data => {
+        console.log(data);  // Verifica la respuesta del servidor
+        if (data.error) {
+          document.getElementById('status').innerText = `❌ Error: ${data.error}`;
         } else {
-          document.getElementById('status').innerText = '❌ Error al subir el archivo';
+          document.getElementById('status').innerText = '✅ Archivo subido correctamente';
         }
       })
       .catch(error => {
