@@ -146,6 +146,27 @@
       vertical-align: middle;
       display: none;
     }
+    .upload-progress {
+      width: 100%;
+      max-width: 500px;
+      height: 20px;
+      background-color: #f3f3f3;
+      border-radius: 4px;
+      margin: 10px 0;
+      overflow: hidden;
+      display: none;
+    }
+    .upload-progress-bar {
+      height: 100%;
+      background-color: #4CAF50;
+      width: 0%;
+      transition: width 0.3s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 12px;
+    }
     @keyframes spin {
       0% { transform: rotate(0deg); }
       100% { transform: rotate(360deg); }
@@ -161,6 +182,34 @@
     #user-info {
       font-size: 14px;
       margin-bottom: 20px;
+    }
+    .file-input-container {
+      position: relative;
+      overflow: hidden;
+      display: inline-block;
+      width: 100%;
+      max-width: 500px;
+    }
+    .file-input-container input[type=file] {
+      font-size: 100px;
+      position: absolute;
+      left: 0;
+      top: 0;
+      opacity: 0;
+      cursor: pointer;
+    }
+    .file-input-button {
+      background-color: #2196F3;
+      color: white;
+      padding: 10px;
+      border-radius: 4px;
+      text-align: center;
+      cursor: pointer;
+    }
+    .file-name {
+      margin-top: 5px;
+      font-size: 14px;
+      color: #555;
     }
   </style>
 </head>
@@ -214,9 +263,13 @@
       </div>
       
       <div class="form-group">
-        <label for="poster_url">URL de la portada:</label>
-        <input type="url" id="poster_url" placeholder="https://ejemplo.com/imagen.jpg" />
-        <small>URL de la imagen de portada de la película</small>
+        <label for="poster">Portada de la película:</label>
+        <div class="file-input-container">
+          <div class="file-input-button">Seleccionar imagen</div>
+          <input type="file" id="poster" accept="image/*" />
+        </div>
+        <div class="file-name" id="poster-file-name">Ningún archivo seleccionado</div>
+        <small>Imagen para la portada de la película (JPG, PNG)</small>
         <div class="preview-container">
           <div>Vista previa de la portada:</div>
           <img id="poster-preview" class="preview-image" alt="Vista previa" />
@@ -224,14 +277,21 @@
       </div>
       
       <div class="form-group">
-        <label for="movie_url">URL del video: <span style="color: red">*</span></label>
-        <input type="url" id="movie_url" placeholder="https://ejemplo.com/pelicula.mp4" required />
-        <small>URL del archivo de video de la película</small>
+        <label for="movie">Archivo de video: <span style="color: red">*</span></label>
+        <div class="file-input-container">
+          <div class="file-input-button">Seleccionar video</div>
+          <input type="file" id="movie" accept="video/*" required />
+        </div>
+        <div class="file-name" id="movie-file-name">Ningún archivo seleccionado</div>
+        <small>Archivo de video de la película (MP4, MOV, AVI)</small>
         <div class="preview-container">
           <div>Vista previa del video:</div>
           <video id="video-preview" class="video-preview" controls>
             Tu navegador no soporta la reproducción de videos.
           </video>
+        </div>
+        <div class="upload-progress" id="video-upload-progress">
+          <div class="upload-progress-bar" id="video-upload-progress-bar">0%</div>
         </div>
       </div>
       
@@ -264,8 +324,13 @@
     // Inicialización de Supabase
     const supabaseUrl = 'https://srormesvqserhrfugrls.supabase.co';
     const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNyb3JtZXN2cXNlcmhyZnVncmxzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDMzNTk0MzUsImV4cCI6MjA1ODkzNTQzNX0.zGjT9CbTd6jb1lEBzK3OrsZJIgZSqJH9zfLXzWvLTlM';
-    // Corrección: Usar window.supabase para acceder al objeto global
     const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+    
+    // Configuración de Bunny.net
+    const BUNNY_API_KEY = "5ce19b6a-b9ee-4d43-a22850932484-4bac-40f6";
+    const BUNNY_STORAGE_ZONE = "399619";
+    const BUNNY_API_URL = `https://storage.bunnycdn.com/${BUNNY_STORAGE_ZONE}/`;
+    const BUNNY_STREAM_URL = `https://${BUNNY_STORAGE_ZONE}.b-cdn.net/`;
     
     // Elementos DOM
     const form = document.getElementById("movie-form");
@@ -277,6 +342,8 @@
     const userInfoEl = document.getElementById("user-info");
     const moviesTable = document.getElementById("movies-table");
     const moviesLoading = document.getElementById("movies-loading");
+    const videoUploadProgress = document.getElementById("video-upload-progress");
+    const videoUploadProgressBar = document.getElementById("video-upload-progress-bar");
     
     // Funciones auxiliares
     function showNotification(element, message, duration = 5000) {
@@ -297,6 +364,59 @@
     function hideLoading(button, loadingElement) {
       button.disabled = false;
       loadingElement.style.display = "none";
+    }
+    
+    function generateUniqueFileName(file) {
+      const timestamp = new Date().getTime();
+      const randomStr = Math.random().toString(36).substring(2, 12);
+      const extension = file.name.split('.').pop();
+      return `${timestamp}-${randomStr}.${extension}`;
+    }
+    
+    // Función para subir archivo a Bunny.net
+    async function uploadToBunny(file, path, onProgress) {
+      return new Promise((resolve, reject) => {
+        const uniqueFileName = path + generateUniqueFileName(file);
+        const xhr = new XMLHttpRequest();
+        
+        // Configurar eventos de progreso
+        xhr.upload.addEventListener("progress", (event) => {
+          if (event.lengthComputable) {
+            const percentComplete = Math.round((event.loaded / event.total) * 100);
+            if (onProgress) onProgress(percentComplete);
+          }
+        });
+        
+        // Configurar evento de completado
+        xhr.onload = function() {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            resolve({
+              success: true,
+              url: BUNNY_STREAM_URL + uniqueFileName,
+              fileName: uniqueFileName
+            });
+          } else {
+            reject({
+              success: false,
+              error: `Error al subir: ${xhr.status} ${xhr.statusText}`
+            });
+          }
+        };
+        
+        // Configurar evento de error
+        xhr.onerror = function() {
+          reject({
+            success: false,
+            error: "Error de red al intentar subir el archivo"
+          });
+        };
+        
+        // Abrir y enviar la solicitud
+        xhr.open("PUT", BUNNY_API_URL + uniqueFileName);
+        xhr.setRequestHeader("AccessKey", BUNNY_API_KEY);
+        xhr.setRequestHeader("Content-Type", file.type);
+        xhr.send(file);
+      });
     }
     
     // Verificar autenticación del usuario
@@ -374,37 +494,44 @@
       loadMovies(user.id);
       
       // Vista previa de poster
-      const posterUrlInput = document.getElementById("poster_url");
+      const posterInput = document.getElementById("poster");
+      const posterFileNameEl = document.getElementById("poster-file-name");
       const posterPreview = document.getElementById("poster-preview");
       
-      posterUrlInput.addEventListener("input", function() {
-        const url = this.value.trim();
-        if (url) {
-          posterPreview.src = url;
-          posterPreview.style.display = "block";
-          posterPreview.onerror = function() {
-            this.style.display = "none";
-            this.src = "";
+      posterInput.addEventListener("change", function() {
+        const file = this.files[0];
+        if (file) {
+          posterFileNameEl.textContent = file.name;
+          
+          // Vista previa de la imagen
+          const reader = new FileReader();
+          reader.onload = function(e) {
+            posterPreview.src = e.target.result;
+            posterPreview.style.display = "block";
           };
+          reader.readAsDataURL(file);
         } else {
+          posterFileNameEl.textContent = "Ningún archivo seleccionado";
           posterPreview.style.display = "none";
         }
       });
       
       // Vista previa de video
-      const videoUrlInput = document.getElementById("movie_url");
+      const movieInput = document.getElementById("movie");
+      const movieFileNameEl = document.getElementById("movie-file-name");
       const videoPreview = document.getElementById("video-preview");
       
-      videoUrlInput.addEventListener("input", function() {
-        const url = this.value.trim();
-        if (url) {
+      movieInput.addEventListener("change", function() {
+        const file = this.files[0];
+        if (file) {
+          movieFileNameEl.textContent = file.name;
+          
+          // Vista previa del video
+          const url = URL.createObjectURL(file);
           videoPreview.src = url;
           videoPreview.style.display = "block";
-          videoPreview.onerror = function() {
-            this.style.display = "none";
-            this.src = "";
-          };
         } else {
+          movieFileNameEl.textContent = "Ningún archivo seleccionado";
           videoPreview.style.display = "none";
         }
       });
@@ -423,11 +550,11 @@
         const description = document.getElementById("description").value.trim();
         const duration = parseInt(document.getElementById("duration").value);
         const genre = document.getElementById("genre").value;
-        const poster_url = document.getElementById("poster_url").value.trim();
-        const movie_url = document.getElementById("movie_url").value.trim();
+        const posterFile = document.getElementById("poster").files[0];
+        const movieFile = document.getElementById("movie").files[0];
         
         // Validaciones
-        if (!title || !duration || !genre || !movie_url) {
+        if (!title || !duration || !genre || !movieFile) {
           showNotification(errorNotification, "Por favor complete todos los campos obligatorios");
           return;
         }
@@ -441,31 +568,80 @@
         showLoading(submitBtn, submitLoading);
         
         try {
+          let posterUrl = null;
+          let movieUrl = null;
+          
+          // Subir poster si existe
+          if (posterFile) {
+            try {
+              const posterUploadResult = await uploadToBunny(posterFile, "posters/");
+              if (posterUploadResult.success) {
+                posterUrl = posterUploadResult.url;
+              }
+            } catch (error) {
+              console.error("Error al subir la imagen de portada:", error);
+              // Continuamos con la subida del video incluso si falla la portada
+            }
+          }
+          
+          // Mostrar barra de progreso para el video
+          videoUploadProgress.style.display = "block";
+          
+          // Subir video
+          try {
+            const movieUploadResult = await uploadToBunny(
+              movieFile, 
+              "videos/",
+              (percent) => {
+                videoUploadProgressBar.style.width = percent + "%";
+                videoUploadProgressBar.textContent = percent + "%";
+              }
+            );
+            
+            if (movieUploadResult.success) {
+              movieUrl = movieUploadResult.url;
+            } else {
+              throw new Error("Error al subir el video");
+            }
+          } catch (error) {
+            console.error("Error al subir el video:", error);
+            hideLoading(submitBtn, submitLoading);
+            videoUploadProgress.style.display = "none";
+            showNotification(errorNotification, "Error al subir el video: " + error.message);
+            return;
+          }
+          
+          // Ocultar la barra de progreso
+          videoUploadProgress.style.display = "none";
+          
           // Insertar en Supabase
           const { error: insertError } = await supabase.from("movies").insert([{
             title,
             description,
             duration_minutes: duration,
             genre,
-            poster_url,
-            movie_url,
+            poster_url: posterUrl,
+            movie_url: movieUrl,
             created_by: user.id
           }]);
           
           hideLoading(submitBtn, submitLoading);
           
           if (insertError) {
-            console.error("Error al subir la película:", insertError);
-            showNotification(errorNotification, "Error al subir la película: " + insertError.message);
+            console.error("Error al guardar la información de la película:", insertError);
+            showNotification(errorNotification, "Error al guardar la información: " + insertError.message);
           } else {
             showNotification(successNotification);
             form.reset();
             posterPreview.style.display = "none";
             videoPreview.style.display = "none";
+            posterFileNameEl.textContent = "Ningún archivo seleccionado";
+            movieFileNameEl.textContent = "Ningún archivo seleccionado";
             loadMovies(user.id);
           }
         } catch (err) {
           hideLoading(submitBtn, submitLoading);
+          videoUploadProgress.style.display = "none";
           console.error("Error inesperado:", err);
           showNotification(errorNotification, "Error inesperado al procesar la solicitud");
         }
