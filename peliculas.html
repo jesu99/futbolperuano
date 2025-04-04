@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Subir Películas</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; }
+    input, textarea, button { display: block; margin: 10px 0; width: 100%; max-width: 500px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 30px; }
+    th, td { padding: 10px; border: 1px solid #ccc; text-align: left; }
+    img { width: 80px; height: auto; }
+  </style>
+</head>
+<body>
+  <h1>📽 Subir Película</h1>
+
+  <form id="movie-form">
+    <input type="text" id="title" placeholder="Título" required />
+    <textarea id="description" placeholder="Descripción"></textarea>
+    <input type="number" id="duration" placeholder="Duración en minutos" required />
+    <input type="text" id="genre" placeholder="Género (Ej: Acción)" />
+    <input type="url" id="poster_url" placeholder="URL de la portada" />
+    <button type="submit">Subir Película</button>
+  </form>
+
+  <h2>🎞 Tus Películas</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Portada</th>
+        <th>Título</th>
+        <th>Duración</th>
+        <th>Género</th>
+        <th>Fecha</th>
+      </tr>
+    </thead>
+    <tbody id="movies-table"></tbody>
+  </table>
+
+  <script>
+    const supabase = supabase.createClient('https://srormesvqserhrfugrls.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNyb3JtZXN2cXNlcmhyZnVncmxzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDMzNTk0MzUsImV4cCI6MjA1ODkzNTQzNX0.zGjT9CbTd6jb1lEBzK3OrsZJIgZSqJH9zfLXzWvLTlM');
+
+    document.addEventListener("DOMContentLoaded", async () => {
+      const { data: { user }, error } = await supabase.auth.getUser();
+      if (!user) return window.location.href = "index.html";
+
+      const userId = user.id;
+      loadMovies(userId);
+
+      document.getElementById("movie-form").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const title = document.getElementById("title").value;
+        const description = document.getElementById("description").value;
+        const duration = parseInt(document.getElementById("duration").value);
+        const genre = document.getElementById("genre").value;
+        const poster_url = document.getElementById("poster_url").value;
+
+        const { error: insertError } = await supabase.from("movies").insert([{
+          title,
+          description,
+          duration_minutes: duration,
+          genre,
+          poster_url,
+          created_by: userId
+        }]);
+
+        if (insertError) {
+          alert("Error al subir la película: " + insertError.message);
+        } else {
+          alert("Película subida con éxito");
+          e.target.reset();
+          loadMovies(userId);
+        }
+      });
+    });
+
+    async function loadMovies(userId) {
+      const { data: movies, error } = await supabase
+        .from("movies")
+        .select("*")
+        .eq("created_by", userId)
+        .order("created_at", { ascending: false });
+
+      const table = document.getElementById("movies-table");
+      table.innerHTML = "";
+
+      if (movies && movies.length > 0) {
+        movies.forEach(movie => {
+          table.innerHTML += `
+            <tr>
+              <td><img src="${movie.poster_url || ''}" alt="Portada" /></td>
+              <td>${movie.title}</td>
+              <td>${movie.duration_minutes} min</td>
+              <td>${movie.genre || ''}</td>
+              <td>${new Date(movie.created_at).toLocaleString()}</td>
+            </tr>
+          `;
+        });
+      } else {
+        table.innerHTML = `<tr><td colspan="5">No has subido películas aún.</td></tr>`;
+      }
+    }
+  </script>
+</body>
+</html>
