@@ -18,6 +18,7 @@
       padding: 20px;
       border-radius: 8px;
       box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
     }
     input, textarea, button, select { 
       display: block; 
@@ -38,6 +39,10 @@
     }
     button:hover {
       background-color: #45a049;
+    }
+    button:disabled {
+      background-color: #cccccc;
+      cursor: not-allowed;
     }
     table { 
       width: 100%; 
@@ -90,6 +95,12 @@
       margin-bottom: 5px;
       font-weight: bold;
     }
+    .form-group small {
+      display: block;
+      color: #666;
+      font-size: 12px;
+      margin-top: 3px;
+    }
     .actions-column {
       text-align: center;
     }
@@ -106,14 +117,71 @@
     .btn-view:hover {
       background-color: #0b7dda;
     }
+    .notification {
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 4px;
+      display: none;
+      max-width: 500px;
+    }
+    .notification.success {
+      background-color: #dff0d8;
+      color: #3c763d;
+      border: 1px solid #d6e9c6;
+    }
+    .notification.error {
+      background-color: #f2dede;
+      color: #a94442;
+      border: 1px solid #ebccd1;
+    }
+    .loading {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 3px solid rgba(255,255,255,.3);
+      border-radius: 50%;
+      border-top-color: #fff;
+      animation: spin 1s linear infinite;
+      margin-left: 10px;
+      vertical-align: middle;
+      display: none;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    .header-container {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .header-container button {
+      width: auto;
+    }
+    #user-info {
+      font-size: 14px;
+      margin-bottom: 20px;
+    }
   </style>
 </head>
 <body>
   <div class="container">
-    <h1>📽 Subir Película</h1>
+    <div class="header-container">
+      <h1>📽 Subir Película</h1>
+      <button id="logout-btn">Cerrar Sesión</button>
+    </div>
+    <div id="user-info">Cargando información de usuario...</div>
+    
+    <div id="success-notification" class="notification success">
+      ¡Película subida con éxito!
+    </div>
+    <div id="error-notification" class="notification error">
+      Error al subir la película.
+    </div>
+    
     <form id="movie-form">
       <div class="form-group">
-        <label for="title">Título:</label>
+        <label for="title">Título: <span style="color: red">*</span></label>
         <input type="text" id="title" placeholder="Título de la película" required />
       </div>
       
@@ -123,12 +191,12 @@
       </div>
       
       <div class="form-group">
-        <label for="duration">Duración (minutos):</label>
+        <label for="duration">Duración (minutos): <span style="color: red">*</span></label>
         <input type="number" id="duration" placeholder="Ej: 120" required min="1" />
       </div>
       
       <div class="form-group">
-        <label for="genre">Género:</label>
+        <label for="genre">Género: <span style="color: red">*</span></label>
         <select id="genre" required>
           <option value="">Selecciona un género</option>
           <option value="Acción">Acción</option>
@@ -156,7 +224,7 @@
       </div>
       
       <div class="form-group">
-        <label for="movie_url">URL del video:</label>
+        <label for="movie_url">URL del video: <span style="color: red">*</span></label>
         <input type="url" id="movie_url" placeholder="https://ejemplo.com/pelicula.mp4" required />
         <small>URL del archivo de video de la película</small>
         <div class="preview-container">
@@ -167,12 +235,16 @@
         </div>
       </div>
       
-      <button type="submit">Subir Película</button>
+      <button type="submit" id="submit-btn">
+        Subir Película
+        <span class="loading" id="submit-loading"></span>
+      </button>
     </form>
   </div>
   
-  <div class="container" style="margin-top: 20px;">
+  <div class="container">
     <h2>🎞 Tus Películas</h2>
+    <div id="movies-loading">Cargando películas...</div>
     <table>
       <thead>
         <tr>
@@ -192,20 +264,114 @@
     // Inicialización de Supabase
     const supabaseUrl = 'https://srormesvqserhrfugrls.supabase.co';
     const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNyb3JtZXN2cXNlcmhyZnVncmxzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDMzNTk0MzUsImV4cCI6MjA1ODkzNTQzNX0.zGjT9CbTd6jb1lEBzK3OrsZJIgZSqJH9zfLXzWvLTlM';
-    const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+    // Corrección: Usar window.supabase para acceder al objeto global
+    const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
     
-    document.addEventListener("DOMContentLoaded", async () => {
-      // Verificar autenticación del usuario
-      const { data: { user }, error } = await supabase.auth.getUser();
-      if (!user) {
-        window.location.href = "index.html";
-        return;
+    // Elementos DOM
+    const form = document.getElementById("movie-form");
+    const submitBtn = document.getElementById("submit-btn");
+    const submitLoading = document.getElementById("submit-loading");
+    const successNotification = document.getElementById("success-notification");
+    const errorNotification = document.getElementById("error-notification");
+    const logoutBtn = document.getElementById("logout-btn");
+    const userInfoEl = document.getElementById("user-info");
+    const moviesTable = document.getElementById("movies-table");
+    const moviesLoading = document.getElementById("movies-loading");
+    
+    // Funciones auxiliares
+    function showNotification(element, message, duration = 5000) {
+      if (message) {
+        element.textContent = message;
       }
+      element.style.display = "block";
+      setTimeout(() => {
+        element.style.display = "none";
+      }, duration);
+    }
+    
+    function showLoading(button, loadingElement) {
+      button.disabled = true;
+      loadingElement.style.display = "inline-block";
+    }
+    
+    function hideLoading(button, loadingElement) {
+      button.disabled = false;
+      loadingElement.style.display = "none";
+    }
+    
+    // Verificar autenticación del usuario
+    async function checkAuth() {
+      try {
+        const { data: { user }, error } = await supabase.auth.getUser();
+        
+        if (error || !user) {
+          window.location.href = "index.html";
+          return null;
+        }
+        
+        userInfoEl.textContent = `Usuario conectado: ${user.email}`;
+        return user;
+      } catch (err) {
+        console.error("Error de autenticación:", err);
+        window.location.href = "index.html";
+        return null;
+      }
+    }
+    
+    // Cargar películas del usuario
+    async function loadMovies(userId) {
+      moviesLoading.style.display = "block";
       
-      const userId = user.id;
+      try {
+        const { data: movies, error } = await supabase
+          .from("movies")
+          .select("*")
+          .eq("created_by", userId)
+          .order("created_at", { ascending: false });
+        
+        moviesLoading.style.display = "none";
+        
+        if (error) {
+          console.error("Error al cargar películas:", error);
+          moviesTable.innerHTML = `<tr><td colspan="6">Error al cargar películas: ${error.message}</td></tr>`;
+          return;
+        }
+        
+        if (movies && movies.length > 0) {
+          moviesTable.innerHTML = "";
+          movies.forEach(movie => {
+            const posterUrl = movie.poster_url || 'https://via.placeholder.com/80x120?text=Sin+Imagen';
+            const created = new Date(movie.created_at).toLocaleString();
+            
+            moviesTable.innerHTML += `
+              <tr>
+                <td><img src="${posterUrl}" alt="${movie.title}" onerror="this.src='https://via.placeholder.com/80x120?text=Error'"/></td>
+                <td>${movie.title}</td>
+                <td>${movie.duration_minutes} min</td>
+                <td>${movie.genre || 'No especificado'}</td>
+                <td>${created}</td>
+                <td class="actions-column">
+                  ${movie.movie_url ? `<button class="btn-small btn-view" onclick="window.open('${movie.movie_url}', '_blank')">Ver</button>` : 'No disponible'}
+                </td>
+              </tr>
+            `;
+          });
+        } else {
+          moviesTable.innerHTML = `<tr><td colspan="6">No has subido películas aún.</td></tr>`;
+        }
+      } catch (err) {
+        console.error("Error al procesar películas:", err);
+        moviesLoading.style.display = "none";
+        moviesTable.innerHTML = `<tr><td colspan="6">Error inesperado al cargar películas.</td></tr>`;
+      }
+    }
+    
+    // Inicialización
+    document.addEventListener("DOMContentLoaded", async () => {
+      const user = await checkAuth();
+      if (!user) return;
       
-      // Cargar películas del usuario
-      loadMovies(userId);
+      loadMovies(user.id);
       
       // Vista previa de poster
       const posterUrlInput = document.getElementById("poster_url");
@@ -243,8 +409,14 @@
         }
       });
       
+      // Cerrar sesión
+      logoutBtn.addEventListener("click", async () => {
+        await supabase.auth.signOut();
+        window.location.href = "index.html";
+      });
+      
       // Envío del formulario
-      document.getElementById("movie-form").addEventListener("submit", async (e) => {
+      form.addEventListener("submit", async (e) => {
         e.preventDefault();
         
         const title = document.getElementById("title").value.trim();
@@ -256,75 +428,49 @@
         
         // Validaciones
         if (!title || !duration || !genre || !movie_url) {
-          alert("Por favor complete todos los campos obligatorios");
+          showNotification(errorNotification, "Por favor complete todos los campos obligatorios");
           return;
         }
         
         if (duration <= 0) {
-          alert("La duración debe ser mayor a 0 minutos");
+          showNotification(errorNotification, "La duración debe ser mayor a 0 minutos");
           return;
         }
         
-        // Insertar en Supabase
-        const { error: insertError } = await supabase.from("movies").insert([{
-          title,
-          description,
-          duration_minutes: duration,
-          genre,
-          poster_url,
-          movie_url,
-          created_by: userId
-        }]);
+        // Mostrar estado de carga
+        showLoading(submitBtn, submitLoading);
         
-        if (insertError) {
-          console.error("Error al subir la película:", insertError);
-          alert("Error al subir la película: " + insertError.message);
-        } else {
-          alert("¡Película subida con éxito!");
-          e.target.reset();
-          posterPreview.style.display = "none";
-          videoPreview.style.display = "none";
-          loadMovies(userId);
+        try {
+          // Insertar en Supabase
+          const { error: insertError } = await supabase.from("movies").insert([{
+            title,
+            description,
+            duration_minutes: duration,
+            genre,
+            poster_url,
+            movie_url,
+            created_by: user.id
+          }]);
+          
+          hideLoading(submitBtn, submitLoading);
+          
+          if (insertError) {
+            console.error("Error al subir la película:", insertError);
+            showNotification(errorNotification, "Error al subir la película: " + insertError.message);
+          } else {
+            showNotification(successNotification);
+            form.reset();
+            posterPreview.style.display = "none";
+            videoPreview.style.display = "none";
+            loadMovies(user.id);
+          }
+        } catch (err) {
+          hideLoading(submitBtn, submitLoading);
+          console.error("Error inesperado:", err);
+          showNotification(errorNotification, "Error inesperado al procesar la solicitud");
         }
       });
     });
-    
-    async function loadMovies(userId) {
-      const { data: movies, error } = await supabase
-        .from("movies")
-        .select("*")
-        .eq("created_by", userId)
-        .order("created_at", { ascending: false });
-      
-      const table = document.getElementById("movies-table");
-      table.innerHTML = "";
-      
-      if (error) {
-        console.error("Error al cargar películas:", error);
-        table.innerHTML = `<tr><td colspan="6">Error al cargar películas: ${error.message}</td></tr>`;
-        return;
-      }
-      
-      if (movies && movies.length > 0) {
-        movies.forEach(movie => {
-          const posterUrl = movie.poster_url || 'https://via.placeholder.com/80x120?text=Sin+Imagen';
-          table.innerHTML += `
-            <tr>
-              <td><img src="${posterUrl}" alt="${movie.title}" onerror="this.src='https://via.placeholder.com/80x120?text=Error'"/></td>
-              <td>${movie.title}</td>
-              <td>${movie.duration_minutes} min</td>
-              <td>${movie.genre || 'No especificado'}</td>
-              <td>${new Date(movie.created_at).toLocaleString()}</td>
-              <td class="actions-column">
-                ${movie.movie_url ? `<button class="btn-small btn-view" onclick="window.open('${movie.movie_url}', '_blank')">Ver</button>` : 'No disponible'}
-              </td>
-            </tr>
-          `;
-        });
-      } else {
-        table.innerHTML = `<tr><td colspan="6">No has subido películas aún.</td></tr>`;
-      }
-    }
   </script>
 </body>
 </html>
