@@ -2,32 +2,53 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Test Bunny API</title>
+  <title>Subir archivo a Bunny</title>
 </head>
 <body>
-  <h2>Test de conexión con Bunny</h2>
-  <div id="status">Verificando conexión...</div>
+  <h2>Subir archivo a Bunny CDN</h2>
+  
+  <!-- Formulario para seleccionar archivo -->
+  <input type="file" id="fileInput" />
+  <button onclick="uploadFile()">Subir archivo</button>
+  
+  <div id="status">Esperando archivo...</div>
 
   <script>
-    const libraryId = '399619'; // Reemplaza con tu Library ID real
-    const apiKey = '5ce19b6a-b9ee-4d43-a22850932484-4bac-40f6';       // Reemplaza con tu API Key real
+    const storageZoneName = 'mi-pelicula'; // Nombre de tu Storage Zone
+    const accessKey = '38c1795e-dd6e-441c-8ba0d17011c0-484a-4437';     // Reemplaza con tu Access Key real
 
-    fetch(`https://video.bunnycdn.com/library/${libraryId}/videos`, {
-      headers: {
-        'AccessKey': apiKey
+    function uploadFile() {
+      const fileInput = document.getElementById('fileInput');
+      const file = fileInput.files[0]; // Obtiene el archivo seleccionado
+
+      if (!file) {
+        document.getElementById('status').innerText = '❌ No se seleccionó un archivo';
+        return;
       }
-    })
-    .then(res => {
-      if (res.ok) {
-        document.getElementById('status').innerText = '✅ API conectada';
-      } else {
-        document.getElementById('status').innerText = '❌ Error en la API';
-      }
-    })
-    .catch(error => {
-      console.error('Error:', error);
-      document.getElementById('status').innerText = '❌ Error de conexión';
-    });
+
+      const formData = new FormData();
+      formData.append('file', file);
+
+      // Subir archivo a Bunny CDN
+      fetch(`https://storage.bunnycdn.com/${storageZoneName}/${file.name}`, {
+        method: 'POST',
+        headers: {
+          'AccessKey': accessKey
+        },
+        body: formData
+      })
+      .then(res => {
+        if (res.ok) {
+          document.getElementById('status').innerText = '✅ Archivo subido correctamente';
+        } else {
+          document.getElementById('status').innerText = '❌ Error al subir el archivo';
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        document.getElementById('status').innerText = '❌ Error de conexión';
+      });
+    }
   </script>
 </body>
 </html>
