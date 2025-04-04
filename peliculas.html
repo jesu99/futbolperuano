@@ -2,103 +2,327 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Subir Películas</title>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
-    body { font-family: Arial, sans-serif; padding: 20px; }
-    input, textarea, button { display: block; margin: 10px 0; width: 100%; max-width: 500px; }
-    table { width: 100%; border-collapse: collapse; margin-top: 30px; }
-    th, td { padding: 10px; border: 1px solid #ccc; text-align: left; }
-    img { width: 80px; height: auto; }
+    body { 
+      font-family: Arial, sans-serif; 
+      padding: 20px; 
+      background-color: #f5f5f5;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    .container {
+      background-color: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    input, textarea, button, select { 
+      display: block; 
+      margin: 10px 0; 
+      width: 100%; 
+      max-width: 500px;
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+    button {
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      cursor: pointer;
+      padding: 10px;
+      font-weight: bold;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+    table { 
+      width: 100%; 
+      border-collapse: collapse; 
+      margin-top: 30px; 
+    }
+    th, td { 
+      padding: 12px; 
+      border: 1px solid #ddd; 
+      text-align: left; 
+    }
+    th {
+      background-color: #f2f2f2;
+    }
+    tr:nth-child(even) {
+      background-color: #f9f9f9;
+    }
+    img { 
+      width: 80px; 
+      height: auto;
+      border-radius: 4px;
+      object-fit: cover;
+    }
+    .preview-container {
+      margin: 15px 0;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+    }
+    .preview-image {
+      max-width: 200px;
+      max-height: 300px;
+      margin: 10px 0;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      display: none;
+    }
+    .video-preview {
+      max-width: 400px;
+      margin: 10px 0;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      display: none;
+    }
+    .form-group {
+      margin-bottom: 15px;
+    }
+    .form-group label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+    .actions-column {
+      text-align: center;
+    }
+    .btn-small {
+      width: auto;
+      display: inline-block;
+      margin: 0 2px;
+      padding: 5px 10px;
+      font-size: 14px;
+    }
+    .btn-view {
+      background-color: #2196F3;
+    }
+    .btn-view:hover {
+      background-color: #0b7dda;
+    }
   </style>
 </head>
 <body>
-  <h1>📽 Subir Película</h1>
-
-  <form id="movie-form">
-    <input type="text" id="title" placeholder="Título" required />
-    <textarea id="description" placeholder="Descripción"></textarea>
-    <input type="number" id="duration" placeholder="Duración en minutos" required />
-    <input type="text" id="genre" placeholder="Género (Ej: Acción)" />
-    <input type="url" id="poster_url" placeholder="URL de la portada" />
-    <button type="submit">Subir Película</button>
-  </form>
-
-  <h2>🎞 Tus Películas</h2>
-  <table>
-    <thead>
-      <tr>
-        <th>Portada</th>
-        <th>Título</th>
-        <th>Duración</th>
-        <th>Género</th>
-        <th>Fecha</th>
-      </tr>
-    </thead>
-    <tbody id="movies-table"></tbody>
-  </table>
-
+  <div class="container">
+    <h1>📽 Subir Película</h1>
+    <form id="movie-form">
+      <div class="form-group">
+        <label for="title">Título:</label>
+        <input type="text" id="title" placeholder="Título de la película" required />
+      </div>
+      
+      <div class="form-group">
+        <label for="description">Descripción:</label>
+        <textarea id="description" placeholder="Descripción de la película" rows="4"></textarea>
+      </div>
+      
+      <div class="form-group">
+        <label for="duration">Duración (minutos):</label>
+        <input type="number" id="duration" placeholder="Ej: 120" required min="1" />
+      </div>
+      
+      <div class="form-group">
+        <label for="genre">Género:</label>
+        <select id="genre" required>
+          <option value="">Selecciona un género</option>
+          <option value="Acción">Acción</option>
+          <option value="Aventura">Aventura</option>
+          <option value="Comedia">Comedia</option>
+          <option value="Drama">Drama</option>
+          <option value="Ciencia Ficción">Ciencia Ficción</option>
+          <option value="Terror">Terror</option>
+          <option value="Romance">Romance</option>
+          <option value="Documental">Documental</option>
+          <option value="Animación">Animación</option>
+          <option value="Thriller">Thriller</option>
+          <option value="Otro">Otro</option>
+        </select>
+      </div>
+      
+      <div class="form-group">
+        <label for="poster_url">URL de la portada:</label>
+        <input type="url" id="poster_url" placeholder="https://ejemplo.com/imagen.jpg" />
+        <small>URL de la imagen de portada de la película</small>
+        <div class="preview-container">
+          <div>Vista previa de la portada:</div>
+          <img id="poster-preview" class="preview-image" alt="Vista previa" />
+        </div>
+      </div>
+      
+      <div class="form-group">
+        <label for="movie_url">URL del video:</label>
+        <input type="url" id="movie_url" placeholder="https://ejemplo.com/pelicula.mp4" required />
+        <small>URL del archivo de video de la película</small>
+        <div class="preview-container">
+          <div>Vista previa del video:</div>
+          <video id="video-preview" class="video-preview" controls>
+            Tu navegador no soporta la reproducción de videos.
+          </video>
+        </div>
+      </div>
+      
+      <button type="submit">Subir Película</button>
+    </form>
+  </div>
+  
+  <div class="container" style="margin-top: 20px;">
+    <h2>🎞 Tus Películas</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Portada</th>
+          <th>Título</th>
+          <th>Duración</th>
+          <th>Género</th>
+          <th>Fecha</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody id="movies-table"></tbody>
+    </table>
+  </div>
+  
   <script>
-    const supabase = supabase.createClient('https://srormesvqserhrfugrls.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNyb3JtZXN2cXNlcmhyZnVncmxzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDMzNTk0MzUsImV4cCI6MjA1ODkzNTQzNX0.zGjT9CbTd6jb1lEBzK3OrsZJIgZSqJH9zfLXzWvLTlM');
-
+    // Inicialización de Supabase
+    const supabaseUrl = 'https://srormesvqserhrfugrls.supabase.co';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNyb3JtZXN2cXNlcmhyZnVncmxzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDMzNTk0MzUsImV4cCI6MjA1ODkzNTQzNX0.zGjT9CbTd6jb1lEBzK3OrsZJIgZSqJH9zfLXzWvLTlM';
+    const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+    
     document.addEventListener("DOMContentLoaded", async () => {
+      // Verificar autenticación del usuario
       const { data: { user }, error } = await supabase.auth.getUser();
-      if (!user) return window.location.href = "index.html";
-
+      if (!user) {
+        window.location.href = "index.html";
+        return;
+      }
+      
       const userId = user.id;
+      
+      // Cargar películas del usuario
       loadMovies(userId);
-
+      
+      // Vista previa de poster
+      const posterUrlInput = document.getElementById("poster_url");
+      const posterPreview = document.getElementById("poster-preview");
+      
+      posterUrlInput.addEventListener("input", function() {
+        const url = this.value.trim();
+        if (url) {
+          posterPreview.src = url;
+          posterPreview.style.display = "block";
+          posterPreview.onerror = function() {
+            this.style.display = "none";
+            this.src = "";
+          };
+        } else {
+          posterPreview.style.display = "none";
+        }
+      });
+      
+      // Vista previa de video
+      const videoUrlInput = document.getElementById("movie_url");
+      const videoPreview = document.getElementById("video-preview");
+      
+      videoUrlInput.addEventListener("input", function() {
+        const url = this.value.trim();
+        if (url) {
+          videoPreview.src = url;
+          videoPreview.style.display = "block";
+          videoPreview.onerror = function() {
+            this.style.display = "none";
+            this.src = "";
+          };
+        } else {
+          videoPreview.style.display = "none";
+        }
+      });
+      
+      // Envío del formulario
       document.getElementById("movie-form").addEventListener("submit", async (e) => {
         e.preventDefault();
-        const title = document.getElementById("title").value;
-        const description = document.getElementById("description").value;
+        
+        const title = document.getElementById("title").value.trim();
+        const description = document.getElementById("description").value.trim();
         const duration = parseInt(document.getElementById("duration").value);
         const genre = document.getElementById("genre").value;
-        const poster_url = document.getElementById("poster_url").value;
-
+        const poster_url = document.getElementById("poster_url").value.trim();
+        const movie_url = document.getElementById("movie_url").value.trim();
+        
+        // Validaciones
+        if (!title || !duration || !genre || !movie_url) {
+          alert("Por favor complete todos los campos obligatorios");
+          return;
+        }
+        
+        if (duration <= 0) {
+          alert("La duración debe ser mayor a 0 minutos");
+          return;
+        }
+        
+        // Insertar en Supabase
         const { error: insertError } = await supabase.from("movies").insert([{
           title,
           description,
           duration_minutes: duration,
           genre,
           poster_url,
+          movie_url,
           created_by: userId
         }]);
-
+        
         if (insertError) {
+          console.error("Error al subir la película:", insertError);
           alert("Error al subir la película: " + insertError.message);
         } else {
-          alert("Película subida con éxito");
+          alert("¡Película subida con éxito!");
           e.target.reset();
+          posterPreview.style.display = "none";
+          videoPreview.style.display = "none";
           loadMovies(userId);
         }
       });
     });
-
+    
     async function loadMovies(userId) {
       const { data: movies, error } = await supabase
         .from("movies")
         .select("*")
         .eq("created_by", userId)
         .order("created_at", { ascending: false });
-
+      
       const table = document.getElementById("movies-table");
       table.innerHTML = "";
-
+      
+      if (error) {
+        console.error("Error al cargar películas:", error);
+        table.innerHTML = `<tr><td colspan="6">Error al cargar películas: ${error.message}</td></tr>`;
+        return;
+      }
+      
       if (movies && movies.length > 0) {
         movies.forEach(movie => {
+          const posterUrl = movie.poster_url || 'https://via.placeholder.com/80x120?text=Sin+Imagen';
           table.innerHTML += `
             <tr>
-              <td><img src="${movie.poster_url || ''}" alt="Portada" /></td>
+              <td><img src="${posterUrl}" alt="${movie.title}" onerror="this.src='https://via.placeholder.com/80x120?text=Error'"/></td>
               <td>${movie.title}</td>
               <td>${movie.duration_minutes} min</td>
-              <td>${movie.genre || ''}</td>
+              <td>${movie.genre || 'No especificado'}</td>
               <td>${new Date(movie.created_at).toLocaleString()}</td>
+              <td class="actions-column">
+                ${movie.movie_url ? `<button class="btn-small btn-view" onclick="window.open('${movie.movie_url}', '_blank')">Ver</button>` : 'No disponible'}
+              </td>
             </tr>
           `;
         });
       } else {
-        table.innerHTML = `<tr><td colspan="5">No has subido películas aún.</td></tr>`;
+        table.innerHTML = `<tr><td colspan="6">No has subido películas aún.</td></tr>`;
       }
     }
   </script>
