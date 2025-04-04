@@ -13,6 +13,15 @@
             padding: 0;
             color: #333;
         }
+        .page-layout {
+            display: flex;
+            justify-content: center;
+        }
+        .side-ad {
+            width: 250px;
+            padding: 10px;
+            margin-top: 30px;
+        }
         .container {
             max-width: 800px;
             margin: 30px auto;
@@ -20,6 +29,11 @@
             border-radius: 8px;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
             padding: 20px;
+        }
+        .banner-ad {
+            max-width: 800px;
+            margin: 20px auto 0;
+            text-align: center;
         }
         .header {
             display: flex;
@@ -181,135 +195,163 @@
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>Subir Película</h1>
-            <div class="user-info">
-                <span id="user-email"></span>
-                <button id="logout-btn" style="margin-left: 10px;">Cerrar Sesión</button>
-            </div>
+    <!-- Banner Ad at the top -->
+    <div class="banner-ad">
+        <script type="text/javascript">
+            atOptions = {
+                'key': 'b330ccd204185aee9ef640adccf896d2',
+                'format': 'iframe',
+                'height': 90,
+                'width': 728,
+                'params': {}
+            };
+        </script>
+        <script type="text/javascript" src="//www.highperformanceformat.com/b330ccd204185aee9ef640adccf896d2/invoke.js"></script>
+    </div>
+
+    <div class="page-layout">
+        <!-- Left Side Ad -->
+        <div class="side-ad">
+            <script async="async" data-cfasync="false" src="//pl26063295.effectiveratecpm.com/2537ae2ea8b16bc9e554273a94dfd098/invoke.js"></script>
+            <div id="container-2537ae2ea8b16bc9e554273a94dfd098"></div>
         </div>
 
-        <div class="notification" id="notification">
-            Por favor, haz clic en al menos un anuncio antes de continuar.
-        </div>
-
-        <div class="progress-bar">
-            <div class="progress-step active">
-                <div class="progress-circle">1</div>
-                <div>Detalles</div>
-            </div>
-            <div class="progress-step">
-                <div class="progress-circle">2</div>
-                <div>Anuncios</div>
-            </div>
-            <div class="progress-step">
-                <div class="progress-circle">3</div>
-                <div>Finalizar</div>
-            </div>
-        </div>
-
-        <form id="movie-form">
-            <div class="step active" id="step1">
-                <div class="form-group">
-                    <label for="video-url">URL del Video:</label>
-                    <input type="url" id="video-url" name="video-url" required placeholder="https://ejemplo.com/video">
+        <div class="container">
+            <div class="header">
+                <h1>Subir Película</h1>
+                <div class="user-info">
+                    <span id="user-email"></span>
+                    <button id="logout-btn" style="margin-left: 10px;">Cerrar Sesión</button>
                 </div>
-
-                <div class="form-group">
-                    <label for="cover-url">URL de la Portada:</label>
-                    <input type="url" id="cover-url" name="cover-url" required placeholder="https://ejemplo.com/imagen.jpg" oninput="previewCover()">
-                </div>
-
-                <div class="preview" id="cover-preview">
-                    <p>La imagen de portada se mostrará aquí</p>
-                </div>
-
-                <div class="form-group">
-                    <label for="title">Título de la Película:</label>
-                    <input type="text" id="title" name="title" required placeholder="Ingresa el título de la película">
-                </div>
-
-                <div class="form-group">
-                    <label for="genre">Género:</label>
-                    <select id="genre" name="genre" required>
-                        <option value="" disabled selected>Selecciona un género</option>
-                        <option value="drama">Drama</option>
-                        <option value="terror">Terror</option>
-                        <option value="comedia">Comedia</option>
-                        <option value="romance">Romance</option>
-                        <option value="accion">Acción</option>
-                        <option value="suspenso">Suspenso</option>
-                        <option value="kdorama">K-Drama</option>
-                        <option value="comedia-romantica">Comedia Romántica</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label for="review">Reseña:</label>
-                    <textarea id="review" name="review" required placeholder="Escribe una reseña de la película..."></textarea>
-                </div>
-
-                <button type="button" onclick="nextStep(1, 2)">Siguiente</button>
             </div>
 
-            <div class="step" id="step2">
-                <h2>Por favor, mira y haz clic en al menos un anuncio antes de continuar</h2>
-                
-                <div class="ad-container">
-                    <div class="ad" onclick="adClicked(1)">
-                        <h3>Anuncio 1</h3>
-                        <p>Este es un anuncio promocional</p>
-                        <div class="ad-overlay" id="ad-overlay-1">¡Clic registrado!</div>
+            <div class="notification" id="notification">
+                Por favor, haz clic en al menos un anuncio antes de continuar.
+            </div>
+
+            <div class="progress-bar">
+                <div class="progress-step active">
+                    <div class="progress-circle">1</div>
+                    <div>Detalles</div>
+                </div>
+                <div class="progress-step">
+                    <div class="progress-circle">2</div>
+                    <div>Anuncios</div>
+                </div>
+                <div class="progress-step">
+                    <div class="progress-circle">3</div>
+                    <div>Finalizar</div>
+                </div>
+            </div>
+
+            <form id="movie-form">
+                <div class="step active" id="step1">
+                    <div class="form-group">
+                        <label for="video-url">URL del Video:</label>
+                        <input type="url" id="video-url" name="video-url" required placeholder="https://ejemplo.com/video">
                     </div>
-                    <div class="ad" onclick="adClicked(2)">
-                        <h3>Anuncio 2</h3>
-                        <p>Este es un anuncio promocional</p>
-                        <div class="ad-overlay" id="ad-overlay-2">¡Clic registrado!</div>
+
+                    <div class="form-group">
+                        <label for="cover-url">URL de la Portada:</label>
+                        <input type="url" id="cover-url" name="cover-url" required placeholder="https://ejemplo.com/imagen.jpg" oninput="previewCover()">
+                    </div>
+
+                    <div class="preview" id="cover-preview">
+                        <p>La imagen de portada se mostrará aquí</p>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="title">Título de la Película:</label>
+                        <input type="text" id="title" name="title" required placeholder="Ingresa el título de la película">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="genre">Género:</label>
+                        <select id="genre" name="genre" required>
+                            <option value="" disabled selected>Selecciona un género</option>
+                            <option value="drama">Drama</option>
+                            <option value="terror">Terror</option>
+                            <option value="comedia">Comedia</option>
+                            <option value="romance">Romance</option>
+                            <option value="accion">Acción</option>
+                            <option value="suspenso">Suspenso</option>
+                            <option value="kdorama">K-Drama</option>
+                            <option value="comedia-romantica">Comedia Romántica</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="review">Reseña:</label>
+                        <textarea id="review" name="review" required placeholder="Escribe una reseña de la película..."></textarea>
+                    </div>
+
+                    <button type="button" onclick="nextStep(1, 2)">Siguiente</button>
+                </div>
+
+                <div class="step" id="step2">
+                    <h2>Por favor, mira y haz clic en al menos un anuncio antes de continuar</h2>
+                    
+                    <div class="ad-container">
+                        <div class="ad" onclick="adClicked(1)">
+                            <h3>Anuncio 1</h3>
+                            <p>Este es un anuncio promocional</p>
+                            <div class="ad-overlay" id="ad-overlay-1">¡Clic registrado!</div>
+                        </div>
+                        <div class="ad" onclick="adClicked(2)">
+                            <h3>Anuncio 2</h3>
+                            <p>Este es un anuncio promocional</p>
+                            <div class="ad-overlay" id="ad-overlay-2">¡Clic registrado!</div>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; justify-content: space-between;">
+                        <button type="button" onclick="prevStep(2, 1)">Anterior</button>
+                        <button type="button" onclick="checkAdsAndContinue()">Siguiente</button>
                     </div>
                 </div>
 
-                <div style="display: flex; justify-content: space-between;">
-                    <button type="button" onclick="prevStep(2, 1)">Anterior</button>
-                    <button type="button" onclick="checkAdsAndContinue()">Siguiente</button>
-                </div>
-            </div>
+                <div class="step" id="step3">
+                    <h2>Confirmación</h2>
+                    <p>Por favor, verifica que la información ingresada sea correcta:</p>
+                    
+                    <div class="form-group">
+                        <strong>Título:</strong>
+                        <p id="confirm-title"></p>
+                    </div>
+                    
+                    <div class="form-group">
+                        <strong>Género:</strong>
+                        <p id="confirm-genre"></p>
+                    </div>
+                    
+                    <div class="form-group">
+                        <strong>URL del Video:</strong>
+                        <p id="confirm-video"></p>
+                    </div>
+                    
+                    <div class="form-group">
+                        <strong>Portada:</strong>
+                        <div id="confirm-cover"></div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <strong>Reseña:</strong>
+                        <p id="confirm-review"></p>
+                    </div>
 
-            <div class="step" id="step3">
-                <h2>Confirmación</h2>
-                <p>Por favor, verifica que la información ingresada sea correcta:</p>
-                
-                <div class="form-group">
-                    <strong>Título:</strong>
-                    <p id="confirm-title"></p>
+                    <div style="display: flex; justify-content: space-between;">
+                        <button type="button" onclick="prevStep(3, 2)">Anterior</button>
+                        <button type="submit">Enviar Película</button>
+                    </div>
                 </div>
-                
-                <div class="form-group">
-                    <strong>Género:</strong>
-                    <p id="confirm-genre"></p>
-                </div>
-                
-                <div class="form-group">
-                    <strong>URL del Video:</strong>
-                    <p id="confirm-video"></p>
-                </div>
-                
-                <div class="form-group">
-                    <strong>Portada:</strong>
-                    <div id="confirm-cover"></div>
-                </div>
-                
-                <div class="form-group">
-                    <strong>Reseña:</strong>
-                    <p id="confirm-review"></p>
-                </div>
+            </form>
+        </div>
 
-                <div style="display: flex; justify-content: space-between;">
-                    <button type="button" onclick="prevStep(3, 2)">Anterior</button>
-                    <button type="submit">Enviar Película</button>
-                </div>
-            </div>
-        </form>
+        <!-- Right Side Ad -->
+        <div class="side-ad">
+            <script async="async" data-cfasync="false" src="//pl26063295.effectiveratecpm.com/2537ae2ea8b16bc9e554273a94dfd098/invoke.js"></script>
+            <div id="container-2537ae2ea8b16bc9e554273a94dfd098"></div>
+        </div>
     </div>
 
     <script>
