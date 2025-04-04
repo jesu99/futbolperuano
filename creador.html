@@ -97,40 +97,7 @@
         .ad-container {
             margin: 20px 0;
             padding: 15px;
-            background-color: #f9f9f9;
-            border: 1px solid #ddd;
-            border-radius: 4px;
             text-align: center;
-        }
-        .ad {
-            display: inline-block;
-            width: 300px;
-            height: 250px;
-            background-color: #e0e0e0;
-            margin: 10px;
-            padding: 10px;
-            border-radius: 4px;
-            cursor: pointer;
-            position: relative;
-        }
-        .ad-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.5);
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 18px;
-            font-weight: bold;
-            opacity: 0;
-            transition: opacity 0.3s;
-        }
-        .ad:hover .ad-overlay {
-            opacity: 1;
         }
         .step {
             display: none;
@@ -289,19 +256,11 @@
                 </div>
 
                 <div class="step" id="step2">
-                    <h2>Por favor, mira y haz clic en al menos un anuncio antes de continuar</h2>
+                    <h2>Por favor, haz clic en al menos un anuncio antes de continuar</h2>
                     
                     <div class="ad-container">
-                        <div class="ad" onclick="adClicked(1)">
-                            <h3>Anuncio 1</h3>
-                            <p>Este es un anuncio promocional</p>
-                            <div class="ad-overlay" id="ad-overlay-1">¡Clic registrado!</div>
-                        </div>
-                        <div class="ad" onclick="adClicked(2)">
-                            <h3>Anuncio 2</h3>
-                            <p>Este es un anuncio promocional</p>
-                            <div class="ad-overlay" id="ad-overlay-2">¡Clic registrado!</div>
-                        </div>
+                        <script async="async" data-cfasync="false" src="//pl26063295.effectiveratecpm.com/2537ae2ea8b16bc9e554273a94dfd098/invoke.js"></script>
+                        <div id="container-2537ae2ea8b16bc9e554273a94dfd098"></div>
                     </div>
 
                     <div style="display: flex; justify-content: space-between;">
@@ -363,6 +322,7 @@
         // Variables globales
         let adClicks = 0;
         let userId;
+        let adClickRegistered = false;
 
         // Verificar sesión del usuario al cargar la página
         document.addEventListener("DOMContentLoaded", async function() {
@@ -376,11 +336,50 @@
                 
                 userId = user.id;
                 document.getElementById("user-email").textContent = user.email;
+                
+                // Configurar observadores para detectar clics en anuncios
+                setupAdClickObservers();
             } catch (error) {
                 console.error("Error al verificar la sesión:", error);
                 window.location.href = "index.html";
             }
         });
+
+        // Configurar observadores para detectar clics en anuncios
+        function setupAdClickObservers() {
+            // Usar MutationObserver para detectar cuando los anuncios se carguen
+            const adContainers = document.querySelectorAll("#container-2537ae2ea8b16bc9e554273a94dfd098");
+            
+            adContainers.forEach(container => {
+                container.addEventListener('click', function() {
+                    handleAdClick();
+                });
+                
+                // Observar cambios en el contenedor para detectar cuándo se carga el anuncio
+                const observer = new MutationObserver(function(mutations) {
+                    mutations.forEach(function(mutation) {
+                        if (mutation.addedNodes.length > 0) {
+                            // Añadir escuchadores de eventos a los elementos añadidos
+                            mutation.addedNodes.forEach(function(node) {
+                                if (node.nodeType === 1) { // Es un elemento
+                                    node.addEventListener('click', function() {
+                                        handleAdClick();
+                                    });
+                                }
+                            });
+                        }
+                    });
+                });
+                
+                observer.observe(container, { childList: true, subtree: true });
+            });
+        }
+
+        // Manejar clic en anuncio
+        function handleAdClick() {
+            adClickRegistered = true;
+            registerAdClick();
+        }
 
         // Cerrar sesión
         document.getElementById("logout-btn").addEventListener("click", async function() {
@@ -419,22 +418,25 @@
                     alert("Por favor, completa todos los campos antes de continuar.");
                     return;
                 }
+                
+                // Verificar si ya existe una película con el mismo título o URL
+                checkMovieExists(title, videoUrl, function(exists) {
+                    if (exists) {
+                        alert("Ya existe una película con el mismo título o URL del video. Por favor, verifica la información.");
+                        return;
+                    }
+                    
+                    // Si no existe, continuar al siguiente paso
+                    document.getElementById(`step${current}`).classList.remove("active");
+                    document.getElementById(`step${next}`).classList.add("active");
+                    updateProgressBar(next);
+                });
+                return;
             }
             
             document.getElementById(`step${current}`).classList.remove("active");
             document.getElementById(`step${next}`).classList.add("active");
-            
-            // Actualizar la barra de progreso
-            document.querySelectorAll(".progress-step").forEach((step, index) => {
-                if (index + 1 < next) {
-                    step.classList.add("completed");
-                }
-                if (index + 1 === next) {
-                    step.classList.add("active");
-                } else {
-                    step.classList.remove("active");
-                }
-            });
+            updateProgressBar(next);
             
             // Si es el paso de confirmación, llenar los datos
             if (next === 3) {
@@ -444,6 +446,20 @@
                 document.getElementById("confirm-review").textContent = document.getElementById("review").value;
                 document.getElementById("confirm-cover").innerHTML = `<img src="${document.getElementById("cover-url").value}" alt="Portada de la película" style="max-width: 200px;">`;
             }
+        }
+
+        function updateProgressBar(currentStep) {
+            // Actualizar la barra de progreso
+            document.querySelectorAll(".progress-step").forEach((step, index) => {
+                if (index + 1 < currentStep) {
+                    step.classList.add("completed");
+                }
+                if (index + 1 === currentStep) {
+                    step.classList.add("active");
+                } else {
+                    step.classList.remove("active");
+                }
+            });
         }
 
         function prevStep(current, prev) {
@@ -461,18 +477,34 @@
             });
         }
 
-        // Gestión de clics en anuncios
-        function adClicked(adNumber) {
-            adClicks++;
-            document.getElementById(`ad-overlay-${adNumber}`).style.opacity = "1";
-            
-            // Registrar el clic en la base de datos
-            registerAdClick();
-            
-            // Ocultar el overlay después de 2 segundos
-            setTimeout(() => {
-                document.getElementById(`ad-overlay-${adNumber}`).style.opacity = "0";
-            }, 2000);
+        // Verificar si la película ya existe
+        async function checkMovieExists(title, videoUrl, callback) {
+            try {
+                // Buscar por título similar (ignorando mayúsculas/minúsculas)
+                const { data: titleData, error: titleError } = await supabase
+                    .from('movies')
+                    .select('id')
+                    .ilike('title', title)
+                    .limit(1);
+                
+                if (titleError) throw titleError;
+                
+                // Buscar por URL de video
+                const { data: urlData, error: urlError } = await supabase
+                    .from('movies')
+                    .select('id')
+                    .eq('video_url', videoUrl)
+                    .limit(1);
+                
+                if (urlError) throw urlError;
+                
+                // Si encontramos coincidencias en título o URL, la película ya existe
+                const exists = (titleData && titleData.length > 0) || (urlData && urlData.length > 0);
+                callback(exists);
+            } catch (error) {
+                console.error("Error al verificar película existente:", error);
+                callback(false); // En caso de error, permitimos continuar
+            }
         }
 
         async function registerAdClick() {
@@ -490,13 +522,15 @@
                 if (error) {
                     console.error("Error al registrar el clic:", error);
                 }
+                
+                adClicks++;
             } catch (error) {
                 console.error("Error al procesar el clic:", error);
             }
         }
 
         function checkAdsAndContinue() {
-            if (adClicks === 0) {
+            if (!adClickRegistered) {
                 document.getElementById("notification").style.display = "block";
                 setTimeout(() => {
                     document.getElementById("notification").style.display = "none";
