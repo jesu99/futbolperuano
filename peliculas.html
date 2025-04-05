@@ -7,24 +7,49 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
 </head>
 <body>
-  <h1>Bienvenido, <span id="user-email"></span></h1>
+  <h1>Bienvenido, <span id="user-email">Cargando...</span></h1>
+  <p>ID del Usuario: <span id="user-id">Cargando...</span></p>
+  <p>Balance: $<span id="user-balance">Cargando...</span></p>
+  <button id="logout">Cerrar sesión</button>
 
   <script>
-    // Configura Supabase
     const supabase = supabase.createClient(
-      'https://srormesvqserhrfugrls.supabase.co', // 🔁 reemplaza con tu URL
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNyb3JtZXN2cXNlcmhyZnVncmxzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDMzNTk0MzUsImV4cCI6MjA1ODkzNTQzNX0.zGjT9CbTd6jb1lEBzK3OrsZJIgZSqJH9zfLXzWvLTlM'                 // 🔁 reemplaza con tu clave anónima
+      'https://srormesvqserhrfugrls.supabase.co',
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNyb3JtZXN2cXNlcmhyZnVncmxzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDMzNTk0MzUsImV4cCI6MjA1ODkzNTQzNX0.zGjT9CbTd6jb1lEBzK3OrsZJIgZSqJH9zfLXzWvLTlM'
     );
 
-    document.addEventListener("DOMContentLoaded", async function () {
+    document.addEventListener("DOMContentLoaded", async () => {
+      // Verificar sesión del usuario
       const { data: { user }, error } = await supabase.auth.getUser();
-      
+
       if (error || !user) {
-        window.location.href = "index.html"; // 🔁 redirige si no hay sesión
+        window.location.href = "index.html";
         return;
       }
 
+      // Mostrar email e ID
       document.getElementById("user-email").textContent = user.email;
+      document.getElementById("user-id").textContent = user.id;
+
+      // Obtener datos adicionales del usuario desde la tabla 'users'
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('balance')
+        .eq('id', user.id)
+        .single();
+
+      if (userError || !userData) {
+        document.getElementById("user-balance").textContent = 'Error';
+        console.error("Error obteniendo datos del usuario:", userError);
+      } else {
+        document.getElementById("user-balance").textContent = userData.balance.toFixed(3);
+      }
+    });
+
+    // Cierre de sesión
+    document.getElementById("logout").addEventListener("click", async () => {
+      await supabase.auth.signOut();
+      window.location.href = "index.html";
     });
   </script>
 </body>
