@@ -5,66 +5,163 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Películas</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 20px;
+      background-color: #f0f0f0;
+    }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background-color: #333;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
+    .user-info {
+      text-align: right;
+    }
+    .movie-container {
+      display: flex;
+      flex-direction: column;
+      background-color: white;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    .movie-info {
+      display: flex;
+      padding: 20px;
+    }
+    .movie-poster {
+      width: 200px;
+      height: 300px;
+      object-fit: cover;
+      margin-right: 20px;
+      border-radius: 4px;
+    }
+    .movie-details {
+      flex: 1;
+    }
+    .player-container {
+      width: 100%;
+      padding: 20px;
+      text-align: center;
+      display: none;
+    }
+    .player-container iframe {
+      max-width: 100%;
+      border-radius: 8px;
+    }
+    button {
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+      margin-top: 15px;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+    h2, h3 {
+      margin-top: 0;
+    }
+  </style>
   <script>
     const SUPABASE_URL = "https://srormesvqserhrfugrls.supabase.co";
     const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNyb3JtZXN2cXNlcmhyZnVncmxzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDMzNTk0MzUsImV4cCI6MjA1ODkzNTQzNX0.zGjT9CbTd6jb1lEBzK3OrsZJIgZSqJH9zfLXzWvLTlM";
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
+    
     document.addEventListener("DOMContentLoaded", async function () {
       const { data: { user }, error } = await supabase.auth.getUser();
-
       if (error || !user) {
         window.location.href = "login.html"; // o index.html
         return;
       }
-
       document.getElementById("user-email").textContent = user.email;
-
       const { data: userData } = await supabase
         .from("users")
         .select("balance")
         .eq("id", user.id)
         .single();
-
-      document.getElementById("user-balance").textContent = userData.balance ?? 0;
+      document.getElementById("user-balance").textContent = (userData.balance ?? 0).toFixed(3);
     });
-
+    
+    function verPelicula() {
+      document.getElementById("player-container").style.display = "block";
+      document.getElementById("ver-btn").textContent = "Película en reproducción";
+      document.getElementById("ver-btn").disabled = true;
+      
+      // Iniciar el contador para ganar dinero después de 30 segundos
+      setTimeout(function() {
+        document.getElementById("ganar-btn").style.display = "block";
+      }, 30000);
+    }
+    
     async function sumarBalancePeliculas() {
       const { data: { user } } = await supabase.auth.getUser();
-
       const { data: userData, error: fetchError } = await supabase
         .from("users")
         .select("balance")
         .eq("id", user.id)
         .single();
-
       if (fetchError || !userData) {
         console.error("Error al obtener balance:", fetchError);
         return;
       }
-
       const nuevoBalance = parseFloat(userData.balance || 0) + 0.003;
-
       const { error: updateError } = await supabase
         .from("users")
         .update({ balance: nuevoBalance })
         .eq("id", user.id);
-
       if (updateError) {
         console.error("Error actualizando balance:", updateError);
         return;
       }
-
       document.getElementById("user-balance").textContent = nuevoBalance.toFixed(3);
       alert("¡Ganaste S/ 0.003 por ver la película!");
+      
+      // Resetear la interfaz después de ganar
+      document.getElementById("ganar-btn").style.display = "none";
+      document.getElementById("ver-btn").textContent = "Ver película nuevamente";
+      document.getElementById("ver-btn").disabled = false;
     }
   </script>
 </head>
 <body>
-  <h2>Películas 🎬</h2>
-  <p>Usuario logueado: <span id="user-email">Cargando...</span></p>
-  <p>Saldo actual: S/ <span id="user-balance">Cargando...</span></p>
-
-  <button onclick="sumarBalancePeliculas()">Ver película (Ganar S/ 0.003)</button>
+  <div class="header">
+    <h2>Películas 🎬</h2>
+    <div class="user-info">
+      <p>Usuario: <span id="user-email">Cargando...</span></p>
+      <p>Saldo: S/ <span id="user-balance">Cargando...</span></p>
+    </div>
+  </div>
+  
+  <div class="movie-container">
+    <div class="movie-info">
+      <img src="/api/placeholder/200/300" alt="Poster de la película" class="movie-poster">
+      <div class="movie-details">
+        <h3>Título de la Película</h3>
+        <p><strong>Año:</strong> 2024</p>
+        <p><strong>Director:</strong> Nombre del Director</p>
+        <p><strong>Género:</strong> Acción, Aventura</p>
+        <p><strong>Sinopsis:</strong> Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.</p>
+        <button id="ver-btn" onclick="verPelicula()">Ver película</button>
+        <button id="ganar-btn" onclick="sumarBalancePeliculas()" style="display: none; background-color: #ff9800;">Ganar S/ 0.003</button>
+      </div>
+    </div>
+    
+    <div id="player-container" class="player-container">
+      <iframe src="https://streamtape.com/e/2a6VZgbGRbcZvGy/" width="800" height="500" allowfullscreen allowtransparency allow="autoplay" scrolling="no" frameborder="0"></iframe>
+    </div>
+  </div>
 </body>
 </html>
