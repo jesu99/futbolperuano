@@ -8,28 +8,42 @@
   <style>
     body { font-family: sans-serif; padding: 20px; background: #f8f8f8; }
     .pelicula { border: 1px solid #ccc; border-radius: 10px; background: #fff; padding: 16px; margin-bottom: 20px; display: flex; gap: 16px; }
-    .pelicula img { width: 150px; border-radius: 10px; }
+    .pelicula img { width: 150px; height: 225px; object-fit: cover; border-radius: 10px; }
     .info { flex-grow: 1; }
     .timer { margin-top: 10px; font-weight: bold; color: green; }
     .ver-link { display: none; margin-top: 10px; color: blue; font-weight: bold; }
+    .container { max-width: 1200px; margin: 0 auto; }
+    .encabezado { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .saldo { background: #e9f5e9; padding: 10px; border-radius: 5px; }
   </style>
 </head>
 <body>
-  <h1>Bienvenido, <span id="user-email"></span></h1>
-  <div id="catalogo"></div>
+  <div class="container">
+    <div class="encabezado">
+      <h1>Bienvenido, <span id="user-email"></span></h1>
+      <div class="saldo">Saldo: $<span id="user-balance">0.00</span></div>
+    </div>
+    <div id="catalogo"></div>
+  </div>
 
   <script>
-    const supabase = supabase.createClient('https://srormesvqserhrfugrls.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNyb3JtZXN2cXNlcmhyZnVncmxzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDMzNTk0MzUsImV4cCI6MjA1ODkzNTQzNX0.zGjT9CbTd6jb1lEBzK3OrsZJIgZSqJH9zfLXzWvLTlM');
+    // Inicializa Supabase con tu URL y clave anónima
+    const supabaseUrl = 'https://srormesvqserhrfugrls.supabase.co';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNyb3JtZXN2cXNlcmhyZnVncmxzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDMzNTk0MzUsImV4cCI6MjA1ODkzNTQzNX0.zGjT9CbTd6jb1lEBzK3OrsZJIgZSqJH9zfLXzWvLTlM';
+    const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+    
     let userId = null;
+    let userBalance = 0;
 
+    // Datos de películas con URLs de imágenes correctas
     const peliculas = [
       {
         id: "pelicula-1",
         titulo: "El Origen",
-        imagen: "https://streamtape.com/v/2a6VZgbGRbcZvGy/137785--d3208a35-5676-4a65-830f-1a8047d1ac49--xqnr--1092987-1fichier.mp4",
+        imagen: "https://image.tmdb.org/t/p/w500/8IB2e4r4oVhHnANbnm7O3Tj6tF8.jpg", // URL de imagen correcta
         categoria: "Ciencia Ficción",
         sinopsis: "Un ladrón que roba secretos corporativos a través del uso de la tecnología de los sueños.",
-        url: "https://tuservidor.com/peliculas/origen.mp4"
+        url: "https://streamtape.com/v/2a6VZgbGRbcZvGy/137785--d3208a35-5676-4a65-830f-1a8047d1ac49--xqnr--1092987-1fichier.mp4"
       },
       {
         id: "pelicula-2",
@@ -38,27 +52,65 @@
         categoria: "Drama / Romance",
         sinopsis: "Una historia épica de amor condenada por la tragedia del Titanic.",
         url: "https://tuservidor.com/peliculas/titanic.mp4"
+      },
+      {
+        id: "pelicula-3",
+        titulo: "El Padrino",
+        imagen: "https://image.tmdb.org/t/p/w500/rPdtLWNsZmAtoZl9PK7S2wE3qiS.jpg",
+        categoria: "Drama / Crimen",
+        sinopsis: "La historia de la familia Corleone bajo el patriarcado de Don Vito Corleone.",
+        url: "https://tuservidor.com/peliculas/elpadrino.mp4"
       }
     ];
 
+    // Carga del contenido cuando la página esté lista
     document.addEventListener("DOMContentLoaded", async function () {
-      const { data: { user }, error } = await supabase.auth.getUser();
-      if (error || !user) {
-        window.location.href = "index.html";
-        return;
+      try {
+        // Verificar si el usuario está autenticado
+        const { data: { user }, error } = await supabase.auth.getUser();
+        
+        if (error || !user) {
+          console.error("Error de autenticación:", error);
+          window.location.href = "index.html";
+          return;
+        }
+        
+        // Guardar el ID del usuario y mostrar su email
+        userId = user.id;
+        document.getElementById("user-email").textContent = user.email;
+        
+        // Obtener información del usuario desde la tabla users
+        const { data: userData, error: userError } = await supabase
+          .from("users")
+          .select("balance, movie_earnings, movie_watch_count")
+          .eq("id", userId)
+          .single();
+        
+        if (userError) {
+          console.error("Error al obtener datos del usuario:", userError);
+        } else if (userData) {
+          userBalance = userData.balance || 0;
+          document.getElementById("user-balance").textContent = userBalance.toFixed(3);
+        }
+        
+        // Cargar el catálogo de películas
+        cargarCatalogo();
+        
+      } catch (error) {
+        console.error("Error general:", error);
       }
-      userId = user.id;
-      document.getElementById("user-email").textContent = user.email;
-      cargarCatalogo();
     });
 
+    // Función para cargar el catálogo de películas
     function cargarCatalogo() {
       const contenedor = document.getElementById("catalogo");
+      contenedor.innerHTML = ""; // Limpiar el contenedor antes de cargar
+      
       peliculas.forEach(peli => {
         const div = document.createElement("div");
         div.className = "pelicula";
         div.innerHTML = `
-          <img src="${peli.imagen}" alt="${peli.titulo}" />
+          <img src="${peli.imagen}" alt="${peli.titulo}" onerror="this.src='https://via.placeholder.com/150x225?text=No+Image'"/>
           <div class="info">
             <h2>${peli.titulo}</h2>
             <p><strong>Categoría:</strong> ${peli.categoria}</p>
@@ -72,14 +124,26 @@
       });
     }
 
+    // Función para iniciar la visualización de una película
     function verPelicula(id, url) {
       const timerEl = document.getElementById(`timer-${id}`);
       const linkEl = document.getElementById(`link-${id}`);
+      
+      if (!timerEl || !linkEl) return;
+      
+      // Registrar inicio de visualización
+      registrarInicioVista();
+      
+      // Configurar el timer y mostrar cuenta regresiva
       timerEl.classList.remove("hidden");
       linkEl.style.display = "none";
 
+      // Duración en milisegundos (30 segundos para pruebas, cambia a 30 min para producción)
+      const duracion = 30 * 1000; // 30 segundos para pruebas
+      // const duracion = 30 * 60 * 1000; // 30 minutos para producción
+      
       const start = Date.now();
-      const end = start + (30 * 60 * 1000);
+      const end = start + duracion;
 
       const interval = setInterval(() => {
         const now = Date.now();
@@ -89,7 +153,7 @@
           clearInterval(interval);
           timerEl.textContent = "✅ Vista completada";
           linkEl.style.display = "inline-block";
-          registrarVista();
+          registrarFinVista(id);
         } else {
           const minutos = Math.floor(restante / 60000);
           const segundos = Math.floor((restante % 60000) / 1000);
@@ -98,12 +162,34 @@
       }, 1000);
     }
 
-    async function registrarVista() {
+    // Registrar inicio de visualización
+    async function registrarInicioVista() {
+      if (!userId) return;
+      
+      const { error } = await supabase
+        .from("users")
+        .update({
+          movie_view_start: new Date().toISOString()
+        })
+        .eq("id", userId);
+
+      if (error) {
+        console.error("Error al registrar inicio de vista:", error.message);
+      }
+    }
+
+    // Registrar finalización de visualización y actualizar ganancias
+    async function registrarFinVista(peliculaId) {
+      if (!userId) return;
+      
+      const ganancia = 0.005; // 0.005 dólares por película vista
+      
       const { error } = await supabase
         .from("users")
         .update({
           movie_watch_count: supabase.raw('movie_watch_count + 1'),
-          movie_earnings: supabase.raw('movie_earnings + 0.005'),
+          movie_earnings: supabase.raw('movie_earnings + ' + ganancia),
+          balance: supabase.raw('balance + ' + ganancia),
           movie_view_complete: new Date().toISOString()
         })
         .eq("id", userId);
@@ -112,6 +198,9 @@
         console.error("Error al registrar vista:", error.message);
       } else {
         console.log("Vista registrada correctamente");
+        // Actualizar saldo en la interfaz
+        userBalance += ganancia;
+        document.getElementById("user-balance").textContent = userBalance.toFixed(3);
       }
     }
   </script>
