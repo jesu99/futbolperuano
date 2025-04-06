@@ -2,101 +2,109 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Mi Saldo y Películas</title>
+  <title>Películas con Temporizador</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      padding: 20px;
-      background-color: #f4f4f4;
-    }
+    body { font-family: Arial; background: #f4f4f4; padding: 20px; }
     .pelicula {
       background: white;
       border-radius: 10px;
       padding: 15px;
       margin-bottom: 20px;
       box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-      display: flex;
-      flex-direction: column;
       max-width: 400px;
     }
-    .pelicula img {
-      width: 100%;
-      border-radius: 10px;
-    }
-    .pelicula h3 {
-      margin: 10px 0 5px;
-    }
-    .pelicula p {
-      font-size: 14px;
-    }
+    .pelicula img { width: 100%; border-radius: 10px; }
     .pelicula button {
       margin-top: 10px;
       padding: 10px;
+      background: #007BFF;
+      color: white;
       border: none;
       border-radius: 5px;
-      background-color: #007BFF;
-      color: white;
       cursor: pointer;
     }
-    .pelicula button:hover {
-      background-color: #0056b3;
-    }
+    .pelicula button:hover { background: #0056b3; }
+    #contador { font-size: 18px; margin: 10px 0; font-weight: bold; }
   </style>
-  <script>
-    const SUPABASE_URL = "https://srormesvqserhrfugrls.supabase.co";
-    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNyb3JtZXN2cXNlcmhyZnVncmxzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDMzNTk0MzUsImV4cCI6MjA1ODkzNTQzNX0.zGjT9CbTd6jb1lEBzK3OrsZJIgZSqJH9zfLXzWvLTlM";
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-    document.addEventListener("DOMContentLoaded", async () => {
-      const { data: { user }, error } = await supabase.auth.getUser();
-
-      if (error || !user) {
-        alert("No has iniciado sesión");
-        window.location.href = "login.html";
-        return;
-      }
-
-      document.getElementById("email").textContent = user.email;
-
-      const { data, error: balanceError } = await supabase
-        .from("users")
-        .select("balance")
-        .eq("id", user.id)
-        .single();
-
-      if (balanceError || !data) {
-        document.getElementById("saldo").textContent = "0.00";
-      } else {
-        document.getElementById("saldo").textContent = data.balance;
-      }
-    });
-
-    function reproducir(url) {
-      window.open(url, "_blank");
-    }
-  </script>
 </head>
 <body>
+
   <h2>Bienvenido</h2>
   <p>Correo: <span id="email">Cargando...</span></p>
   <p>Saldo actual: S/ <span id="saldo">Cargando...</span></p>
-
-  <hr>
+  <p id="contador">Tiempo restante: --</p>
 
   <div class="pelicula">
     <img src="https://pics.filmaffinity.com/Bajo_custodia-198204017-large.jpg" alt="Bajo custodia">
     <h3>Bajo custodia</h3>
-    <p>Una mujer enigmática despierta dentro de una comisaría abandonada en medio de la noche sin recordar cómo llegó allí. Dos detectives intentan reconstruir sus pasos para acusarla de un atropello.</p>
-    <button onclick="reproducir('https://mega.nz/file/UtxyVSiD#aKDB0n0uIYYZmyjSPmlECZPFaPCQ7mzyhNC64X50vqA')">Ver Película</button>
+    <p>Una mujer enigmática despierta dentro de una comisaría abandonada sin recordar cómo llegó allí.</p>
+    <button onclick="verPelicula('https://mega.nz/file/UtxyVSiD#aKDB0n0uIYYZmyjSPmlECZPFaPCQ7mzyhNC64X50vqA')">Ver Película</button>
   </div>
 
   <div class="pelicula">
     <img src="https://images.justwatch.com/poster/322836177/s166/equipaje-de-mano-2024.avif" alt="Equipaje de mano">
     <h3>Equipaje de mano</h3>
-    <p>El día de Nochebuena, en el concurrido aeropuerto de Los Angeles, un desconocido chantajea a un joven agente para que le deje subir una misteriosa maleta al avión.</p>
-    <button onclick="reproducir('https://mega.nz/file/g1JVhJIa#blYnA6tfvZfuMvuOk66dwTb9X-aSSmwARAMHrMfV7e8')">Ver Película</button>
+    <p>Un desconocido chantajea a un joven agente para subir una misteriosa maleta al avión.</p>
+    <button onclick="verPelicula('https://mega.nz/file/g1JVhJIa#blYnA6tfvZfuMvuOk66dwTb9X-aSSmwARAMHrMfV7e8')">Ver Película</button>
   </div>
+
+  <script>
+    const SUPABASE_URL = "https://srormesvqserhrfugrls.supabase.co";
+    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNyb3JtZXN2cXNlcmhyZnVncmxzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDMzNTk0MzUsImV4cCI6MjA1ODkzNTQzNX0.zGjT9CbTd6jb1lEBzK3OrsZJIgZSqJH9zfLXzWvLTlM";
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    const tiempoMax = 90 * 60 * 1000; // 1 hora 30 min en milisegundos
+    const clave = "tiempoInicio";
+
+    document.addEventListener("DOMContentLoaded", async () => {
+      const { data: { user }, error } = await supabase.auth.getUser();
+      if (error || !user) return window.location.href = "login.html";
+      document.getElementById("email").textContent = user.email;
+
+      const { data, error: balanceError } = await supabase
+        .from("users").select("balance").eq("id", user.id).single();
+
+      document.getElementById("saldo").textContent = balanceError || !data ? "0.00" : data.balance;
+
+      verificarContador();
+    });
+
+    function verPelicula(url) {
+      const ahora = Date.now();
+      localStorage.setItem(clave, ahora);
+      window.open(url, "_blank");
+    }
+
+    function verificarContador() {
+      const inicio = localStorage.getItem(clave);
+      if (!inicio) return;
+
+      const restante = tiempoMax - (Date.now() - parseInt(inicio));
+      if (restante > 0) {
+        iniciarTemporizador(restante);
+      } else {
+        localStorage.removeItem(clave);
+        document.getElementById("contador").textContent = "Tiempo restante: --";
+      }
+    }
+
+    function iniciarTemporizador(tiempoRestante) {
+      const contador = document.getElementById("contador");
+
+      const timer = setInterval(() => {
+        tiempoRestante -= 1000;
+        const minutos = Math.floor(tiempoRestante / 60000);
+        const segundos = Math.floor((tiempoRestante % 60000) / 1000);
+        contador.textContent = `Tiempo restante: ${minutos}m ${segundos}s`;
+
+        if (tiempoRestante <= 0) {
+          clearInterval(timer);
+          localStorage.removeItem(clave);
+          contador.textContent = "Tiempo finalizado.";
+        }
+      }, 1000);
+    }
+  </script>
 </body>
 </html>
