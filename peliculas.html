@@ -147,7 +147,7 @@
     <h2>Películas 🎬</h2>
     <div class="user-info">
       <p>Usuario: <span id="user-email">Cargando...</span></p>
-      <p>Saldo: S/ <span id="user-balance">Cargando...</span></p>
+      <p>Saldo: S/ <span id="user-balance">0.000</span></p>
     </div>
   </div>
   
@@ -216,36 +216,45 @@
         }
         
         document.getElementById("user-email").textContent = user.email;
-        const { data: userData } = await supabase
-          .from("users")
-          .select("balance, watch_state")
-          .eq("id", user.id)
-          .single();
+        
+        try {
+          const { data: userData, error: userError } = await supabase
+            .from("users")
+            .select("balance, watch_state")
+            .eq("id", user.id)
+            .single();
+            
+          if (userError) throw userError;
           
-        if (userData) {
-          document.getElementById("user-balance").textContent = (userData.balance ?? 0).toFixed(3);
-          
-          // Verificar si hay una película en progreso
-          if (userData.watch_state) {
-            try {
-              const watchState = JSON.parse(userData.watch_state);
-              if (watchState.isWatching && watchState.startTime) {
-                isWatching = true;
-                watchStartTime = new Date(watchState.startTime);
-                currentMovieIndex = watchState.movieIndex;
-                if (currentMovieIndex >= 0 && currentMovieIndex < peliculas.length) {
-                  currentMovie = peliculas[currentMovieIndex];
-                  showMovieDetail(currentMovieIndex, true);
-                  return;
+          if (userData) {
+            // Asegurarse de que el balance sea un número válido
+            const balance = parseFloat(userData.balance || 0);
+            document.getElementById("user-balance").textContent = balance.toFixed(3);
+            
+            // Verificar si hay una película en progreso
+            if (userData.watch_state) {
+              try {
+                const watchState = JSON.parse(userData.watch_state);
+                if (watchState.isWatching && watchState.startTime) {
+                  isWatching = true;
+                  watchStartTime = new Date(watchState.startTime);
+                  currentMovieIndex = watchState.movieIndex;
+                  if (currentMovieIndex >= 0 && currentMovieIndex < peliculas.length) {
+                    currentMovie = peliculas[currentMovieIndex];
+                    showMovieDetail(currentMovieIndex, true);
+                    return;
+                  }
                 }
+              } catch (e) {
+                console.error("Error al parsear watch_state:", e);
               }
-            } catch (e) {
-              console.error("Error al parsear watch_state:", e);
             }
           }
+        } catch (userDataError) {
+          console.error("Error al obtener datos del usuario:", userDataError);
         }
         
-        // Si no hay película activa, mostrar la lista
+        // Si no hay película activa o hubo un error, mostrar la lista
         showMoviesList();
       } catch (error) {
         console.error("Error durante la inicialización:", error);
@@ -350,10 +359,24 @@
         viewButton.textContent = "Película no disponible";
       } else if (resuming && isWatching) {
         viewButton.textContent = "Continuar viendo";
-        viewButton.addEventListener("click", verPelicula);
+        if (currentMovie.url.includes("mega.nz")) {
+          viewButton.addEventListener("click", () => {
+            window.open(currentMovie.url, "_blank");
+            verPelicula();
+          });
+        } else {
+          viewButton.addEventListener("click", verPelicula);
+        }
       } else {
         viewButton.textContent = "Ver película";
-        viewButton.addEventListener("click", verPelicula);
+        if (currentMovie.url.includes("mega.nz")) {
+          viewButton.addEventListener("click", () => {
+            window.open(currentMovie.url, "_blank");
+            verPelicula();
+          });
+        } else {
+          viewButton.addEventListener("click", verPelicula);
+        }
       }
       
       details.appendChild(viewButton);
@@ -380,42 +403,35 @@
       movieInfo.appendChild(details);
       movieContainer.appendChild(movieInfo);
       
-      // Contenedor del reproductor
-      const playerContainer = document.createElement("div");
-      playerContainer.id = "player-container";
-      playerContainer.className = "player-container";
-      
-      // Verificar tipo de URL
-      if (currentMovie.url && currentMovie.url.includes("mega.nz")) {
-        // Para enlaces de MEGA, proporcionamos instrucciones
-        playerContainer.innerHTML = `
-          <div style="padding: 20px; text-align: center;">
-            <h3>Esta película está alojada en MEGA</h3>
-            <p>Haz clic en el siguiente enlace para verla:</p>
-            <a href="${currentMovie.url}" target="_blank" style="color: #4CAF50; font-weight: bold;">${currentMovie.titulo} - Ver en MEGA</a>
-            <p style="margin-top: 15px;">Debes ver la película completa (aproximadamente 1 hora y 30 minutos) para recibir tu recompensa.</p>
-            <p>Por favor, no cierres esta ventana mientras ves la película.</p>
-          </div>
-        `;
-      } else if (currentMovie.url && currentMovie.url.includes("streamtape.com")) {
-        // Para enlaces de Streamtape, mostramos el reproductor embebido
-        const videoId = currentMovie.url.split('/').pop();
-        playerContainer.innerHTML = `
-          <iframe src="https://streamtape.com/e/${videoId}/" width="800" height="500" allowfullscreen allowtransparency allow="autoplay" scrolling="no" frameborder="0"></iframe>
-        `;
-      } else if (currentMovie.url) {
-        // Para otros enlaces, intentamos un iframe genérico
-        playerContainer.innerHTML = `
-          <iframe src="${currentMovie.url}" width="800" height="500" allowfullscreen frameborder="0"></iframe>
-        `;
+      // Contenedor del reproductor - Solo se mostrará para enlaces que no sean de MEGA
+      if (!currentMovie.url.includes("mega.nz")) {
+        const playerContainer = document.createElement("div");
+        playerContainer.id = "player-container";
+        playerContainer.className = "player-container";
+        
+        if (currentMovie.url && currentMovie.url.includes("streamtape.com")) {
+          // Para enlaces de Streamtape, mostramos el reproductor embebido
+          const videoId = currentMovie.url.split('/').pop();
+          playerContainer.innerHTML = `
+            <iframe src="https://streamtape.com/e/${videoId}/" width="800" height="500" allowfullscreen allowtransparency allow="autoplay" scrolling="no" frameborder="0"></iframe>
+          `;
+        } else if (currentMovie.url) {
+          // Para otros enlaces, intentamos un iframe genérico
+          playerContainer.innerHTML = `
+            <iframe src="${currentMovie.url}" width="800" height="500" allowfullscreen frameborder="0"></iframe>
+          `;
+        }
+        
+        movieContainer.appendChild(playerContainer);
       }
       
-      movieContainer.appendChild(playerContainer);
       container.appendChild(movieContainer);
       
       if (resuming && isWatching && watchStartTime) {
-        // Mostrar el reproductor y actualizar la interfaz
-        document.getElementById("player-container").style.display = "block";
+        // Actualizar la interfaz
+        if (!currentMovie.url.includes("mega.nz")) {
+          document.getElementById("player-container").style.display = "block";
+        }
         document.getElementById("ver-btn").textContent = "Película en reproducción";
         document.getElementById("ver-btn").disabled = true;
         document.getElementById("timer-container").style.display = "block";
@@ -459,11 +475,14 @@
     async function verPelicula() {
       if (!currentMovie.url) return;
       
-      const playerContainer = document.getElementById("player-container");
       const verBtn = document.getElementById("ver-btn");
       const timerContainer = document.getElementById("timer-container");
       
-      playerContainer.style.display = "block";
+      // Solo mostrar el reproductor si no es un enlace de MEGA
+      if (!currentMovie.url.includes("mega.nz") && document.getElementById("player-container")) {
+        document.getElementById("player-container").style.display = "block";
+      }
+      
       verBtn.textContent = "Película en reproducción";
       verBtn.disabled = true;
       timerContainer.style.display = "block";
