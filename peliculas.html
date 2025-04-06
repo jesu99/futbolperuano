@@ -321,7 +321,7 @@
         }
         
         // Calcular el nuevo saldo (agregar 0.5 por ver un video completo y 0.003 de recompensa adicional)
-        const nuevoSaldo = parseFloat(data.balance) + 0.0 + 0.003;
+        const nuevoSaldo = parseFloat(data.balance) + 0.5 + 0.003;
         
         // Actualizar el saldo en la base de datos
         const { error: updateError } = await supabase
