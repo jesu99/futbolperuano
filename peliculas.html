@@ -106,6 +106,8 @@
     const tiempoMax = 90 * 60 * 1000; // 1 hora 30 min en milisegundos
     let timer = null;
     let userId = null;
+    let peliculaVentana = null;
+    let contadorPausado = false;
     
     // Función para cargar los datos del usuario
     document.addEventListener("DOMContentLoaded", async () => {
@@ -141,12 +143,28 @@
       verificarTemporizadorActivo();
     });
     
+    // Detectar cuando esta ventana recupera el foco
+    window.addEventListener('focus', function() {
+      // Si tenemos una ventana de película abierta, verificamos si está cerrada
+      if (peliculaVentana && peliculaVentana.closed) {
+        pausarTemporizador();
+        peliculaVentana = null;
+      }
+    });
+    
     // Función para verificar si hay un temporizador activo al cargar la página
     function verificarTemporizadorActivo() {
       const temporizadorData = localStorage.getItem("temporizadorData");
       
       if (temporizadorData) {
         const data = JSON.parse(temporizadorData);
+        
+        // Verificar si el temporizador estaba pausado
+        if (data.pausado) {
+          document.getElementById("contador").textContent = "Temporizador pausado. Ver película para continuar.";
+          return;
+        }
+        
         const tiempoTranscurrido = Date.now() - data.inicio;
         const tiempoRestante = tiempoMax - tiempoTranscurrido;
         
@@ -164,18 +182,68 @@
     
     // Función para iniciar la visualización de una película
     function verPelicula(url) {
+      // Si hay un temporizador pausado, restaurar desde donde se quedó
+      const temporizadorData = localStorage.getItem("temporizadorData");
+      let tiempoRestante = tiempoMax;
+      
+      if (temporizadorData) {
+        const data = JSON.parse(temporizadorData);
+        if (data.pausado && data.tiempoRestante) {
+          tiempoRestante = data.tiempoRestante;
+        }
+      }
+      
       // Guardar datos del temporizador
       const inicioTiempo = Date.now();
       localStorage.setItem("temporizadorData", JSON.stringify({
         inicio: inicioTiempo,
-        url: url
+        url: url,
+        pausado: false,
+        tiempoRestante: tiempoRestante
       }));
       
-      // Abrir la película en una nueva pestaña
-      window.open(url, "_blank");
+      // Abrir la película en una nueva pestaña y guardar referencia
+      peliculaVentana = window.open(url, "_blank");
+      
+      // Verificar periódicamente si la ventana está cerrada
+      const checkWindowInterval = setInterval(() => {
+        if (peliculaVentana && peliculaVentana.closed) {
+          clearInterval(checkWindowInterval);
+          pausarTemporizador();
+          peliculaVentana = null;
+        }
+      }, 1000);
       
       // Iniciar el temporizador
-      iniciarTemporizador(tiempoMax);
+      contadorPausado = false;
+      iniciarTemporizador(tiempoRestante);
+    }
+    
+    // Función para pausar el temporizador
+    function pausarTemporizador() {
+      if (timer) {
+        clearInterval(timer);
+        timer = null;
+      }
+      
+      contadorPausado = true;
+      document.getElementById("contador").textContent = "Temporizador pausado. Ver película para continuar.";
+      
+      // Actualizar el estado en localStorage
+      const temporizadorData = localStorage.getItem("temporizadorData");
+      if (temporizadorData) {
+        const data = JSON.parse(temporizadorData);
+        // Calcular tiempo restante
+        const tiempoTranscurrido = Date.now() - data.inicio;
+        const tiempoRestante = tiempoMax - tiempoTranscurrido;
+        
+        // Guardar el tiempo restante y marcar como pausado
+        localStorage.setItem("temporizadorData", JSON.stringify({
+          ...data,
+          pausado: true,
+          tiempoRestante: tiempoRestante > 0 ? tiempoRestante : 0
+        }));
+      }
     }
     
     // Función para iniciar el temporizador con la duración especificada
@@ -185,6 +253,13 @@
       clearInterval(timer); // Limpiar cualquier temporizador existente
       
       timer = setInterval(() => {
+        // Si el contador está pausado, no continuar
+        if (contadorPausado) {
+          clearInterval(timer);
+          timer = null;
+          return;
+        }
+        
         restante -= 1000;
         
         if (restante <= 0) {
