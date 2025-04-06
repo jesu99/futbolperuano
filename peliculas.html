@@ -33,6 +33,7 @@
       border-radius: 8px;
       overflow: hidden;
       box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
     }
     .movie-info {
       display: flex;
@@ -71,8 +72,59 @@
     button:hover {
       background-color: #45a049;
     }
+    button:disabled {
+      background-color: #cccccc;
+      cursor: not-allowed;
+    }
+    .earn-button {
+      background-color: #ff9800;
+    }
+    .earn-button:hover {
+      background-color: #e88e00;
+    }
     h2, h3 {
       margin-top: 0;
+    }
+    .movies-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+    .movie-card {
+      background-color: white;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    .movie-card:hover {
+      transform: translateY(-5px);
+    }
+    .movie-card img {
+      width: 100%;
+      height: 200px;
+      object-fit: cover;
+    }
+    .movie-card-info {
+      padding: 15px;
+    }
+    .movie-card h3 {
+      margin: 0 0 10px 0;
+      font-size: 18px;
+    }
+    .movie-card p {
+      margin: 5px 0;
+      font-size: 14px;
+      color: #666;
+    }
+    .back-button {
+      background-color: #2196F3;
+      margin-bottom: 20px;
+    }
+    .back-button:hover {
+      background-color: #0b7dda;
     }
   </style>
   <script>
@@ -80,12 +132,110 @@
     const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNyb3JtZXN2cXNlcmhyZnVncmxzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDMzNTk0MzUsImV4cCI6MjA1ODkzNTQzNX0.zGjT9CbTd6jb1lEBzK3OrsZJIgZSqJH9zfLXzWvLTlM";
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     
+    // Películas data
+    const peliculas = [
+      {
+        titulo: "I.S.S.",
+        imagen: "https://www.cuevana.is/_next/image?url=https%3A%2F%2Fimage.tmdb.org%2Ft%2Fp%2Foriginal%2F2ZgXNi458jc7DqdAMhsHpF1sX0I.jpg&w=640&q=75",
+        url: "", // URL está vacía
+        sinopsis: "Cuando se produce un acontecimiento bélico mundial en la Tierra, Estados Unidos y Rusia, ambas naciones contactan en secreto con sus astronautas a bordo de la ISS y les dan instrucciones para que tomen el control de la estación por cualquier medio necesario.",
+        genero: "Ciencia ficción, Suspenso",
+        actores: "Ariana DeBose, Chris Messina, John Gallagher Jr., Мария Машкова, Costa Ronin, Pilou Asbæk, Mohamed ElGohary, Dean Labossiere, K.C. White, Tanya Giang, Jimmie Lee Sessoms",
+        anio: "2024"
+      },
+      {
+        titulo: "Bajo custodia",
+        imagen: "https://pics.filmaffinity.com/Bajo_custodia-198204017-large.jpg",
+        url: "https://mega.nz/file/UtxyVSiD#aKDB0n0uIYYZmyjSPmlECZPFaPCQ7mzyhNC64X50vqA",
+        sinopsis: "Una mujer enigmática despierta dentro de una comisaría abandonada en medio de la noche sin recordar cómo llegó allí. Dos detectives intentan reconstruir sus pasos para acusarla de un atropello.",
+        genero: "Thriller, Drama",
+        actores: "Actores no disponibles",
+        anio: "2024"
+      },
+      {
+        titulo: "Equipaje de mano",
+        imagen: "https://images.justwatch.com/poster/322836177/s166/equipaje-de-mano-2024.avif",
+        url: "https://mega.nz/file/g1JVhJIa#blYnA6tfvZfuMvuOk66dwTb9X-aSSmwARAMHrMfV7e8",
+        sinopsis: "El día de Nochebuena, en el concurrido aeropuerto de Los Angeles, un desconocido chantajea a un joven agente de la Administración de Seguridad en el Transporte, encargado de escanear el equipaje de mano, para que le deje subir una misteriosa maleta al avión.",
+        genero: "Thriller, Acción",
+        actores: "Actores no disponibles",
+        anio: "2024"
+      },
+      {
+        titulo: "Fuego Cruzado",
+        imagen: "https://m.media-amazon.com/images/M/MV5BMTY2NDc0MjMtMzk4Ny00MWE0LWE2OTgtZDQ0NDBjMjQ3MjJjXkEyXkFqcGc@._V1_.jpg",
+        url: "https://mega.nz/file/dhByQCLb#41SIXG3FKwwfrN83sQfZnL6P1Qj6YJtGhGkE4y_oE3Q",
+        sinopsis: "Un criminal reúne un ejército de reclusos y se enfrenta a un ex agente.",
+        genero: "Acción",
+        actores: "Actores no disponibles",
+        anio: "2024"
+      },
+      {
+        titulo: "Rápidos y Furiosos X",
+        imagen: "https://www.infobae.com/resizer/v2/VW6GWH7SPFG67A4SJP3E7KVBTI.jpeg?auth=00b9e92b0e19b1b6a90457f56bd4d649bb01b3a3ff7f2e0c89a996ada89d7dba&smart=true&width=350&height=467&quality=85",
+        url: "https://mega.nz/file/J0oHnbjK#WckEcI4mpevkBP045gGqSdy3R4lqTxNNPrBVgVeSniU",
+        sinopsis: "En la décima entrega de la saga Rápidos y Furiosos, Toretto y su familia desafían todas las leyes de la física en una lucha motorizada contra Dante Reyes (Jason Momoa), un vengativo adversario que emerge de las sombras del pasado.",
+        genero: "Acción, Aventura",
+        actores: "Vin Diesel, Jason Momoa, Michelle Rodriguez, Jason Statham",
+        anio: "2023"
+      },
+      {
+        titulo: "Respira",
+        imagen: "https://pics.filmaffinity.com/Respira-938032787-large.jpg",
+        url: "https://mega.nz/file/tppm1IYB#knSjgtPDoVdsLqGSvZbnjhLFGnnCHvedooO264O7xmY",
+        sinopsis: "Dos desconocidos amenazan a una madre y a su hija en una Tierra que quedó inhabitable por falta de oxígeno.",
+        genero: "Ciencia ficción, Thriller",
+        actores: "Actores no disponibles",
+        anio: "2024"
+      },
+      {
+        titulo: "Sonic 3 La Película",
+        imagen: "https://encrypted-tbn3.gstatic.com/images?q=tbn:ANd9GcSu8nsDSE6dU7T3vTQShr0OgDHiCZSetzqGfkwV46_RphV-NogS",
+        url: "",
+        sinopsis: "Sonic, Knuckles y Tails regresan para vivir su aventura más épica. El equipo enfrenta a un poderoso enemigo, Shadow, un erizo misterioso con habilidades nunca antes vistas.",
+        genero: "Animación, Aventura",
+        actores: "Jim Carrey, James Marsden, Idris Elba, Ben Schwartz",
+        anio: "2024"
+      },
+      {
+        titulo: "Venom: El último baile",
+        imagen: "https://tv8.cuevana3.vip/wp-content/uploads/venom-el-ultimo-baile-2024.jpg",
+        url: "https://mega.nz/file/I8hlEYwK#Ro3GrGzAJS6L0jUOpUeGfEIA5GXD2GmD6a_i5ADG5kY",
+        sinopsis: "Eddie y Venom están a la fuga. Perseguidos por sus sendos mundos y cada vez más cercados, el dúo se ve abocado a tomar una decisión devastadora que hará que caiga el telón sobre el último baile de Venom y Eddie.",
+        genero: "Acción, Ciencia ficción",
+        actores: "Tom Hardy, Juno Temple, Chiwetel Ejiofor",
+        anio: "2024"
+      },
+      {
+        titulo: "Winnie the Pooh: Sangre y miel",
+        imagen: "https://encrypted-tbn3.gstatic.com/images?q=tbn:ANd9GcRKIMfNVHYaQkcZU4E2vmWCuX_sVl85MpJu_UG-20k4f6LmQOlj",
+        url: "https://mega.nz/file/koxUAQDA#30SiGJAdEOgtM7S484AuyENFzMGb6pZ583Miu8BeAFc",
+        sinopsis: "Winnie the Pooh y Piglet se han vuelto salvajes y quieren sangre humana. Los antes entrañables amigos aterrorizan a Christopher Robin y un grupo de jóvenes en una casa aislada.",
+        genero: "Terror",
+        actores: "Actores no disponibles",
+        anio: "2023"
+      },
+      {
+        titulo: "Depravación",
+        imagen: "https://www.cuevana.is/_next/image?url=https%3A%2F%2Fimage.tmdb.org%2Ft%2Fp%2Foriginal%2FcC1mG3UAfITKUBHtwtD7xaNnX10.jpg&w=640&q=75",
+        url: "https://mega.nz/file/I4RVUJJS#OCfqBGts3hddi_umTAw3BJCl53Zv_-aUyF-H4HHXQnU",
+        sinopsis: "Cuando tres vecinos sospechan que su solitario vecino es un asesino en serie, irrumpen en su apartamento para descubrir una fortuna oculta en obras de arte robadas. Pero su descubrimiento se convierte en una pesadilla al verse atrapados en un sádico juego de supervivencia, donde cada esquina esconde un nuevo horror.",
+        genero: "Terror, Thriller",
+        actores: "Actores no disponibles",
+        anio: "2024"
+      }
+    ];
+    
+    let currentMovie = null;
+    let currentMovieIndex = -1;
+    
     document.addEventListener("DOMContentLoaded", async function () {
       const { data: { user }, error } = await supabase.auth.getUser();
       if (error || !user) {
-        window.location.href = "login.html"; // o index.html
+        window.location.href = "login.html";
         return;
       }
+      
       document.getElementById("user-email").textContent = user.email;
       const { data: userData } = await supabase
         .from("users")
@@ -93,12 +243,142 @@
         .eq("id", user.id)
         .single();
       document.getElementById("user-balance").textContent = (userData.balance ?? 0).toFixed(3);
+      
+      // Mostrar lista de películas
+      showMoviesList();
     });
     
+    function showMoviesList() {
+      const container = document.getElementById("main-content");
+      container.innerHTML = "";
+      
+      const moviesGrid = document.createElement("div");
+      moviesGrid.className = "movies-grid";
+      
+      peliculas.forEach((pelicula, index) => {
+        const movieCard = document.createElement("div");
+        movieCard.className = "movie-card";
+        movieCard.innerHTML = `
+          <img src="${pelicula.imagen}" alt="${pelicula.titulo}" onerror="this.src='/api/placeholder/300/200'">
+          <div class="movie-card-info">
+            <h3>${pelicula.titulo}</h3>
+            <p>${pelicula.genero}</p>
+            <p>${pelicula.anio}</p>
+          </div>
+        `;
+        movieCard.onclick = () => showMovieDetail(index);
+        moviesGrid.appendChild(movieCard);
+      });
+      
+      container.appendChild(moviesGrid);
+    }
+    
+    function showMovieDetail(index) {
+      currentMovie = peliculas[index];
+      currentMovieIndex = index;
+      
+      const container = document.getElementById("main-content");
+      container.innerHTML = "";
+      
+      // Botón para volver a la lista
+      const backButton = document.createElement("button");
+      backButton.textContent = "← Volver a la lista";
+      backButton.className = "back-button";
+      backButton.onclick = showMoviesList;
+      container.appendChild(backButton);
+      
+      // Contenedor de película
+      const movieContainer = document.createElement("div");
+      movieContainer.className = "movie-container";
+      
+      // Información de la película
+      const movieInfo = document.createElement("div");
+      movieInfo.className = "movie-info";
+      
+      // Poster
+      const poster = document.createElement("img");
+      poster.src = currentMovie.imagen;
+      poster.alt = currentMovie.titulo;
+      poster.className = "movie-poster";
+      poster.onerror = function() { this.src = '/api/placeholder/200/300'; };
+      movieInfo.appendChild(poster);
+      
+      // Detalles
+      const details = document.createElement("div");
+      details.className = "movie-details";
+      details.innerHTML = `
+        <h3>${currentMovie.titulo}</h3>
+        <p><strong>Año:</strong> ${currentMovie.anio}</p>
+        <p><strong>Género:</strong> ${currentMovie.genero}</p>
+        <p><strong>Actores:</strong> ${currentMovie.actores}</p>
+        <p><strong>Sinopsis:</strong> ${currentMovie.sinopsis}</p>
+      `;
+      
+      // Botón para ver película
+      const viewButton = document.createElement("button");
+      viewButton.id = "ver-btn";
+      viewButton.textContent = "Ver película";
+      viewButton.onclick = verPelicula;
+      
+      if (!currentMovie.url) {
+        viewButton.disabled = true;
+        viewButton.textContent = "Película no disponible";
+      }
+      
+      details.appendChild(viewButton);
+      
+      // Botón para ganar dinero
+      const earnButton = document.createElement("button");
+      earnButton.id = "ganar-btn";
+      earnButton.textContent = "Ganar S/ 0.003";
+      earnButton.className = "earn-button";
+      earnButton.style.display = "none";
+      earnButton.onclick = sumarBalancePeliculas;
+      details.appendChild(earnButton);
+      
+      movieInfo.appendChild(details);
+      movieContainer.appendChild(movieInfo);
+      
+      // Contenedor del reproductor
+      const playerContainer = document.createElement("div");
+      playerContainer.id = "player-container";
+      playerContainer.className = "player-container";
+      
+      // Verificar tipo de URL
+      if (currentMovie.url && currentMovie.url.includes("mega.nz")) {
+        // Para enlaces de MEGA, proporcionamos instrucciones
+        playerContainer.innerHTML = `
+          <div style="padding: 20px; text-align: center;">
+            <h3>Esta película está alojada en MEGA</h3>
+            <p>Haz clic en el siguiente enlace para verla:</p>
+            <a href="${currentMovie.url}" target="_blank" style="color: #4CAF50; font-weight: bold;">${currentMovie.titulo} - Ver en MEGA</a>
+            <p style="margin-top: 15px;">Recuerda volver aquí después de 30 segundos para ganar tu recompensa.</p>
+          </div>
+        `;
+      } else if (currentMovie.url && currentMovie.url.includes("streamtape.com")) {
+        // Para enlaces de Streamtape, mostramos el reproductor embebido
+        const videoId = currentMovie.url.split('/').pop();
+        playerContainer.innerHTML = `
+          <iframe src="https://streamtape.com/e/${videoId}/" width="800" height="500" allowfullscreen allowtransparency allow="autoplay" scrolling="no" frameborder="0"></iframe>
+        `;
+      } else if (currentMovie.url) {
+        // Para otros enlaces, intentamos un iframe genérico
+        playerContainer.innerHTML = `
+          <iframe src="${currentMovie.url}" width="800" height="500" allowfullscreen frameborder="0"></iframe>
+        `;
+      }
+      
+      movieContainer.appendChild(playerContainer);
+      container.appendChild(movieContainer);
+    }
+    
     function verPelicula() {
-      document.getElementById("player-container").style.display = "block";
-      document.getElementById("ver-btn").textContent = "Película en reproducción";
-      document.getElementById("ver-btn").disabled = true;
+      const playerContainer = document.getElementById("player-container");
+      const verBtn = document.getElementById("ver-btn");
+      
+      playerContainer.style.display = "block";
+      verBtn.textContent = "Película en reproducción";
+      verBtn.disabled = true;
       
       // Iniciar el contador para ganar dinero después de 30 segundos
       setTimeout(function() {
@@ -134,6 +414,24 @@
       document.getElementById("ver-btn").textContent = "Ver película nuevamente";
       document.getElementById("ver-btn").disabled = false;
     }
+    
+    // Función para agregar una nueva película fácilmente
+    function agregarPelicula(titulo, urlImagen, urlPelicula, sinopsis, genero, actores = "Actores no disponibles", anio = "2024") {
+      peliculas.push({
+        titulo,
+        imagen: urlImagen,
+        url: urlPelicula,
+        sinopsis,
+        genero,
+        actores,
+        anio
+      });
+      
+      // Si estás mostrando la lista, actualízala
+      if (currentMovieIndex === -1) {
+        showMoviesList();
+      }
+    }
   </script>
 </head>
 <body>
@@ -145,23 +443,8 @@
     </div>
   </div>
   
-  <div class="movie-container">
-    <div class="movie-info">
-      <img src="/api/placeholder/200/300" alt="Poster de la película" class="movie-poster">
-      <div class="movie-details">
-        <h3>Título de la Película</h3>
-        <p><strong>Año:</strong> 2024</p>
-        <p><strong>Director:</strong> Nombre del Director</p>
-        <p><strong>Género:</strong> Acción, Aventura</p>
-        <p><strong>Sinopsis:</strong> Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.</p>
-        <button id="ver-btn" onclick="verPelicula()">Ver película</button>
-        <button id="ganar-btn" onclick="sumarBalancePeliculas()" style="display: none; background-color: #ff9800;">Ganar S/ 0.003</button>
-      </div>
-    </div>
-    
-    <div id="player-container" class="player-container">
-      <iframe src="https://streamtape.com/e/2a6VZgbGRbcZvGy/" width="800" height="500" allowfullscreen allowtransparency allow="autoplay" scrolling="no" frameborder="0"></iframe>
-    </div>
+  <div id="main-content">
+    <!-- Aquí se cargarán las películas -->
   </div>
 </body>
 </html>
