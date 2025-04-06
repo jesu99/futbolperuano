@@ -141,6 +141,20 @@
       display: none;
     }
   </style>
+</head>
+<body>
+  <div class="header">
+    <h2>Películas 🎬</h2>
+    <div class="user-info">
+      <p>Usuario: <span id="user-email">Cargando...</span></p>
+      <p>Saldo: S/ <span id="user-balance">Cargando...</span></p>
+    </div>
+  </div>
+  
+  <div id="main-content">
+    <!-- Aquí se cargarán las películas -->
+  </div>
+
   <script>
     const SUPABASE_URL = "https://srormesvqserhrfugrls.supabase.co";
     const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNyb3JtZXN2cXNlcmhyZnVncmxzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDMzNTk0MzUsImV4cCI6MjA1ODkzNTQzNX0.zGjT9CbTd6jb1lEBzK3OrsZJIgZSqJH9zfLXzWvLTlM";
@@ -155,24 +169,6 @@
         sinopsis: "Cuando se produce un acontecimiento bélico mundial en la Tierra, Estados Unidos y Rusia, ambas naciones contactan en secreto con sus astronautas a bordo de la ISS y les dan instrucciones para que tomen el control de la estación por cualquier medio necesario.",
         genero: "Ciencia ficción, Suspenso",
         actores: "Ariana DeBose, Chris Messina, John Gallagher Jr., Мария Машкова, Costa Ronin, Pilou Asbæk, Mohamed ElGohary, Dean Labossiere, K.C. White, Tanya Giang, Jimmie Lee Sessoms",
-        anio: "2024"
-      },
-      {
-        titulo: "Bajo custodia",
-        imagen: "https://pics.filmaffinity.com/Bajo_custodia-198204017-large.jpg",
-        url: "https://mega.nz/file/UtxyVSiD#aKDB0n0uIYYZmyjSPmlECZPFaPCQ7mzyhNC64X50vqA",
-        sinopsis: "Una mujer enigmática despierta dentro de una comisaría abandonada en medio de la noche sin recordar cómo llegó allí. Dos detectives intentan reconstruir sus pasos para acusarla de un atropello.",
-        genero: "Thriller, Drama",
-        actores: "Actores no disponibles",
-        anio: "2024"
-      },
-      {
-        titulo: "Equipaje de mano",
-        imagen: "https://images.justwatch.com/poster/322836177/s166/equipaje-de-mano-2024.avif",
-        url: "https://mega.nz/file/g1JVhJIa#blYnA6tfvZfuMvuOk66dwTb9X-aSSmwARAMHrMfV7e8",
-        sinopsis: "El día de Nochebuena, en el concurrido aeropuerto de Los Angeles, un desconocido chantajea a un joven agente de la Administración de Seguridad en el Transporte, encargado de escanear el equipaje de mano, para que le deje subir una misteriosa maleta al avión.",
-        genero: "Thriller, Acción",
-        actores: "Actores no disponibles",
         anio: "2024"
       },
       {
@@ -194,42 +190,6 @@
         anio: "2023"
       },
       {
-        titulo: "Respira",
-        imagen: "https://pics.filmaffinity.com/Respira-938032787-large.jpg",
-        url: "https://mega.nz/file/tppm1IYB#knSjgtPDoVdsLqGSvZbnjhLFGnnCHvedooO264O7xmY",
-        sinopsis: "Dos desconocidos amenazan a una madre y a su hija en una Tierra que quedó inhabitable por falta de oxígeno.",
-        genero: "Ciencia ficción, Thriller",
-        actores: "Actores no disponibles",
-        anio: "2024"
-      },
-      {
-        titulo: "Sonic 3 La Película",
-        imagen: "https://encrypted-tbn3.gstatic.com/images?q=tbn:ANd9GcSu8nsDSE6dU7T3vTQShr0OgDHiCZSetzqGfkwV46_RphV-NogS",
-        url: "",
-        sinopsis: "Sonic, Knuckles y Tails regresan para vivir su aventura más épica. El equipo enfrenta a un poderoso enemigo, Shadow, un erizo misterioso con habilidades nunca antes vistas.",
-        genero: "Animación, Aventura",
-        actores: "Jim Carrey, James Marsden, Idris Elba, Ben Schwartz",
-        anio: "2024"
-      },
-      {
-        titulo: "Venom: El último baile",
-        imagen: "https://tv8.cuevana3.vip/wp-content/uploads/venom-el-ultimo-baile-2024.jpg",
-        url: "https://mega.nz/file/I8hlEYwK#Ro3GrGzAJS6L0jUOpUeGfEIA5GXD2GmD6a_i5ADG5kY",
-        sinopsis: "Eddie y Venom están a la fuga. Perseguidos por sus sendos mundos y cada vez más cercados, el dúo se ve abocado a tomar una decisión devastadora que hará que caiga el telón sobre el último baile de Venom y Eddie.",
-        genero: "Acción, Ciencia ficción",
-        actores: "Tom Hardy, Juno Temple, Chiwetel Ejiofor",
-        anio: "2024"
-      },
-      {
-        titulo: "Winnie the Pooh: Sangre y miel",
-        imagen: "https://encrypted-tbn3.gstatic.com/images?q=tbn:ANd9GcRKIMfNVHYaQkcZU4E2vmWCuX_sVl85MpJu_UG-20k4f6LmQOlj",
-        url: "https://mega.nz/file/koxUAQDA#30SiGJAdEOgtM7S484AuyENFzMGb6pZ583Miu8BeAFc",
-        sinopsis: "Winnie the Pooh y Piglet se han vuelto salvajes y quieren sangre humana. Los antes entrañables amigos aterrorizan a Christopher Robin y un grupo de jóvenes en una casa aislada.",
-        genero: "Terror",
-        actores: "Actores no disponibles",
-        anio: "2023"
-      },
-      {
         titulo: "Depravación",
         imagen: "https://www.cuevana.is/_next/image?url=https%3A%2F%2Fimage.tmdb.org%2Ft%2Fp%2Foriginal%2FcC1mG3UAfITKUBHtwtD7xaNnX10.jpg&w=640&q=75",
         url: "https://mega.nz/file/I4RVUJJS#OCfqBGts3hddi_umTAw3BJCl53Zv_-aUyF-H4HHXQnU",
@@ -248,41 +208,49 @@
     let movieWatchTime = 90 * 60 * 1000; // 1 hora y 30 minutos en milisegundos
     
     document.addEventListener("DOMContentLoaded", async function () {
-      const { data: { user }, error } = await supabase.auth.getUser();
-      if (error || !user) {
-        window.location.href = "login.html";
-        return;
-      }
-      
-      document.getElementById("user-email").textContent = user.email;
-      const { data: userData } = await supabase
-        .from("users")
-        .select("balance, watch_state")
-        .eq("id", user.id)
-        .single();
-      document.getElementById("user-balance").textContent = (userData.balance ?? 0).toFixed(3);
-      
-      // Verificar si hay una película en progreso
-      if (userData.watch_state) {
-        try {
-          const watchState = JSON.parse(userData.watch_state);
-          if (watchState.isWatching && watchState.startTime) {
-            isWatching = true;
-            watchStartTime = new Date(watchState.startTime);
-            currentMovieIndex = watchState.movieIndex;
-            if (currentMovieIndex >= 0 && currentMovieIndex < peliculas.length) {
-              currentMovie = peliculas[currentMovieIndex];
-              showMovieDetail(currentMovieIndex, true);
-              return;
+      try {
+        const { data: { user }, error } = await supabase.auth.getUser();
+        if (error || !user) {
+          window.location.href = "login.html";
+          return;
+        }
+        
+        document.getElementById("user-email").textContent = user.email;
+        const { data: userData } = await supabase
+          .from("users")
+          .select("balance, watch_state")
+          .eq("id", user.id)
+          .single();
+          
+        if (userData) {
+          document.getElementById("user-balance").textContent = (userData.balance ?? 0).toFixed(3);
+          
+          // Verificar si hay una película en progreso
+          if (userData.watch_state) {
+            try {
+              const watchState = JSON.parse(userData.watch_state);
+              if (watchState.isWatching && watchState.startTime) {
+                isWatching = true;
+                watchStartTime = new Date(watchState.startTime);
+                currentMovieIndex = watchState.movieIndex;
+                if (currentMovieIndex >= 0 && currentMovieIndex < peliculas.length) {
+                  currentMovie = peliculas[currentMovieIndex];
+                  showMovieDetail(currentMovieIndex, true);
+                  return;
+                }
+              }
+            } catch (e) {
+              console.error("Error al parsear watch_state:", e);
             }
           }
-        } catch (e) {
-          console.error("Error al parsear watch_state:", e);
         }
+        
+        // Si no hay película activa, mostrar la lista
+        showMoviesList();
+      } catch (error) {
+        console.error("Error durante la inicialización:", error);
+        alert("Error al cargar la aplicación. Por favor, recarga la página.");
       }
-      
-      // Si no hay película activa, mostrar la lista
-      showMoviesList();
     });
     
     function showMoviesList() {
@@ -308,20 +276,20 @@
         const movieCard = document.createElement("div");
         movieCard.className = "movie-card";
         movieCard.innerHTML = `
-          <img src="${pelicula.imagen}" alt="${pelicula.titulo}" onerror="this.src='/api/placeholder/300/200'">
+          <img src="${pelicula.imagen}" alt="${pelicula.titulo}" onerror="this.src='https://via.placeholder.com/300x200?text=No+disponible'">
           <div class="movie-card-info">
             <h3>${pelicula.titulo}</h3>
             <p>${pelicula.genero}</p>
             <p>${pelicula.anio}</p>
           </div>
         `;
-        movieCard.onclick = () => {
+        movieCard.addEventListener("click", () => {
           if (isWatching && currentMovieIndex !== index) {
             alert("Ya estás viendo una película. Debes terminar de verla antes de ver otra.");
           } else {
             showMovieDetail(index);
           }
-        };
+        });
         moviesGrid.appendChild(movieCard);
       });
       
@@ -343,7 +311,7 @@
       const backButton = document.createElement("button");
       backButton.textContent = "← Volver a la lista";
       backButton.className = "back-button";
-      backButton.onclick = showMoviesList;
+      backButton.addEventListener("click", showMoviesList);
       container.appendChild(backButton);
       
       // Contenedor de película
@@ -359,7 +327,7 @@
       poster.src = currentMovie.imagen;
       poster.alt = currentMovie.titulo;
       poster.className = "movie-poster";
-      poster.onerror = function() { this.src = '/api/placeholder/200/300'; };
+      poster.onerror = function() { this.src = 'https://via.placeholder.com/200x300?text=No+disponible'; };
       movieInfo.appendChild(poster);
       
       // Detalles
@@ -382,10 +350,10 @@
         viewButton.textContent = "Película no disponible";
       } else if (resuming && isWatching) {
         viewButton.textContent = "Continuar viendo";
-        viewButton.onclick = verPelicula;
+        viewButton.addEventListener("click", verPelicula);
       } else {
         viewButton.textContent = "Ver película";
-        viewButton.onclick = verPelicula;
+        viewButton.addEventListener("click", verPelicula);
       }
       
       details.appendChild(viewButton);
@@ -396,7 +364,7 @@
       earnButton.textContent = "Ganar S/ 0.003";
       earnButton.className = "earn-button";
       earnButton.style.display = "none";
-      earnButton.onclick = sumarBalancePeliculas;
+      earnButton.addEventListener("click", sumarBalancePeliculas);
       details.appendChild(earnButton);
       
       // Container para el timer
@@ -538,52 +506,59 @@
     }
     
     async function sumarBalancePeliculas() {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-      
-      const { data: userData, error: fetchError } = await supabase
-        .from("users")
-        .select("balance")
-        .eq("id", user.id)
-        .single();
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
         
-      if (fetchError || !userData) {
-        console.error("Error al obtener balance:", fetchError);
-        return;
-      }
-      
-      const nuevoBalance = parseFloat(userData.balance || 0) + 0.003;
-      
-      // Actualizar el balance y limpiar el estado de visualización
-      const { error: updateError } = await supabase
-        .from("users")
-        .update({ 
-          balance: nuevoBalance,
-          watch_state: null
-        })
-        .eq("id", user.id);
+        const { data: userData, error: fetchError } = await supabase
+          .from("users")
+          .select("balance")
+          .eq("id", user.id)
+          .single();
+          
+        if (fetchError || !userData) {
+          console.error("Error al obtener balance:", fetchError);
+          alert("Error al actualizar tu balance. Por favor, intenta nuevamente.");
+          return;
+        }
         
-      if (updateError) {
-        console.error("Error actualizando balance:", updateError);
-        return;
+        const nuevoBalance = parseFloat(userData.balance || 0) + 0.003;
+        
+        // Actualizar el balance y limpiar el estado de visualización
+        const { error: updateError } = await supabase
+          .from("users")
+          .update({ 
+            balance: nuevoBalance,
+            watch_state: null
+          })
+          .eq("id", user.id);
+          
+        if (updateError) {
+          console.error("Error actualizando balance:", updateError);
+          alert("Error al actualizar tu balance. Por favor, intenta nuevamente.");
+          return;
+        }
+        
+        // Actualizar estado local
+        isWatching = false;
+        watchStartTime = null;
+        if (watchingTimer) {
+          clearInterval(watchingTimer);
+          watchingTimer = null;
+        }
+        
+        // Actualizar la interfaz
+        document.getElementById("user-balance").textContent = nuevoBalance.toFixed(3);
+        document.getElementById("ganar-btn").style.display = "none";
+        document.getElementById("timer-container").style.display = "none";
+        document.getElementById("ver-btn").textContent = "Ver película nuevamente";
+        document.getElementById("ver-btn").disabled = false;
+        
+        alert("¡Ganaste S/ 0.003 por ver la película!");
+      } catch (error) {
+        console.error("Error en sumarBalancePeliculas:", error);
+        alert("Ocurrió un error al procesar tu recompensa. Por favor, intenta nuevamente.");
       }
-      
-      // Actualizar estado local
-      isWatching = false;
-      watchStartTime = null;
-      if (watchingTimer) {
-        clearInterval(watchingTimer);
-        watchingTimer = null;
-      }
-      
-      // Actualizar la interfaz
-      document.getElementById("user-balance").textContent = nuevoBalance.toFixed(3);
-      document.getElementById("ganar-btn").style.display = "none";
-      document.getElementById("timer-container").style.display = "none";
-      document.getElementById("ver-btn").textContent = "Ver película nuevamente";
-      document.getElementById("ver-btn").disabled = false;
-      
-      alert("¡Ganaste S/ 0.003 por ver la película!");
     }
     
     window.addEventListener("beforeunload", function(e) {
@@ -594,8 +569,15 @@
       }
     });
     
+    // Exponer funciones necesarias al ámbito global
+    window.showMoviesList = showMoviesList;
+    window.showMovieDetail = showMovieDetail;
+    window.continueWatching = continueWatching;
+    window.verPelicula = verPelicula;
+    window.sumarBalancePeliculas = sumarBalancePeliculas;
+    
     // Función para agregar una nueva película fácilmente
-    function agregarPelicula(titulo, urlImagen, urlPelicula, sinopsis, genero, actores = "Actores no disponibles", anio = "2024") {
+    window.agregarPelicula = function(titulo, urlImagen, urlPelicula, sinopsis, genero, actores = "Actores no disponibles", anio = "2024") {
       peliculas.push({
         titulo,
         imagen: urlImagen,
@@ -610,23 +592,7 @@
       if (currentMovieIndex === -1) {
         showMoviesList();
       }
-    }
+    };
   </script>
-</head>
-<body>
-  <div class="header">
-    <h2>Películas 🎬</h2>
-    <div class="user-info">
-      <p>Usuario: <span id="user-email">Cargando...</span></p>
-      <p>Saldo: S/ <span id="user-balance">Cargando...</span></p>
-    </div>
-  </div>
-  
-  <div id="main-content">
-    <!-- Aquí se cargarán las películas -->
-  </div>
 </body>
 </html>
-</antArt>
-  </body>
-  </html>
