@@ -3,8 +3,31 @@
 <head>
   <meta charset="UTF-8">
   <title>Películas con Temporizador</title>
+  <!-- Añadimos Supabase JS -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     body { font-family: Arial; background: #f4f4f4; padding: 20px; }
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: white;
+      padding: 15px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    .user-info {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+    .balance {
+      background: #e7f5ff;
+      padding: 8px 15px;
+      border-radius: 5px;
+      font-weight: bold;
+    }
     .pelicula {
       background: white;
       border-radius: 10px;
@@ -24,70 +47,196 @@
       cursor: pointer;
     }
     .pelicula button:hover { background: #0056b3; }
-    #contador { font-size: 18px; margin: 10px 0; font-weight: bold; }
+    #contador { 
+      font-size: 18px; 
+      margin: 10px 0; 
+      font-weight: bold; 
+      color: #d9534f;
+    }
+    .logout-btn {
+      padding: 8px 15px;
+      background: #f8f9fa;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .logout-btn:hover {
+      background: #e9ecef;
+    }
   </style>
 </head>
 <body>
-
-  <h2>Bienvenido</h2>
+  <header>
+    <h2>Bienvenido <span id="user-email">Cargando...</span></h2>
+    <div class="user-info">
+      <div class="balance">Saldo: $<span id="user-balance">0.00</span></div>
+      <button class="logout-btn" onclick="cerrarSesion()">Cerrar Sesión</button>
+    </div>
+  </header>
+  
   <p id="contador">Tiempo restante: --</p>
-
+  
   <div class="pelicula">
     <img src="https://pics.filmaffinity.com/Bajo_custodia-198204017-large.jpg" alt="Bajo custodia">
     <h3>Bajo custodia</h3>
     <p>Una mujer enigmática despierta dentro de una comisaría abandonada sin recordar cómo llegó allí.</p>
     <button onclick="verPelicula('https://mega.nz/file/UtxyVSiD#aKDB0n0uIYYZmyjSPmlECZPFaPCQ7mzyhNC64X50vqA')">Ver Película</button>
   </div>
-
+  
   <div class="pelicula">
     <img src="https://images.justwatch.com/poster/322836177/s166/equipaje-de-mano-2024.avif" alt="Equipaje de mano">
     <h3>Equipaje de mano</h3>
     <p>Un desconocido chantajea a un joven agente para subir una misteriosa maleta al avión.</p>
     <button onclick="verPelicula('https://mega.nz/file/g1JVhJIa#blYnA6tfvZfuMvuOk66dwTb9X-aSSmwARAMHrMfV7e8')">Ver Película</button>
   </div>
-
+  
   <script>
+    // Inicialización de Supabase - Reemplaza con tus credenciales
+    const supabaseUrl = 'TU_URL_DE_SUPABASE';
+    const supabaseKey = 'TU_LLAVE_ANON_PUBLICA';
+    const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+    
     const tiempoMax = 90 * 60 * 1000; // 1 hora 30 min en milisegundos
     let timer = null;
-
-    // Este código se ejecuta cuando se carga la página
-    document.addEventListener("DOMContentLoaded", () => {
-      // Si el usuario vuelve, se borra cualquier rastro del contador
-      localStorage.removeItem("temporizadorActivo");
-      document.getElementById("contador").textContent = "Tiempo restante: --";
+    
+    // Verificar autenticación y cargar datos del usuario
+    document.addEventListener("DOMContentLoaded", async function() {
+      // Verificar sesión de usuario
+      const { data: { user }, error } = await supabase.auth.getUser();
+      
+      if (error || !user) {
+        console.error("Usuario no autenticado:", error);
+        window.location.href = "index.html";
+        return;
+      }
+      
+      // Mostrar email del usuario
+      document.getElementById("user-email").textContent = user.email;
+      
+      // Obtener saldo del usuario desde la tabla 'users'
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('balance')
+        .eq('id', user.id)
+        .single();
+      
+      if (userError) {
+        console.error("Error al obtener datos del usuario:", userError);
+      } else if (userData) {
+        document.getElementById("user-balance").textContent = userData.balance.toFixed(2);
+      }
+      
+      // Verificar si hay un temporizador activo
+      verificarTemporizadorActivo();
     });
-
+    
+    // Función para verificar si el temporizador está activo al cargar la página
+    function verificarTemporizadorActivo() {
+      const temporizadorData = localStorage.getItem("temporizadorData");
+      
+      if (temporizadorData) {
+        const data = JSON.parse(temporizadorData);
+        const tiempoTranscurrido = Date.now() - data.inicio;
+        const tiempoRestante = tiempoMax - tiempoTranscurrido;
+        
+        // Si aún queda tiempo, reiniciar el contador
+        if (tiempoRestante > 0) {
+          iniciarTemporizador(tiempoRestante);
+        } else {
+          // Si ya pasó el tiempo, registrar la ganancia y limpiar
+          registrarGanancia();
+          localStorage.removeItem("temporizadorData");
+          document.getElementById("contador").textContent = "Tiempo finalizado. Ganancia registrada!";
+        }
+      }
+    }
+    
     function verPelicula(url) {
-      // Guardamos el inicio
-      localStorage.setItem("temporizadorActivo", "true");
-
+      // Guardamos el inicio del temporizador
+      const inicioTiempo = Date.now();
+      localStorage.setItem("temporizadorData", JSON.stringify({
+        inicio: inicioTiempo,
+        url: url
+      }));
+      
       // Abrimos la película
       window.open(url, "_blank");
-
+      
       // Iniciamos el contador en pantalla
       iniciarTemporizador(tiempoMax);
     }
-
+    
     function iniciarTemporizador(duracion) {
       let restante = duracion;
       const display = document.getElementById("contador");
-
       clearInterval(timer); // Por si hay uno corriendo
-
+      
       timer = setInterval(() => {
         restante -= 1000;
-
+        
         if (restante <= 0) {
           clearInterval(timer);
-          localStorage.removeItem("temporizadorActivo");
-          display.textContent = "Tiempo finalizado.";
+          localStorage.removeItem("temporizadorData");
+          display.textContent = "Tiempo finalizado. Ganancia registrada!";
+          registrarGanancia();
           return;
         }
-
+        
         const minutos = Math.floor(restante / 60000);
         const segundos = Math.floor((restante % 60000) / 1000);
         display.textContent = `Tiempo restante: ${minutos}m ${segundos}s`;
       }, 1000);
+    }
+    
+    async function registrarGanancia() {
+      try {
+        // Obtener el usuario actual
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        if (!user) return;
+        
+        // Obtener saldo actual
+        const { data: userData } = await supabase
+          .from('users')
+          .select('balance')
+          .eq('id', user.id)
+          .single();
+        
+        if (!userData) return;
+        
+        // Calcular nuevo saldo (suma 0.5 por ver un video completo)
+        const nuevoSaldo = userData.balance + 0.5;
+        
+        // Actualizar saldo en la base de datos
+        const { error } = await supabase
+          .from('users')
+          .update({ balance: nuevoSaldo })
+          .eq('id', user.id);
+        
+        if (error) {
+          console.error("Error al actualizar saldo:", error);
+        } else {
+          // Actualizar el saldo en la interfaz
+          document.getElementById("user-balance").textContent = nuevoSaldo.toFixed(2);
+        }
+      } catch (error) {
+        console.error("Error al registrar ganancia:", error);
+      }
+    }
+    
+    async function cerrarSesion() {
+      // Limpiar temporizador y datos locales
+      clearInterval(timer);
+      localStorage.removeItem("temporizadorData");
+      
+      // Cerrar sesión en Supabase
+      const { error } = await supabase.auth.signOut();
+      
+      if (error) {
+        console.error("Error al cerrar sesión:", error);
+      } else {
+        window.location.href = "index.html";
+      }
     }
   </script>
 </body>
