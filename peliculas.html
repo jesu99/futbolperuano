@@ -3,7 +3,6 @@
 <head>
   <meta charset="UTF-8">
   <title>Películas con Temporizador</title>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     body { font-family: Arial; background: #f4f4f4; padding: 20px; }
     .pelicula {
@@ -31,8 +30,6 @@
 <body>
 
   <h2>Bienvenido</h2>
-  <p>Correo: <span id="email">Cargando...</span></p>
-  <p>Saldo actual: S/ <span id="saldo">Cargando...</span></p>
   <p id="contador">Tiempo restante: --</p>
 
   <div class="pelicula">
@@ -50,59 +47,46 @@
   </div>
 
   <script>
-    const SUPABASE_URL = "https://srormesvqserhrfugrls.supabase.co";
-    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNyb3JtZXN2cXNlcmhyZnVncmxzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDMzNTk0MzUsImV4cCI6MjA1ODkzNTQzNX0.zGjT9CbTd6jb1lEBzK3OrsZJIgZSqJH9zfLXzWvLTlM";
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
     const tiempoMax = 90 * 60 * 1000; // 1 hora 30 min en milisegundos
-    const clave = "tiempoInicio";
+    let timer = null;
 
-    document.addEventListener("DOMContentLoaded", async () => {
-      const { data: { user }, error } = await supabase.auth.getUser();
-      if (error || !user) return window.location.href = "login.html";
-      document.getElementById("email").textContent = user.email;
-
-      const { data, error: balanceError } = await supabase
-        .from("users").select("balance").eq("id", user.id).single();
-
-      document.getElementById("saldo").textContent = balanceError || !data ? "0.00" : data.balance;
-
-      verificarContador();
+    // Este código se ejecuta cuando se carga la página
+    document.addEventListener("DOMContentLoaded", () => {
+      // Si el usuario vuelve, se borra cualquier rastro del contador
+      localStorage.removeItem("temporizadorActivo");
+      document.getElementById("contador").textContent = "Tiempo restante: --";
     });
 
     function verPelicula(url) {
-      const ahora = Date.now();
-      localStorage.setItem(clave, ahora);
+      // Guardamos el inicio
+      localStorage.setItem("temporizadorActivo", "true");
+
+      // Abrimos la película
       window.open(url, "_blank");
+
+      // Iniciamos el contador en pantalla
+      iniciarTemporizador(tiempoMax);
     }
 
-    function verificarContador() {
-      const inicio = localStorage.getItem(clave);
-      if (!inicio) return;
+    function iniciarTemporizador(duracion) {
+      let restante = duracion;
+      const display = document.getElementById("contador");
 
-      const restante = tiempoMax - (Date.now() - parseInt(inicio));
-      if (restante > 0) {
-        iniciarTemporizador(restante);
-      } else {
-        localStorage.removeItem(clave);
-        document.getElementById("contador").textContent = "Tiempo restante: --";
-      }
-    }
+      clearInterval(timer); // Por si hay uno corriendo
 
-    function iniciarTemporizador(tiempoRestante) {
-      const contador = document.getElementById("contador");
+      timer = setInterval(() => {
+        restante -= 1000;
 
-      const timer = setInterval(() => {
-        tiempoRestante -= 1000;
-        const minutos = Math.floor(tiempoRestante / 60000);
-        const segundos = Math.floor((tiempoRestante % 60000) / 1000);
-        contador.textContent = `Tiempo restante: ${minutos}m ${segundos}s`;
-
-        if (tiempoRestante <= 0) {
+        if (restante <= 0) {
           clearInterval(timer);
-          localStorage.removeItem(clave);
-          contador.textContent = "Tiempo finalizado.";
+          localStorage.removeItem("temporizadorActivo");
+          display.textContent = "Tiempo finalizado.";
+          return;
         }
+
+        const minutos = Math.floor(restante / 60000);
+        const segundos = Math.floor((restante % 60000) / 1000);
+        display.textContent = `Tiempo restante: ${minutos}m ${segundos}s`;
       }, 1000);
     }
   </script>
