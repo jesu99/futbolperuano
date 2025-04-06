@@ -71,6 +71,16 @@
     .logout-btn:hover {
       background: #e9ecef;
     }
+    .notification {
+      padding: 10px;
+      background-color: #dff0d8;
+      color: #3c763d;
+      border-radius: 5px;
+      margin: 10px 0;
+      display: none;
+      text-align: center;
+      font-weight: bold;
+    }
   </style>
 </head>
 <body>
@@ -80,6 +90,8 @@
     <p>Saldo actual: S/ <span id="saldo">Cargando...</span></p>
     <button class="logout-btn" onclick="cerrarSesion()">Cerrar Sesión</button>
   </div>
+  
+  <div id="notification" class="notification">¡Recompensa exitosa! Se ha añadido 0.003 a tu saldo.</div>
   
   <p id="contador">Tiempo restante: --</p>
   
@@ -151,6 +163,18 @@
         peliculaVentana = null;
       }
     });
+    
+    // Función para mostrar notificación
+    function mostrarNotificacion(mensaje) {
+      const notification = document.getElementById("notification");
+      notification.textContent = mensaje;
+      notification.style.display = "block";
+      
+      // Ocultar la notificación después de 5 segundos
+      setTimeout(() => {
+        notification.style.display = "none";
+      }, 5000);
+    }
     
     // Función para verificar si hay un temporizador activo al cargar la página
     function verificarTemporizadorActivo() {
@@ -296,8 +320,8 @@
           return;
         }
         
-        // Calcular el nuevo saldo (agregar 0.5 por ver un video completo)
-        const nuevoSaldo = parseFloat(data.balance) + 0.5;
+        // Calcular el nuevo saldo (agregar 0.5 por ver un video completo y 0.003 de recompensa adicional)
+        const nuevoSaldo = parseFloat(data.balance) + 0.0 + 0.003;
         
         // Actualizar el saldo en la base de datos
         const { error: updateError } = await supabase
@@ -309,7 +333,10 @@
           console.error("Error al actualizar saldo:", updateError);
         } else {
           // Actualizar el saldo en la interfaz
-          document.getElementById("saldo").textContent = nuevoSaldo.toFixed(2);
+          document.getElementById("saldo").textContent = nuevoSaldo.toFixed(3);
+          
+          // Mostrar notificación de recompensa exitosa
+          mostrarNotificacion("¡Recompensa exitosa! Se ha añadido 0.003 a tu saldo.");
         }
       } catch (error) {
         console.error("Error al registrar ganancia:", error);
