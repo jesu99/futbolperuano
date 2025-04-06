@@ -126,6 +126,20 @@
     .back-button:hover {
       background-color: #0b7dda;
     }
+    .timer-container {
+      margin-top: 15px;
+      font-size: 16px;
+    }
+    .timer {
+      font-weight: bold;
+      color: #e91e63;
+    }
+    .blocked-message {
+      color: #e91e63;
+      font-weight: bold;
+      margin-top: 10px;
+      display: none;
+    }
   </style>
   <script>
     const SUPABASE_URL = "https://srormesvqserhrfugrls.supabase.co";
@@ -228,6 +242,10 @@
     
     let currentMovie = null;
     let currentMovieIndex = -1;
+    let watchingTimer = null;
+    let isWatching = false;
+    let watchStartTime = null;
+    let movieWatchTime = 90 * 60 * 1000; // 1 hora y 30 minutos en milisegundos
     
     document.addEventListener("DOMContentLoaded", async function () {
       const { data: { user }, error } = await supabase.auth.getUser();
@@ -239,18 +257,49 @@
       document.getElementById("user-email").textContent = user.email;
       const { data: userData } = await supabase
         .from("users")
-        .select("balance")
+        .select("balance, watch_state")
         .eq("id", user.id)
         .single();
       document.getElementById("user-balance").textContent = (userData.balance ?? 0).toFixed(3);
       
-      // Mostrar lista de películas
+      // Verificar si hay una película en progreso
+      if (userData.watch_state) {
+        try {
+          const watchState = JSON.parse(userData.watch_state);
+          if (watchState.isWatching && watchState.startTime) {
+            isWatching = true;
+            watchStartTime = new Date(watchState.startTime);
+            currentMovieIndex = watchState.movieIndex;
+            if (currentMovieIndex >= 0 && currentMovieIndex < peliculas.length) {
+              currentMovie = peliculas[currentMovieIndex];
+              showMovieDetail(currentMovieIndex, true);
+              return;
+            }
+          }
+        } catch (e) {
+          console.error("Error al parsear watch_state:", e);
+        }
+      }
+      
+      // Si no hay película activa, mostrar la lista
       showMoviesList();
     });
     
     function showMoviesList() {
       const container = document.getElementById("main-content");
       container.innerHTML = "";
+      
+      // Si hay una película en progreso, mostrar mensaje
+      if (isWatching) {
+        const blockedMessage = document.createElement("div");
+        blockedMessage.className = "blocked-message";
+        blockedMessage.style.display = "block";
+        blockedMessage.innerHTML = `
+          <p>Tienes una película en progreso. Debes terminar de verla y reclamar tu recompensa antes de ver otra película.</p>
+          <button onclick="continueWatching(${currentMovieIndex})">Continuar viendo</button>
+        `;
+        container.appendChild(blockedMessage);
+      }
       
       const moviesGrid = document.createElement("div");
       moviesGrid.className = "movies-grid";
@@ -266,14 +315,24 @@
             <p>${pelicula.anio}</p>
           </div>
         `;
-        movieCard.onclick = () => showMovieDetail(index);
+        movieCard.onclick = () => {
+          if (isWatching && currentMovieIndex !== index) {
+            alert("Ya estás viendo una película. Debes terminar de verla antes de ver otra.");
+          } else {
+            showMovieDetail(index);
+          }
+        };
         moviesGrid.appendChild(movieCard);
       });
       
       container.appendChild(moviesGrid);
     }
     
-    function showMovieDetail(index) {
+    function continueWatching(index) {
+      showMovieDetail(index, true);
+    }
+    
+    function showMovieDetail(index, resuming = false) {
       currentMovie = peliculas[index];
       currentMovieIndex = index;
       
@@ -317,12 +376,16 @@
       // Botón para ver película
       const viewButton = document.createElement("button");
       viewButton.id = "ver-btn";
-      viewButton.textContent = "Ver película";
-      viewButton.onclick = verPelicula;
       
       if (!currentMovie.url) {
         viewButton.disabled = true;
         viewButton.textContent = "Película no disponible";
+      } else if (resuming && isWatching) {
+        viewButton.textContent = "Continuar viendo";
+        viewButton.onclick = verPelicula;
+      } else {
+        viewButton.textContent = "Ver película";
+        viewButton.onclick = verPelicula;
       }
       
       details.appendChild(viewButton);
@@ -335,6 +398,16 @@
       earnButton.style.display = "none";
       earnButton.onclick = sumarBalancePeliculas;
       details.appendChild(earnButton);
+      
+      // Container para el timer
+      const timerContainer = document.createElement("div");
+      timerContainer.id = "timer-container";
+      timerContainer.className = "timer-container";
+      timerContainer.style.display = "none";
+      timerContainer.innerHTML = `
+        <p>Debes ver la película durante <span class="timer" id="timer">01:30:00</span> para recibir tu recompensa.</p>
+      `;
+      details.appendChild(timerContainer);
       
       movieInfo.appendChild(details);
       movieContainer.appendChild(movieInfo);
@@ -352,7 +425,8 @@
             <h3>Esta película está alojada en MEGA</h3>
             <p>Haz clic en el siguiente enlace para verla:</p>
             <a href="${currentMovie.url}" target="_blank" style="color: #4CAF50; font-weight: bold;">${currentMovie.titulo} - Ver en MEGA</a>
-            <p style="margin-top: 15px;">Recuerda volver aquí después de 30 segundos para ganar tu recompensa.</p>
+            <p style="margin-top: 15px;">Debes ver la película completa (aproximadamente 1 hora y 30 minutos) para recibir tu recompensa.</p>
+            <p>Por favor, no cierres esta ventana mientras ves la película.</p>
           </div>
         `;
       } else if (currentMovie.url && currentMovie.url.includes("streamtape.com")) {
@@ -370,50 +444,155 @@
       
       movieContainer.appendChild(playerContainer);
       container.appendChild(movieContainer);
+      
+      if (resuming && isWatching && watchStartTime) {
+        // Mostrar el reproductor y actualizar la interfaz
+        document.getElementById("player-container").style.display = "block";
+        document.getElementById("ver-btn").textContent = "Película en reproducción";
+        document.getElementById("ver-btn").disabled = true;
+        document.getElementById("timer-container").style.display = "block";
+        
+        // Calcular el tiempo restante y continuar el temporizador
+        const elapsedTime = new Date() - new Date(watchStartTime);
+        const remainingTime = Math.max(0, movieWatchTime - elapsedTime);
+        
+        if (remainingTime <= 0) {
+          // Si ya pasó el tiempo, mostrar el botón de recompensa
+          document.getElementById("ganar-btn").style.display = "block";
+          document.getElementById("timer").innerText = "00:00:00";
+        } else {
+          // Continuar el temporizador
+          updateTimer(remainingTime);
+          watchingTimer = setInterval(() => {
+            const newElapsedTime = new Date() - new Date(watchStartTime);
+            const newRemainingTime = Math.max(0, movieWatchTime - newElapsedTime);
+            
+            if (newRemainingTime <= 0) {
+              clearInterval(watchingTimer);
+              document.getElementById("ganar-btn").style.display = "block";
+              document.getElementById("timer").innerText = "00:00:00";
+            } else {
+              updateTimer(newRemainingTime);
+            }
+          }, 1000);
+        }
+      }
     }
     
-    function verPelicula() {
+    function updateTimer(remainingTime) {
+      const hours = Math.floor(remainingTime / (60 * 60 * 1000));
+      const minutes = Math.floor((remainingTime % (60 * 60 * 1000)) / (60 * 1000));
+      const seconds = Math.floor((remainingTime % (60 * 1000)) / 1000);
+      
+      document.getElementById("timer").innerText = 
+        `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    }
+    
+    async function verPelicula() {
+      if (!currentMovie.url) return;
+      
       const playerContainer = document.getElementById("player-container");
       const verBtn = document.getElementById("ver-btn");
+      const timerContainer = document.getElementById("timer-container");
       
       playerContainer.style.display = "block";
       verBtn.textContent = "Película en reproducción";
       verBtn.disabled = true;
+      timerContainer.style.display = "block";
       
-      // Iniciar el contador para ganar dinero después de 30 segundos
-      setTimeout(function() {
-        document.getElementById("ganar-btn").style.display = "block";
-      }, 30000);
+      // Iniciar nuevo temporizador si no estamos reanudando
+      if (!isWatching) {
+        isWatching = true;
+        watchStartTime = new Date();
+        
+        // Guardar el estado en la base de datos
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const watchState = {
+            isWatching: true,
+            startTime: watchStartTime.toISOString(),
+            movieIndex: currentMovieIndex
+          };
+          
+          await supabase
+            .from("users")
+            .update({ watch_state: JSON.stringify(watchState) })
+            .eq("id", user.id);
+        }
+        
+        // Iniciar el temporizador para 1 hora y 30 minutos
+        updateTimer(movieWatchTime);
+        watchingTimer = setInterval(() => {
+          const elapsedTime = new Date() - watchStartTime;
+          const remainingTime = Math.max(0, movieWatchTime - elapsedTime);
+          
+          if (remainingTime <= 0) {
+            clearInterval(watchingTimer);
+            document.getElementById("ganar-btn").style.display = "block";
+            document.getElementById("timer").innerText = "00:00:00";
+          } else {
+            updateTimer(remainingTime);
+          }
+        }, 1000);
+      }
     }
     
     async function sumarBalancePeliculas() {
       const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      
       const { data: userData, error: fetchError } = await supabase
         .from("users")
         .select("balance")
         .eq("id", user.id)
         .single();
+        
       if (fetchError || !userData) {
         console.error("Error al obtener balance:", fetchError);
         return;
       }
+      
       const nuevoBalance = parseFloat(userData.balance || 0) + 0.003;
+      
+      // Actualizar el balance y limpiar el estado de visualización
       const { error: updateError } = await supabase
         .from("users")
-        .update({ balance: nuevoBalance })
+        .update({ 
+          balance: nuevoBalance,
+          watch_state: null
+        })
         .eq("id", user.id);
+        
       if (updateError) {
         console.error("Error actualizando balance:", updateError);
         return;
       }
-      document.getElementById("user-balance").textContent = nuevoBalance.toFixed(3);
-      alert("¡Ganaste S/ 0.003 por ver la película!");
       
-      // Resetear la interfaz después de ganar
+      // Actualizar estado local
+      isWatching = false;
+      watchStartTime = null;
+      if (watchingTimer) {
+        clearInterval(watchingTimer);
+        watchingTimer = null;
+      }
+      
+      // Actualizar la interfaz
+      document.getElementById("user-balance").textContent = nuevoBalance.toFixed(3);
       document.getElementById("ganar-btn").style.display = "none";
+      document.getElementById("timer-container").style.display = "none";
       document.getElementById("ver-btn").textContent = "Ver película nuevamente";
       document.getElementById("ver-btn").disabled = false;
+      
+      alert("¡Ganaste S/ 0.003 por ver la película!");
     }
+    
+    window.addEventListener("beforeunload", function(e) {
+      if (isWatching) {
+        const message = "Estás viendo una película. Si sales ahora, perderás tu progreso.";
+        e.returnValue = message;
+        return message;
+      }
+    });
     
     // Función para agregar una nueva película fácilmente
     function agregarPelicula(titulo, urlImagen, urlPelicula, sinopsis, genero, actores = "Actores no disponibles", anio = "2024") {
@@ -448,3 +627,6 @@
   </div>
 </body>
 </html>
+</antArt>
+  </body>
+  </html>
