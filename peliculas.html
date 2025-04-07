@@ -5,108 +5,332 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Películas con Temporizador</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
   <style>
+    :root {
+      --primary-color: #e50914;
+      --dark-bg: #141414;
+      --header-bg: #0c0c0c;
+      --text-color: #fff;
+      --secondary-bg: #222;
+      --hover-color: #e50914;
+      --highlight-bg: rgba(255, 255, 255, 0.1);
+    }
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
     body {
-      font-family: Arial, sans-serif;
-      padding: 20px;
-      background-color: #f4f4f4;
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+      background-color: var(--dark-bg);
+      color: var(--text-color);
+      padding: 0;
+      margin: 0;
+      line-height: 1.5;
     }
-    .user-info {
-      background: white;
-      padding: 15px;
-      border-radius: 10px;
-      margin-bottom: 20px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    }
-    #contador {
-      font-size: 18px;
-      margin: 10px 0;
-      font-weight: bold;
-      color: #d9534f;
-      background: #fff;
-      padding: 10px;
-      border-radius: 5px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    }
-    .pelicula {
-      background: white;
-      border-radius: 10px;
-      padding: 15px;
-      margin-bottom: 20px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    
+    header {
+      background-color: var(--header-bg);
+      padding: 1rem 2rem;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.5);
       display: flex;
-      flex-direction: column;
-      max-width: 400px;
+      justify-content: space-between;
+      align-items: center;
     }
-    .pelicula img {
-      width: 100%;
-      border-radius: 10px;
+    
+    .logo {
+      color: var(--primary-color);
+      font-size: 2rem;
+      font-weight: bold;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
     }
-    .pelicula h3 {
-      margin: 10px 0 5px;
+    
+    .user-info {
+      background: rgba(0, 0, 0, 0.7);
+      padding: 20px;
+      border-radius: 8px;
+      margin: 20px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+      border: 1px solid rgba(255,255,255,0.05);
     }
-    .pelicula p {
-      font-size: 14px;
+    
+    .user-info h2 {
+      margin-bottom: 15px;
+      font-size: 1.5rem;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+      padding-bottom: 10px;
     }
-    .pelicula button {
-      margin-top: 10px;
-      padding: 10px;
-      border: none;
-      border-radius: 5px;
-      background-color: #007BFF;
-      color: white;
-      cursor: pointer;
+    
+    .user-data {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
-    .pelicula button:hover {
-      background-color: #0056b3;
+    
+    .user-balance {
+      font-size: 1.2rem;
+      font-weight: bold;
+      color: #4BB543;
     }
-    .logout-btn {
-      padding: 8px 15px;
-      background: #f8f9fa;
-      border: 1px solid #ddd;
-      border-radius: 5px;
-      cursor: pointer;
-      margin-top: 10px;
-    }
-    .logout-btn:hover {
-      background: #e9ecef;
-    }
-    .notification {
-      padding: 10px;
-      background-color: #dff0d8;
-      color: #3c763d;
-      border-radius: 5px;
-      margin: 10px 0;
-      display: none;
+    
+    #contador {
+      font-size: 1.2rem;
+      margin: 20px;
+      padding: 12px;
+      background: rgba(229, 9, 20, 0.2);
+      border-radius: 8px;
+      border-left: 4px solid var(--primary-color);
+      color: #fff;
       text-align: center;
       font-weight: bold;
+    }
+    
+    .warning-banner {
+      background: linear-gradient(to right, #ff8a00, #e52e71);
+      color: white;
+      padding: 20px;
+      margin: 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .warning-icon {
+      font-size: 2rem;
+      margin-bottom: 10px;
+      display: block;
+      text-align: center;
+    }
+    
+    .warning-title {
+      font-size: 1.5rem;
+      font-weight: bold;
+      margin-bottom: 15px;
+      text-align: center;
+    }
+    
+    .logout-btn {
+      padding: 8px 15px;
+      border: none;
+      border-radius: 4px;
+      background-color: rgba(255,255,255,0.2);
+      color: white;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    
+    .logout-btn:hover {
+      background-color: rgba(255,255,255,0.3);
+    }
+    
+    .notification {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      padding: 15px 25px;
+      background: rgba(75, 181, 67, 0.9);
+      color: white;
+      border-radius: 8px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+      display: none;
+      z-index: 1000;
+      animation: slideIn 0.5s forwards;
+    }
+    
+    @keyframes slideIn {
+      from {
+        transform: translateX(100%);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+    
+    .search-container {
+      margin: 20px;
+      position: relative;
+    }
+    
+    .search-container input {
+      width: 100%;
+      padding: 12px 20px;
+      border-radius: 30px;
+      border: none;
+      background-color: var(--secondary-bg);
+      color: var(--text-color);
+      font-size: 1rem;
+      padding-left: 40px;
+    }
+    
+    .search-container i {
+      position: absolute;
+      left: 15px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: rgba(255,255,255,0.5);
+    }
+    
+    .peliculas-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 20px;
+      padding: 20px;
+    }
+    
+    .pelicula {
+      background: rgba(0, 0, 0, 0.7);
+      border-radius: 8px;
+      overflow: hidden;
+      transition: transform 0.3s, box-shadow 0.3s;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+      border: 1px solid rgba(255,255,255,0.05);
+    }
+    
+    .pelicula:hover {
+      transform: translateY(-10px);
+      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+    }
+    
+    .pelicula img {
+      width: 100%;
+      height: 450px;
+      object-fit: cover;
+      transition: opacity 0.3s;
+    }
+    
+    .pelicula:hover img {
+      opacity: 0.7;
+    }
+    
+    .pelicula-info {
+      padding: 15px;
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .pelicula h3 {
+      margin: 0 0 10px;
+      font-size: 1.3rem;
+      font-weight: 700;
+    }
+    
+    .pelicula p {
+      font-size: 0.95rem;
+      color: rgba(255,255,255,0.7);
+      margin-bottom: 15px;
+      flex-grow: 1;
+    }
+    
+    .pelicula button {
+      padding: 12px;
+      border: none;
+      border-radius: 5px;
+      background-color: var(--primary-color);
+      color: white;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 1rem;
+      transition: background-color 0.3s;
+      margin-top: auto;
+    }
+    
+    .pelicula button:hover {
+      background-color: #f40612;
+    }
+    
+    .check-item {
+      display: flex;
+      align-items: center;
+      margin: 8px 0;
+    }
+    
+    .check-item i {
+      color: #4BB543;
+      margin-right: 10px;
+    }
+    
+    .disclaimer {
+      font-style: italic;
+      color: rgba(255,255,255,0.7);
+      margin-top: 10px;
+      font-size: 0.9rem;
+    }
+    
+    .empty-search {
+      text-align: center;
+      padding: 40px;
+      grid-column: 1 / -1;
     }
   </style>
 </head>
 <body>
+  <header>
+    <div class="logo">MovieFlix</div>
+    <button class="logout-btn" onclick="cerrarSesion()">Cerrar Sesión</button>
+  </header>
+  
   <div class="user-info">
     <h2>Bienvenido</h2>
-    <p>Correo: <span id="email">Cargando...</span></p>
-    <p>Saldo actual: S/ <span id="saldo">Cargando...</span></p>
-    <button class="logout-btn" onclick="cerrarSesion()">Cerrar Sesión</button>
+    <div class="user-data">
+      <div>
+        <p>Correo: <span id="email">Cargando...</span></p>
+      </div>
+      <div class="user-balance">
+        <p>Saldo: S/ <span id="saldo">Cargando...</span></p>
+      </div>
+    </div>
+  </div>
+  
+  <div class="warning-banner">
+    <span class="warning-icon">⚠️</span>
+    <h3 class="warning-title">¡Advertencia! Estás a punto de ganar dinero viendo una película 🍿💸</h3>
+    <p>Sí, leíste bien. Cada vez que ves una película en esta plataforma con anuncios, <strong>se genera ingreso</strong>… 🫢 <em>¿Y sabes quién gana más que nosotros?</em> 👉 ¡<strong>Tú!</strong></p>
+    <div style="margin-top: 15px;">
+      <div class="check-item">
+        <i class="fas fa-check-circle"></i>
+        <span>Porque no pagas ni un sol.</span>
+      </div>
+      <div class="check-item">
+        <i class="fas fa-check-circle"></i>
+        <span>Porque accedes a películas completas sin restricciones.</span>
+      </div>
+      <div class="check-item">
+        <i class="fas fa-check-circle"></i>
+        <span>Porque solo con mirar, <strong>generas ingresos que hacen posible este sitio</strong>.</span>
+      </div>
+      <div class="check-item">
+        <i class="fas fa-check-circle"></i>
+        <span>Porque si todos saltaran los anuncios, <strong>no existiría esta página</strong>.</span>
+      </div>
+    </div>
+    <p class="disclaimer">🔐 Si eliges el modo sin anuncios, tendrás acceso limitado. Pero si ves con anuncios, <strong>tú estás financiando tu propio entretenimiento</strong>. <em>¿Quién más te paga por mirar pelis?</em></p>
   </div>
   
   <div id="notification" class="notification">¡Recompensa exitosa! Se ha añadido 0.003 a tu saldo.</div>
   
   <p id="contador">Tiempo restante: --</p>
   
-  <div class="pelicula">
-    <img src="https://pics.filmaffinity.com/Bajo_custodia-198204017-large.jpg" alt="Bajo custodia">
-    <h3>Bajo custodia</h3>
-    <p>Una mujer enigmática despierta dentro de una comisaría abandonada en medio de la noche sin recordar cómo llegó allí. Dos detectives intentan reconstruir sus pasos para acusarla de un atropello.</p>
-    <button onclick="verPelicula('https://do7go.com/e/utfh2cbr2q7a')">Ver Película</button>
+  <div class="search-container">
+    <i class="fas fa-search"></i>
+    <input type="text" id="buscador" placeholder="Buscar películas..." oninput="filtrarPeliculas()">
   </div>
   
-  <div class="pelicula">
-    <img src="https://images.justwatch.com/poster/322836177/s166/equipaje-de-mano-2024.avif" alt="Equipaje de mano">
-    <h3>Equipaje de mano</h3>
-    <p>El día de Nochebuena, en el concurrido aeropuerto de Los Angeles, un desconocido chantajea a un joven agente para que le deje subir una misteriosa maleta al avión.</p>
-    <button onclick="verPelicula('https://mega.nz/file/g1JVhJIa#blYnA6tfvZfuMvuOk66dwTb9X-aSSmwARAMHrMfV7e8')">Ver Película</button>
+  <div id="peliculas-container" class="peliculas-container">
+    <!-- Las películas se generarán dinámicamente -->
   </div>
   
   <script>
@@ -114,6 +338,32 @@
     const SUPABASE_URL = "https://srormesvqserhrfugrls.supabase.co";
     const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNyb3JtZXN2cXNlcmhyZnVncmxzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDMzNTk0MzUsImV4cCI6MjA1ODkzNTQzNX0.zGjT9CbTd6jb1lEBzK3OrsZJIgZSqJH9zfLXzWvLTlM";
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    
+    // Lista de películas
+    const peliculas = [
+      {
+        id: 1,
+        titulo: "Bajo custodia",
+        imagen: "https://pics.filmaffinity.com/Bajo_custodia-198204017-large.jpg",
+        descripcion: "Una mujer enigmática despierta dentro de una comisaría abandonada en medio de la noche sin recordar cómo llegó allí. Dos detectives intentan reconstruir sus pasos para acusarla de un atropello.",
+        url: "https://do7go.com/e/utfh2cbr2q7a"
+      },
+      {
+        id: 2,
+        titulo: "Equipaje de mano",
+        imagen: "https://images.justwatch.com/poster/322836177/s166/equipaje-de-mano-2024.avif",
+        descripcion: "El día de Nochebuena, en el concurrido aeropuerto de Los Angeles, un desconocido chantajea a un joven agente para que le deje subir una misteriosa maleta al avión.",
+        url: "https://mega.nz/file/g1JVhJIa#blYnA6tfvZfuMvuOk66dwTb9X-aSSmwARAMHrMfV7e8"
+      },
+     
+      {
+        id: 4,
+        titulo: "Furiosa: De la saga Mad Max",
+        imagen: "https://pics.filmaffinity.com/Furiosa_De_la_saga_Mad_Max-839472013-large.jpg",
+        descripcion: "La historia de origen de la guerrera Furiosa antes de unirse a Mad Max en Fury Road. Secuestrada del Verde Lugar de las Muchas Madres, cae en manos de una gran Horda de Motoristas liderada por el Señor de la Guerra Dementus.",
+        url: "https://do7go.com/e/r3xtzbpj9o26"
+      }
+    ];
     
     const tiempoMax = 90 * 60 * 1000; // 1 hora 30 min en milisegundos
     let timer = null;
@@ -151,9 +401,47 @@
         document.getElementById("saldo").textContent = data.balance;
       }
       
+      // Cargar películas
+      cargarPeliculas(peliculas);
+      
       // Verificar si hay un temporizador activo
       verificarTemporizadorActivo();
     });
+    
+    // Función para cargar películas
+    function cargarPeliculas(listaPeliculas) {
+      const contenedor = document.getElementById("peliculas-container");
+      contenedor.innerHTML = "";
+      
+      if (listaPeliculas.length === 0) {
+        contenedor.innerHTML = '<div class="empty-search"><h3>No se encontraron películas</h3><p>Intenta con otro término de búsqueda</p></div>';
+        return;
+      }
+      
+      listaPeliculas.forEach(pelicula => {
+        const peliculaElement = document.createElement("div");
+        peliculaElement.className = "pelicula";
+        peliculaElement.innerHTML = `
+          <img src="${pelicula.imagen}" alt="${pelicula.titulo}">
+          <div class="pelicula-info">
+            <h3>${pelicula.titulo}</h3>
+            <p>${pelicula.descripcion}</p>
+            <button onclick="verPelicula('${pelicula.url}')">Ver Película</button>
+          </div>
+        `;
+        contenedor.appendChild(peliculaElement);
+      });
+    }
+    
+    // Función para filtrar películas
+    function filtrarPeliculas() {
+      const busqueda = document.getElementById("buscador").value.toLowerCase();
+      const peliculasFiltradas = peliculas.filter(pelicula => 
+        pelicula.titulo.toLowerCase().includes(busqueda) || 
+        pelicula.descripcion.toLowerCase().includes(busqueda)
+      );
+      cargarPeliculas(peliculasFiltradas);
+    }
     
     // Detectar cuando esta ventana recupera el foco
     window.addEventListener('focus', function() {
