@@ -355,7 +355,13 @@
         descripcion: "El día de Nochebuena, en el concurrido aeropuerto de Los Angeles, un desconocido chantajea a un joven agente para que le deje subir una misteriosa maleta al avión.",
         url: "https://mega.nz/file/g1JVhJIa#blYnA6tfvZfuMvuOk66dwTb9X-aSSmwARAMHrMfV7e8"
       },
-     
+      {
+        id: 3,
+        titulo: "Avatar: El sentido del agua",
+        imagen: "https://pics.filmaffinity.com/Avatar_El_sentido_del_agua-72202567-large.jpg",
+        descripcion: "Jake Sully y Ney'tiri han formado una familia y hacen todo lo posible por permanecer juntos. Sin embargo, deben abandonar su hogar y explorar las regiones de Pandora cuando una antigua amenaza reaparece.",
+        url: "https://do7go.com/e/x89nj2qm7bde"
+      },
       {
         id: 4,
         titulo: "Furiosa: De la saga Mad Max",
@@ -370,6 +376,11 @@
     let userId = null;
     let peliculaVentana = null;
     let contadorPausado = false;
+    
+    // Función para formatear un número a 3 decimales
+    function formatearSaldo(saldo) {
+      return parseFloat(saldo).toFixed(3);
+    }
     
     // Función para cargar los datos del usuario
     document.addEventListener("DOMContentLoaded", async () => {
@@ -396,9 +407,9 @@
         .single();
       
       if (balanceError || !data) {
-        document.getElementById("saldo").textContent = "0.00";
+        document.getElementById("saldo").textContent = "0.000";
       } else {
-        document.getElementById("saldo").textContent = data.balance;
+        document.getElementById("saldo").textContent = formatearSaldo(data.balance);
       }
       
       // Cargar películas
@@ -610,6 +621,7 @@
         
         // Calcular el nuevo saldo (agregar 0.5 por ver un video completo y 0.003 de recompensa adicional)
         const nuevoSaldo = parseFloat(data.balance) + 0.0 + 0.003;
+        const saldoFormateado = formatearSaldo(nuevoSaldo);
         
         // Actualizar el saldo en la base de datos
         const { error: updateError } = await supabase
@@ -621,7 +633,7 @@
           console.error("Error al actualizar saldo:", updateError);
         } else {
           // Actualizar el saldo en la interfaz
-          document.getElementById("saldo").textContent = nuevoSaldo.toFixed(3);
+          document.getElementById("saldo").textContent = saldoFormateado;
           
           // Mostrar notificación de recompensa exitosa
           mostrarNotificacion("¡Recompensa exitosa! Se ha añadido 0.003 a tu saldo.");
