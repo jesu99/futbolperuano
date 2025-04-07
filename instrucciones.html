@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cómo funciona - Instrucciones</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --primary-bg: #141414;
+            --secondary-bg: #181818;
+            --accent-color: #e50914;
+            --text-color: #ffffff;
+            --btn-hover: #e50914;
+            --btn-active: #b2070e;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+        }
+        
+        body {
+            background-color: var(--primary-bg);
+            color: var(--text-color);
+            padding: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        header {
+            background-color: rgba(0, 0, 0, 0.7);
+            padding: 20px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+        }
+        
+        .logo {
+            color: var(--accent-color);
+            font-size: 32px;
+            font-weight: bold;
+        }
+        
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 4px;
+            background-color: #555;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+        
+        main {
+            flex: 1;
+            padding: 40px;
+            max-width: 1200px;
+            margin: 0 auto;
+            width: 100%;
+        }
+        
+        .content-container {
+            background-color: var(--secondary-bg);
+            padding: 30px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+        
+        .page-title {
+            font-size: 32px;
+            margin-bottom: 20px;
+            color: var(--accent-color);
+        }
+        
+        .section {
+            margin-bottom: 30px;
+        }
+        
+        .section-title {
+            font-size: 24px;
+            margin-bottom: 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 10px;
+        }
+        
+        .section-content {
+            font-size: 16px;
+            line-height: 1.6;
+        }
+        
+        .earning-method {
+            background-color: rgba(0, 0, 0, 0.2);
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            border-left: 3px solid var(--accent-color);
+        }
+        
+        .tips {
+            background-color: rgba(229, 9, 20, 0.1);
+            padding: 15px;
+            border-radius: 6px;
+            margin: 20px 0;
+        }
+        
+        .tips-title {
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        
+        ul {
+            margin-left: 20px;
+            margin-bottom: 15px;
+        }
+        
+        li {
+            margin-bottom: 8px;
+        }
+        
+        .back-button {
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 15px 30px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-block;
+            margin-top: 20px;
+        }
+        
+        .back-button:hover {
+            background-color: var(--btn-active);
+            transform: translateY(-3px);
+        }
+        
+        .ad-container {
+            margin: 30px 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        
+        .vertical-ad {
+            float: right;
+            margin-left: 20px;
+            margin-bottom: 20px;
+        }
+        
+        footer {
+            background-color: rgba(0, 0, 0, 0.8);
+            padding: 20px;
+            text-align: center;
+            font-size: 14px;
+        }
+        
+        /* Estilos responsivos */
+        @media (max-width: 768px) {
+            header {
+                padding: 15px 20px;
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            main {
+                padding: 20px;
+            }
+            
+            .vertical-ad {
+                float: none;
+                margin: 20px auto;
+                display: block;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo">INSTRUCCIONES</div>
+        <div class="user-info">
+            <span id="user-email">Cargando...</span>
+            <div class="user-avatar">U</div>
+        </div>
+    </header>
+    
+    <main>
+        <div class="content-container">
+            <h1 class="page-title">¿Cómo generar ingresos en nuestra plataforma?</h1>
+            
+            <div class="ad-container">
+                <script type="text/javascript">
+                    atOptions = {
+                        'key' : 'b330ccd204185aee9ef640adccf896d2',
+                        'format' : 'iframe',
+                        'height' : 90,
+                        'width' : 728,
+                        'params' : {}
+                    };
+                </script>
+                <script type="text/javascript" src="//www.highperformanceformat.com/b330ccd204185aee9ef640adccf896d2/invoke.js"></script>
+            </div>
+            
+            <div class="vertical-ad">
+                <script type="text/javascript">
+                    atOptions = {
+                        'key' : 'a55c7cdc78df0520f71c2b00e4046167',
+                        'format' : 'iframe',
+                        'height' : 300,
+                        'width' : 160,
+                        'params' : {}
+                    };
+                </script>
+                <script type="text/javascript" src="//www.highperformanceformat.com/a55c7cdc78df0520f71c2b00e4046167/invoke.js"></script>
+            </div>
+            
+            <div class="section">
+                <h2 class="section-title">1. ClickBoom - Gana por cada clic</h2>
+                <div class="section-content">
+                    <div class="earning-method">
+                        <p>ClickBoom es nuestra herramienta principal para generar ingresos rápidamente. Por cada clic que realices en los anuncios designados, recibirás una pequeña comisión directamente en tu balance.</p>
+                    </div>
+                    <p>¿Cómo funciona?</p>
+                    <ul>
+                        <li>Ingresa a la sección "ClickBoom" desde tu dashboard</li>
+                        <li>Verás una serie de anuncios disponibles para interactuar</li>
+                        <li>Haz clic en los anuncios y permanece en la página destino por al menos 20 segundos para que tu click sea valido</li>
+                        <li>Por cada interacción válida, recibirás entre $/ 0.001 y $/ 0.002 en tu balance</li>
+                        <li>Puedes realizar varias interacciones diarias</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="section">
+                <h2 class="section-title">2. MovieCash - Gana viendo películas</h2>
+                <div class="section-content">
+                    <div class="earning-method">
+                        <p>Con MovieCash, puedes generar ingresos mientras disfrutas de tus películas favoritas. El sistema funciona reproduciendo varios anuncios seguidos antes de la reproducción.</p>
+                    </div>
+                    <p>¿Cómo funciona?</p>
+                    <ul>
+                        <li>Accede a la sección "MovieCash" desde tu dashboard</li>
+                        <li>Elige cualquier película de nuestro catálogo</li>
+                        <li>Por cada pelicula visualizada, recibirás S/ 0.03 en tu balance</li>
+                        <li>Las películas tienen entre 5-10 anuncios al inicio de la reproducción</li>
+                        <li>Debes ver al menos el 80%  de la película para que los ingresos sean validados</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="ad-container">
+                <script async="async" data-cfasync="false" src="//pl26063295.profitableratecpm.com/2537ae2ea8b16bc9e554273a94dfd098/invoke.js"></script>
+                <div id="container-2537ae2ea8b16bc9e554273a94dfd098"></div>
+            </div>
+            
+            <div class="section">
+                <h2 class="section-title">3. Modo Premium</h2>
+                <div class="section-content">
+                    <div class="earning-method">
+                        <p>Los usuarios Premium tienen acceso a cualquier pelicula libre de anuncios y podra solicitar su pelicula favorita,el catalogo se actualizara cada 10 horas (tener en cuenta que la pelicula debe tener como minimo 10 dias de estrenado).</p>
+                    </div>
+                    <p>Beneficios Premium:</p>
+                    <ul>
+                        <li>Comisiones un 50% más altas por cada interacción con anuncios</li>
+                        <li>Acceso a campañas exclusivas de alto valor</li>
+                        <li>Límite diario de interacciones aumentado a 200</li>
+                        <li>Películas con menos interrupciones publicitarias pero mismo valor de recompensa</li>
+                        <li>Retiros prioritarios a tu método de pago preferido</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="tips">
+                <div class="tips-title">Consejos para maximizar tus ganancias:</div>
+                <ul>
+                    <li><strong>Consistencia diaria:</strong> Dedica al menos 30 minutos diarios para obtener mejores resultados</li>
+                    <li><strong>Combina métodos:</strong> Alterna entre ClickBoom y MovieCash para optimizar tus ingresos</li>
+                    <li><strong>Completa tu perfil:</strong> Los usuarios con perfiles completos reciben ofertas personalizadas de mayor valor</li>
+                    <li><strong>Mantén tu cuenta activa:</strong> Las cuentas con actividad regular reciben bonificaciones mensuales</li>
+                </ul>
+            </div>
+            
+            <div class="section">
+                <h2 class="section-title">Preguntas Frecuentes</h2>
+                <div class="section-content">
+                    <p><strong>¿Cuándo puedo retirar mis ganancias?</strong><br>
+                    Puedes solicitar un retiro una vez que alcances un mínimo de $/ 50.00 en tu balance.</p>
+                    
+                    <p><strong>¿Qué métodos de pago están disponibles?</strong><br>
+                    Actualmente ofrecemos retiros a través de transferencias bancarias, PayPal y criptomonedas.</p>
+                    
+                    <p><strong>¿Hay algún límite de ganancias?</strong><br>
+                    No existe un límite máximo de ganancias, pero tenemos límites diarios de interacciones para garantizar la calidad del sistema.</p>
+                    
+                    <p><strong>¿Es necesario tener conocimientos técnicos?</strong><br>
+                    No, nuestra plataforma está diseñada para ser intuitiva y fácil de usar para todos.</p>
+                </div>
+            </div>
+            
+            <button class="back-button" id="btn-back">Regresar al Dashboard</button>
+        </div>
+    </main>
+    
+    <footer>
+        © 2025 Dashboard - Todos los derechos reservados
+    </footer>
+
+    <script>
+        // Configuración de Supabase
+        const SUPABASE_URL = "https://srormesvqserhrfugrls.supabase.co";
+        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNyb3JtZXN2cXNlcmhyZnVncmxzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDMzNTk0MzUsImV4cCI6MjA1ODkzNTQzNX0.zGjT9CbTd6jb1lEBzK3OrsZJIgZSqJH9zfLXzWvLTlM";
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        
+        document.addEventListener("DOMContentLoaded", async function() {
+            // Verificar autenticación
+            const { data: { user }, error } = await supabase.auth.getUser();
+            
+            if (error || !user) {
+                window.location.href = "index.html"; // Redirigir si no está logueado
+                return;
+            }
+            
+            // Mostrar email del usuario y actualizar avatar
+            document.getElementById("user-email").textContent = user.email;
+            if (user.email) {
+                document.querySelector(".user-avatar").textContent = user.email.charAt(0).toUpperCase();
+            }
+            
+            // Configurar botón de regreso
+            document.getElementById("btn-back").addEventListener("click", function() {
+                window.location.href = "dashboard.html";
+            });
+        });
+    </script>
+</body>
+</html>
