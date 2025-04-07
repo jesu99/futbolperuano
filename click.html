@@ -50,6 +50,11 @@
             margin-top: 10px;
             padding: 10px;
             border-radius: 4px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        .status.visible {
+            opacity: 1;
         }
         .success {
             background-color: rgba(0, 100, 0, 0.2);
@@ -73,6 +78,11 @@
             border-radius: 4px;
             color: #0071eb;
             border: 1px solid rgba(0, 113, 235, 0.3);
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+        .timer-info.visible {
+            opacity: 1;
         }
         .debug-info {
             margin-top: 20px;
@@ -115,7 +125,7 @@
         }
         .stats-container {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 15px;
             margin: 20px 0;
         }
@@ -124,19 +134,21 @@
             padding: 15px;
             border-radius: 4px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            min-height: 90px;
         }
         .stat-card strong {
             display: block;
             font-size: 1.2em;
-            margin-bottom: 5px;
+            margin-bottom: 10px;
             color: #999;
         }
         .stat-card span {
             font-size: 1.8em;
             color: white;
+            word-break: break-word;
         }
         .progress-container {
-            margin-top: 5px;
+            margin-top: 12px;
             background-color: #333;
             border-radius: 10px;
             height: 6px;
@@ -151,13 +163,17 @@
             position: relative;
             height: 20px;
             margin-top: 10px;
+            overflow: hidden;
         }
         .countdown-bar {
+            position: absolute;
+            top: 0;
+            left: 0;
             height: 100%;
+            width: 0%;
             background-color: #e50914;
             border-radius: 3px;
-            transition: width 1s linear;
-            width: 0%;
+            will-change: width;
         }
     </style>
 </head>
@@ -197,7 +213,7 @@
         </div>
     </div>
     
-    <div id="timer-info" class="timer-info" style="display: none;">
+    <div id="timer-info" class="timer-info">
         Próximo reinicio de clics en: <span id="time-remaining">--:--:--</span>
     </div>
     
@@ -206,7 +222,7 @@
     <div id="container-2537ae2ea8b16bc9e554273a94dfd098" style="cursor: pointer;"></div>
     
     <button id="logout">Cerrar Sesión</button>
-    <div id="status-message" class="status" style="display: none;"></div>
+    <div id="status-message" class="status"></div>
 
     <script>
         // Debug mode (set to false in production)
@@ -234,6 +250,7 @@
         let timerInterval = null;
         let countdownInterval = null;
         let isWaitingForClick = false;
+        let statusTimeoutId = null;
         
         // Debug logging function
         function debugLog(message, data = null) {
@@ -250,13 +267,16 @@
             }
         }
         
-        // Show status messages
+        // Show status messages with improved animation
         function showStatus(message, type = 'success') {
             const statusDiv = document.getElementById('status-message');
             statusDiv.textContent = message;
             
             // Remove all classes
-            statusDiv.classList.remove('success', 'error', 'warning');
+            statusDiv.classList.remove('success', 'error', 'warning', 'visible');
+            
+            // Force reflow to ensure transition works
+            void statusDiv.offsetWidth;
             
             // Add appropriate class
             if (type === 'error') {
@@ -267,11 +287,17 @@
                 statusDiv.classList.add('success');
             }
             
-            statusDiv.style.display = 'block';
+            // Clear any existing timeout
+            if (statusTimeoutId) {
+                clearTimeout(statusTimeoutId);
+            }
             
-            // Hide after 5 seconds
-            setTimeout(() => {
-                statusDiv.style.display = 'none';
+            // Show with fade-in
+            statusDiv.classList.add('visible');
+            
+            // Hide after 5 seconds with fade-out
+            statusTimeoutId = setTimeout(() => {
+                statusDiv.classList.remove('visible');
             }, 5000);
         }
         
@@ -303,7 +329,7 @@
             }
         }
         
-        // Start countdown for click registration
+        // Start countdown for click registration with improved animation
         function startClickCountdown() {
             if (isWaitingForClick) return;
             
@@ -315,13 +341,19 @@
             
             countdownWrapper.style.display = 'block';
             countdownTimer.textContent = secondsLeft;
+            
+            // Reset the countdown bar to 0 width
+            countdownBar.style.transition = 'none';
             countdownBar.style.width = '0%';
             
-            // Animate progress bar to 100% over the wait time
+            // Force reflow to ensure the transition reset takes effect
+            void countdownBar.offsetWidth;
+            
+            // Set the transition and start the animation
             countdownBar.style.transition = `width ${CLICK_WAIT_TIME}s linear`;
-            setTimeout(() => {
+            requestAnimationFrame(() => {
                 countdownBar.style.width = '100%';
-            }, 50);
+            });
             
             countdownInterval = setInterval(() => {
                 secondsLeft--;
@@ -496,7 +528,7 @@
             }
         }
         
-        // Update click availability UI
+        // Update click availability UI with improved transitions
         function updateClickAvailability() {
             const availableClicks = MAX_CLICKS_PER_PERIOD - clicksInPeriod;
             document.getElementById("available-clicks").textContent = Math.max(0, availableClicks);
@@ -516,17 +548,21 @@
                     nextResetTime = new Date(lastClickTime.getTime() + PERIOD_MS);
                 }
                 
-                // Show timer if se han usado todos los clics
-                timerInfoElement.style.display = 'block';
+                // Update timer display first
                 updateTimerDisplay();
+                
+                // Then show timer with transition after a small delay
+                setTimeout(() => {
+                    timerInfoElement.classList.add('visible');
+                }, 10);
                 
                 // Start or ensure timer is running
                 if (!timerInterval) {
                     timerInterval = setInterval(updateTimerDisplay, 1000);
                 }
             } else {
-                // Hide timer if hay clics disponibles
-                timerInfoElement.style.display = 'none';
+                // Hide timer with transition
+                timerInfoElement.classList.remove('visible');
                 
                 // Clear interval if it exists
                 if (timerInterval) {
