@@ -38,7 +38,6 @@
             cursor: pointer;
             font-weight: bold;
             transition: background-color 0.2s;
-            margin-right: 10px;
         }
         button:hover {
             background-color: #f40612;
@@ -46,11 +45,6 @@
         button:disabled {
             background-color: #5c5c5c;
             cursor: not-allowed;
-        }
-        .button-container {
-            margin-top: 20px;
-            display: flex;
-            gap: 10px;
         }
         .status {
             margin-top: 10px;
@@ -227,10 +221,7 @@
     <script async="async" data-cfasync="false" src="//pl26063295.effectiveratecpm.com/2537ae2ea8b16bc9e554273a94dfd098/invoke.js"></script>
     <div id="container-2537ae2ea8b16bc9e554273a94dfd098" style="cursor: pointer;"></div>
     
-    <div class="button-container">
-        <button id="dashboard-btn">Ir al Dashboard</button>
-        <button id="logout">Cerrar Sesión</button>
-    </div>
+    <button id="logout">Cerrar Sesión</button>
     <div id="status-message" class="status"></div>
 
     <script>
@@ -244,7 +235,7 @@
         
         // Constants for click limitation
         const MAX_CLICKS_PER_PERIOD = 3;
-        const PERIOD_HOURS = 3;  // CORREGIDO: Exactamente 3 horas
+        const PERIOD_HOURS = 3;  // Confirmar que son 3 horas, no 7
         const PERIOD_MS = PERIOD_HOURS * 60 * 60 * 1000; // 3 horas en milisegundos
         const CLICK_WAIT_TIME = 20; // Tiempo de espera en segundos para contar un clic
         
@@ -554,9 +545,7 @@
             if (lastClickTime && clicksInPeriod >= MAX_CLICKS_PER_PERIOD) {
                 // Calculate next reset time if not already set
                 if (!nextResetTime) {
-                    // CORREGIDO: Asegurar que se utilizan exactamente 3 horas
                     nextResetTime = new Date(lastClickTime.getTime() + PERIOD_MS);
-                    debugLog('Tiempo de reinicio configurado para exactamente 3 horas después:', nextResetTime);
                 }
                 
                 // Update timer display first
@@ -609,7 +598,6 @@
             
             // Si el período está activo y se han usado todos los clics, configurar el próximo tiempo de reinicio
             if (clicksInPeriod >= MAX_CLICKS_PER_PERIOD) {
-                // CORREGIDO: Asegurar que se utilizan exactamente 3 horas
                 nextResetTime = new Date(lastClick.getTime() + PERIOD_MS);
                 debugLog('Próximo reinicio programado para:', nextResetTime);
             }
@@ -695,7 +683,6 @@
                 
                 // Si este es el tercer clic, iniciar el temporizador
                 if (clicksInPeriod === MAX_CLICKS_PER_PERIOD) {
-                    // CORREGIDO: Asegurar que se utilizan exactamente 3 horas
                     nextResetTime = new Date(lastClickTime.getTime() + PERIOD_MS);
                     debugLog('Tercer clic alcanzado, temporizador iniciado para:', nextResetTime);
                 }
@@ -741,11 +728,6 @@
             }
         }
         
-        // Navigate to dashboard.html
-        function navigateToDashboard() {
-            window.location.href = "dashboard.html";
-        }
-        
         // Logout function
         async function logout() {
             debugLog('Cerrando sesión...');
@@ -771,95 +753,22 @@
         }
         
         // Initialize the page
-document.addEventListener("DOMContentLoaded", () => {
-    // Check user session
-    checkSession();
-    
-    // Set up event listeners
-    document.getElementById("logout").addEventListener("click", logout);
-    document.getElementById("dashboard-btn").addEventListener("click", navigateToDashboard);
-    
-    // Add event listener to the ad container
-    const adContainer = document.getElementById('container-2537ae2ea8b16bc9e554273a94dfd098');
-    adContainer.addEventListener("click", () => {
-        // Start click countdown when ad is clicked
-        startClickCountdown();
-    });
-    
-    // Debug info toggle (for dev purposes)
-    if (DEBUG_MODE) {
-        const debugToggle = document.createElement('button');
-        debugToggle.textContent = 'Toggle Debug Info';
-        debugToggle.style.marginTop = '20px';
-        debugToggle.style.backgroundColor = '#333';
-        document.body.appendChild(debugToggle);
-        
-        const debugInfo = document.createElement('div');
-        debugInfo.className = 'debug-info';
-        debugInfo.innerHTML = '<h3>Debug Info</h3><pre id="debug-content"></pre>';
-        document.body.appendChild(debugInfo);
-        
-        debugToggle.addEventListener('click', () => {
-            if (debugInfo.style.display === 'none' || !debugInfo.style.display) {
-                debugInfo.style.display = 'block';
-                updateDebugInfo();
-            } else {
-                debugInfo.style.display = 'none';
-            }
+        document.addEventListener("DOMContentLoaded", () => {
+            // Check session when page loads
+            checkSession();
+            
+            // Event listeners
+            document.getElementById("logout").addEventListener("click", logout);
+            
+            // Ad container click listener
+            const adContainer = document.getElementById("container-2537ae2ea8b16bc9e554273a94dfd098");
+            adContainer.addEventListener("click", function() {
+                // Start countdown for click registration
+                startClickCountdown();
+            });
+            
+            debugLog('Página inicializada');
         });
-        
-        function updateDebugInfo() {
-            if (debugInfo.style.display === 'block') {
-                const debugContent = document.getElementById('debug-content');
-                debugContent.textContent = JSON.stringify({
-                    userId,
-                    userEmail,
-                    currentClickCount,
-                    currentBalance,
-                    clicksInPeriod,
-                    lastClickTime: lastClickTime ? lastClickTime.toISOString() : null,
-                    nextResetTime: nextResetTime ? nextResetTime.toISOString() : null,
-                    isWaitingForClick,
-                    maxClicks: MAX_CLICKS_PER_PERIOD,
-                    periodHours: PERIOD_HOURS
-                }, null, 2);
-                
-                setTimeout(updateDebugInfo, 1000);
-            }
-        }
-    }
-    
-    // Check for URL parameters that might indicate return from authentication
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.has('session_confirmed')) {
-        showStatus('Sesión iniciada correctamente', 'success');
-    }
-});
-        // Check for URL parameters that might indicate return from authentication
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.has('session_confirmed')) {
-        showStatus('Sesión iniciada correctamente', 'success');
-    }
-});
-
-// Event listener for visibility changes - pause countdown when tab is not visible
-document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'hidden' && isWaitingForClick) {
-        // Cancel click countdown if tab is hidden
-        debugLog('Página oculta, cancelando countdown');
-        cancelClickCountdown();
-        showStatus('Proceso de clic cancelado debido a cambio de pestaña', 'warning');
-    }
-});
-
-// Handle beforeunload to warn user if there's a click in progress
-window.addEventListener('beforeunload', (e) => {
-    if (isWaitingForClick) {
-        const message = 'Hay un clic en proceso. Si sales ahora, se cancelará.';
-        e.returnValue = message;
-        return message;
-    }
-});
-</script>
+    </script>
 </body>
 </html>
