@@ -5,20 +5,312 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            /* Variables configurables para personalización */
+            --primary-bg: #141414;
+            --secondary-bg: #181818;
+            --accent-color: #e50914;
+            --text-color: #ffffff;
+            --btn-hover: #e50914;
+            --btn-active: #b2070e;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+        }
+        
+        body {
+            background-color: var(--primary-bg);
+            color: var(--text-color);
+            padding: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        header {
+            background-color: rgba(0, 0, 0, 0.7);
+            padding: 20px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+        }
+        
+        .logo {
+            color: var(--accent-color);
+            font-size: 32px;
+            font-weight: bold;
+        }
+        
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 4px;
+            background-color: #555;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+        
+        main {
+            flex: 1;
+            padding: 40px;
+            max-width: 1200px;
+            margin: 0 auto;
+            width: 100%;
+        }
+        
+        .balance-display {
+            background-color: var(--secondary-bg);
+            padding: 20px;
+            border-radius: 6px;
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+        
+        .balance-amount {
+            font-size: 32px;
+            font-weight: bold;
+        }
+        
+        .button-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+        
+        .menu-button {
+            background-color: var(--secondary-bg);
+            color: var(--text-color);
+            border: none;
+            border-radius: 4px;
+            padding: 20px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 120px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+        
+        .menu-button:hover {
+            background-color: var(--btn-hover);
+            transform: translateY(-5px);
+        }
+        
+        .menu-button:active {
+            background-color: var(--btn-active);
+        }
+        
+        .menu-button .icon {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+        
+        footer {
+            background-color: rgba(0, 0, 0, 0.8);
+            padding: 20px;
+            text-align: center;
+            font-size: 14px;
+        }
+        
+        /* Estilos responsivos */
+        @media (max-width: 768px) {
+            header {
+                padding: 15px 20px;
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            main {
+                padding: 20px;
+            }
+            
+            .button-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .button-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .balance-display {
+                flex-direction: column;
+                gap: 10px;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo">DASHBOARD</div>
+        <div class="user-info">
+            <span id="user-email">Cargando...</span>
+            <div class="user-avatar">U</div>
+        </div>
+    </header>
+    
+    <main>
+        <div class="balance-display">
+            <div>
+                <h2>Tu Balance</h2>
+                <p class="balance-amount">S/ <span id="user-balance">Cargando...</span></p>
+            </div>
+        </div>
+        
+        <div class="button-grid">
+            <button class="menu-button" id="btn-payment">
+                <span class="icon">💳</span>
+                <span id="btn1-text">Agregar / Cambiar Método de Pago</span>
+            </button>
+            
+            <button class="menu-button" id="btn-creator">
+                <span class="icon">🎬</span>
+                <span id="btn2-text">Ir a Creador</span>
+            </button>
+            
+            <button class="menu-button" id="btn-custom1">
+                <span class="icon">📊</span>
+                <span id="btn3-text">Estadísticas</span>
+            </button>
+            
+            <button class="menu-button" id="btn-custom2">
+                <span class="icon">⭐</span>
+                <span id="btn4-text">Favoritos</span>
+            </button>
+            
+            <button class="menu-button" id="btn-custom3">
+                <span class="icon">📝</span>
+                <span id="btn5-text">Historial</span>
+            </button>
+            
+            <button class="menu-button" id="btn-custom4">
+                <span class="icon">⚙️</span>
+                <span id="btn6-text">Configuración</span>
+            </button>
+            
+            <button class="menu-button" id="btn-logout">
+                <span class="icon">🚪</span>
+                <span>Cerrar Sesión</span>
+            </button>
+        </div>
+    </main>
+    
+    <footer>
+        © 2025 Dashboard - Todos los derechos reservados
+    </footer>
+
     <script>
+        // Configuración de botones - Edita estas variables para personalizar
+        const buttonConfig = {
+            btn1: {
+                text: "Agregar / Cambiar Método de Pago",
+                url: "click.html"
+            },
+            btn2: {
+                text: "Ir a Creador",
+                url: "peliculas.html"
+            },
+            btn3: {
+                text: "Estadísticas",
+                url: "estadisticas.html"
+            },
+            btn4: {
+                text: "Favoritos",
+                url: "favoritos.html"
+            },
+            btn5: {
+                text: "Historial",
+                url: "historial.html"
+            },
+            btn6: {
+                text: "Configuración",
+                url: "config.html"
+            }
+        };
+        
+        // Configuración de Supabase
         const SUPABASE_URL = "https://srormesvqserhrfugrls.supabase.co";
         const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNyb3JtZXN2cXNlcmhyZnVncmxzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDMzNTk0MzUsImV4cCI6MjA1ODkzNTQzNX0.zGjT9CbTd6jb1lEBzK3OrsZJIgZSqJH9zfLXzWvLTlM";
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
+        
+        // Aplicar configuración de botones
+        function applyButtonConfig() {
+            document.getElementById("btn1-text").textContent = buttonConfig.btn1.text;
+            document.getElementById("btn2-text").textContent = buttonConfig.btn2.text;
+            document.getElementById("btn3-text").textContent = buttonConfig.btn3.text;
+            document.getElementById("btn4-text").textContent = buttonConfig.btn4.text;
+            document.getElementById("btn5-text").textContent = buttonConfig.btn5.text;
+            document.getElementById("btn6-text").textContent = buttonConfig.btn6.text;
+            
+            document.getElementById("btn-payment").addEventListener("click", () => {
+                window.location.href = buttonConfig.btn1.url;
+            });
+            
+            document.getElementById("btn-creator").addEventListener("click", () => {
+                window.location.href = buttonConfig.btn2.url;
+            });
+            
+            document.getElementById("btn-custom1").addEventListener("click", () => {
+                window.location.href = buttonConfig.btn3.url;
+            });
+            
+            document.getElementById("btn-custom2").addEventListener("click", () => {
+                window.location.href = buttonConfig.btn4.url;
+            });
+            
+            document.getElementById("btn-custom3").addEventListener("click", () => {
+                window.location.href = buttonConfig.btn5.url;
+            });
+            
+            document.getElementById("btn-custom4").addEventListener("click", () => {
+                window.location.href = buttonConfig.btn6.url;
+            });
+            
+            document.getElementById("btn-logout").addEventListener("click", logout);
+        }
+        
         document.addEventListener("DOMContentLoaded", async function() {
+            // Aplicar configuración de botones
+            applyButtonConfig();
+            
+            // Verificar autenticación
             const { data: { user }, error } = await supabase.auth.getUser();
             
             if (error || !user) {
                 window.location.href = "index.html"; // Redirigir si no está logueado
                 return;
             }
-
+            
+            // Mostrar email del usuario y actualizar avatar
             document.getElementById("user-email").textContent = user.email;
+            if (user.email) {
+                document.querySelector(".user-avatar").textContent = user.email.charAt(0).toUpperCase();
+            }
             
             // Verificar si el usuario ya está en la tabla 'users'
             const { data, error: userError } = await supabase
@@ -26,36 +318,22 @@
                 .select('balance')
                 .eq('id', user.id)
                 .single();
-
+                
             if (userError || !data) {
                 console.log("Usuario no encontrado, creando en la base de datos...");
                 await supabase.from('users').insert([{ id: user.id, balance: 0 }]);
-                document.getElementById("user-balance").textContent = "0.00";
+                document.getElementById("user-balance").textContent = "0.000";
             } else {
-                document.getElementById("user-balance").textContent = data.balance;
+                // Formatear balance con 3 decimales exactos
+                const balance = parseFloat(data.balance);
+                document.getElementById("user-balance").textContent = balance.toFixed(3);
             }
         });
-
-        function redirectToPayment() {
-            window.location.href = "click.html"; // Asegúrate de que la ruta es correcta
-        }
-
+        
         async function logout() {
             await supabase.auth.signOut();
             window.location.href = "login.html";
         }
     </script>
-</head>
-<body>
-    <h2>Bienvenido al Dashboard</h2>
-    <p>Usuario logueado: <span id="user-email">Cargando...</span></p>
-    <p>Saldo: S/ <span id="user-balance">Cargando...</span></p>
-    <button onclick="logout()">Cerrar sesión</button>
-    <button onclick="redirectToPayment()">Agregar / Cambiar Método de Pago</button>
-
-    <a href="peliculas.html">
-    <button>Ir creador</button>
-</a>
-
 </body>
 </html>
