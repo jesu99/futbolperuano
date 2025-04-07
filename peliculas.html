@@ -61,13 +61,6 @@
       border: 1px solid rgba(255,255,255,0.05);
     }
     
-    .user-info h2 {
-      margin-bottom: 15px;
-      font-size: 1.5rem;
-      border-bottom: 1px solid rgba(255,255,255,0.1);
-      padding-bottom: 10px;
-    }
-    
     .user-data {
       display: flex;
       justify-content: space-between;
@@ -117,14 +110,45 @@
       text-align: center;
     }
     
-    .logout-btn {
+    .ad-banner {
+      margin: 20px;
+      text-align: center;
+      background: rgba(0, 0, 0, 0.5);
+      padding: 15px;
+      border-radius: 8px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    }
+    
+    .button-container {
+      display: flex;
+      gap: 10px;
+    }
+    
+    .header-buttons {
+      display: flex;
+      gap: 10px;
+    }
+    
+    .dashboard-btn, .logout-btn {
       padding: 8px 15px;
       border: none;
       border-radius: 4px;
-      background-color: rgba(255,255,255,0.2);
-      color: white;
       cursor: pointer;
       transition: background-color 0.3s;
+    }
+    
+    .dashboard-btn {
+      background-color: var(--primary-color);
+      color: white;
+    }
+    
+    .dashboard-btn:hover {
+      background-color: #f40612;
+    }
+    
+    .logout-btn {
+      background-color: rgba(255,255,255,0.2);
+      color: white;
     }
     
     .logout-btn:hover {
@@ -275,16 +299,27 @@
       padding: 40px;
       grid-column: 1 / -1;
     }
+    
+    .bottom-ad {
+      margin-top: 40px;
+      margin-bottom: 40px;
+      padding: 20px;
+      text-align: center;
+      background: rgba(0, 0, 0, 0.5);
+      border-radius: 8px;
+    }
   </style>
 </head>
 <body>
   <header>
     <div class="logo">MovieFlix</div>
-    <button class="logout-btn" onclick="cerrarSesion()">Cerrar Sesión</button>
+    <div class="header-buttons">
+      <button class="dashboard-btn" onclick="irAlDashboard()">Dashboard</button>
+      <button class="logout-btn" onclick="cerrarSesion()">Cerrar Sesión</button>
+    </div>
   </header>
   
   <div class="user-info">
-    <h2>Bienvenido</h2>
     <div class="user-data">
       <div>
         <p>Correo: <span id="email">Cargando...</span></p>
@@ -293,6 +328,20 @@
         <p>Saldo: S/ <span id="saldo">Cargando...</span></p>
       </div>
     </div>
+  </div>
+  
+  <!-- Banner de anuncios superior -->
+  <div class="ad-banner">
+    <script type="text/javascript">
+      atOptions = {
+        'key' : 'b330ccd204185aee9ef640adccf896d2',
+        'format' : 'iframe',
+        'height' : 90,
+        'width' : 728,
+        'params' : {}
+      };
+    </script>
+    <script type="text/javascript" src="//www.highperformanceformat.com/b330ccd204185aee9ef640adccf896d2/invoke.js"></script>
   </div>
   
   <div class="warning-banner">
@@ -331,6 +380,26 @@
   
   <div id="peliculas-container" class="peliculas-container">
     <!-- Las películas se generarán dinámicamente -->
+  </div>
+  
+  <!-- Banner de anuncios lateral -->
+  <div class="ad-banner">
+    <script type="text/javascript">
+      atOptions = {
+        'key' : 'a55c7cdc78df0520f71c2b00e4046167',
+        'format' : 'iframe',
+        'height' : 300,
+        'width' : 160,
+        'params' : {}
+      };
+    </script>
+    <script type="text/javascript" src="//www.highperformanceformat.com/a55c7cdc78df0520f71c2b00e4046167/invoke.js"></script>
+  </div>
+  
+  <!-- Banner de anuncios inferior -->
+  <div class="bottom-ad">
+    <script async="async" data-cfasync="false" src="//pl26063295.profitableratecpm.com/2537ae2ea8b16bc9e554273a94dfd098/invoke.js"></script>
+    <div id="container-2537ae2ea8b16bc9e554273a94dfd098"></div>
   </div>
   
   <script>
@@ -641,6 +710,11 @@
       } catch (error) {
         console.error("Error al registrar ganancia:", error);
       }
+    }
+    
+    // Función para ir al dashboard
+    function irAlDashboard() {
+      window.location.href = "dashboard.html";
     }
     
     // Función para cerrar sesión
