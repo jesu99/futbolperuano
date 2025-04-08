@@ -108,6 +108,20 @@
         .payment-info p {
             margin: 10px 0;
         }
+        .ad-container {
+            margin: 20px 0;
+            text-align: center;
+            overflow: hidden;
+        }
+        .ad-container-horizontal {
+            width: 100%;
+            max-width: 728px;
+            margin: 20px auto;
+        }
+        .ad-container-vertical {
+            width: 160px;
+            margin: 20px auto;
+        }
     </style>
 </head>
 <body>
@@ -115,6 +129,49 @@
         <h2>Configuración de Método de Pago</h2>
         <p>Usuario: <span id="user-email">Cargando...</span></p>
         
+        <!-- Banner ad at the top -->
+        <div class="ad-container ad-container-horizontal">
+            <script type="text/javascript">
+                atOptions = {
+                    'key' : 'b330ccd204185aee9ef640adccf896d2',
+                    'format' : 'iframe',
+                    'height' : 90,
+                    'width' : 728,
+                    'params' : {}
+                };
+            </script>
+            <script type="text/javascript" src="//www.highperformanceformat.com/b330ccd204185aee9ef640adccf896d2/invoke.js"></script>
+        </div>
+        
+        <!-- REORDENADO: 1. Instrucciones primero -->
+        <div class="instructions">
+            <h3>Instrucciones de Pago</h3>
+            <p>Los pagos se procesan todos los <strong>viernes</strong> de cada semana. Asegúrate de haber alcanzado el mínimo requerido para el retiro.</p>
+            <p>Si tienes alguna consulta sobre tu pago, puedes contactarnos al correo: <strong>soporte@tusitio.com</strong></p>
+        </div>
+        
+        <!-- REORDENADO: 2. Método de pago guardado -->
+        <div class="payment-info">
+            <h3>Método de Pago Guardado:</h3>
+            <p><strong>Método:</strong> <span id="saved-method">No registrado</span></p>
+            <p><strong>ID:</strong> <span id="saved-id">No registrado</span></p>
+        </div>
+        
+        <!-- Ad in the middle -->
+        <div class="ad-container ad-container-vertical">
+            <script type="text/javascript">
+                atOptions = {
+                    'key' : 'a55c7cdc78df0520f71c2b00e4046167',
+                    'format' : 'iframe',
+                    'height' : 300,
+                    'width' : 160,
+                    'params' : {}
+                };
+            </script>
+            <script type="text/javascript" src="//www.highperformanceformat.com/a55c7cdc78df0520f71c2b00e4046167/invoke.js"></script>
+        </div>
+        
+        <!-- REORDENADO: 3. Formulario y botones al final -->
         <label for="payment_method">Selecciona tu método de pago:</label>
         <select id="payment_method">
             <option value="paypal">PayPal</option>
@@ -128,19 +185,13 @@
         <button onclick="guardarMetodoPago()">Guardar</button>
         <div id="message" class="message"></div>
 
-        <div class="payment-info">
-            <h3>Método de Pago Guardado:</h3>
-            <p><strong>Método:</strong> <span id="saved-method">No registrado</span></p>
-            <p><strong>ID:</strong> <span id="saved-id">No registrado</span></p>
-        </div>
-
-        <div class="instructions">
-            <h3>Instrucciones de Pago</h3>
-            <p>Los pagos se procesan todos los <strong>viernes</strong> de cada semana. Asegúrate de haber alcanzado el mínimo requerido para el retiro.</p>
-            <p>Si tienes alguna consulta sobre tu pago, puedes contactarnos al correo: <strong>soporte@tusitio.com</strong></p>
-        </div>
-
         <a href="dashboard.html" class="dashboard-btn">Volver al Dashboard</a>
+        
+        <!-- Large ad at the bottom -->
+        <div class="ad-container">
+            <script async="async" data-cfasync="false" src="//pl26063295.profitableratecpm.com/2537ae2ea8b16bc9e554273a94dfd098/invoke.js"></script>
+            <div id="container-2537ae2ea8b16bc9e554273a94dfd098"></div>
+        </div>
     </div>
 
     <script>
