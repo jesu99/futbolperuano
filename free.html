@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>MODO-SIN-ANUNCIO</title>
+  <title>Plataforma de Películas</title>
   <style>
     body {
       font-family: 'Helvetica Neue', Arial, sans-serif;
@@ -83,6 +83,14 @@
       margin-bottom: 8px;
     }
     
+    .movie-description {
+      font-size: 12px;
+      color: #ccc;
+      margin-bottom: 10px;
+      height: 60px;
+      overflow: hidden;
+    }
+    
     .btn {
       display: inline-block;
       background-color: #e50914;
@@ -110,15 +118,6 @@
       background-color: #555;
     }
     
-    .no-ads-notice {
-      background-color: rgba(0, 0, 0, 0.8);
-      padding: 20px;
-      border-radius: 8px;
-      margin: 20px auto;
-      max-width: 800px;
-      border-left: 4px solid #e50914;
-    }
-    
     .hero {
       background: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url('/api/placeholder/1200/500');
       background-size: cover;
@@ -141,11 +140,43 @@
       margin-bottom: 20px;
       opacity: 0.8;
     }
+    
+    .ad-container {
+      margin: 20px auto;
+      text-align: center;
+      max-width: 100%;
+      overflow: hidden;
+    }
+    
+    .mode-switch {
+      background-color: rgba(0, 0, 0, 0.8);
+      padding: 20px;
+      border-radius: 8px;
+      margin: 20px auto;
+      max-width: 800px;
+      border-left: 4px solid #e50914;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .mode-text {
+      flex: 1;
+    }
+    
+    .premium-btn {
+      background-color: gold;
+      color: #000;
+    }
+    
+    .premium-btn:hover {
+      background-color: #ffd700;
+    }
   </style>
 </head>
 <body>
   <div class="header">
-    <div class="logo">MODO SIN ANUNCIOS</div>
+    <div class="logo">PeliculasMax</div>
     <div>
       <a href="dashboard.html" class="btn dashboard-btn">Dashboard</a>
     </div>
@@ -153,100 +184,185 @@
   
   <div class="main-content">
     <div class="hero">
-      <h1 class="hero-title">Bienvenido </h1>
-      <p class="hero-subtitle">Disfruta de las mejores películas y series</p>
+      <h1 class="hero-title">Bienvenido</h1>
+      <p class="hero-subtitle">Las mejores películas y series en un solo lugar</p>
     </div>
     
-    <div class="no-ads-notice">
-      <h3>Estás en modo sin anuncios</h3>
-      <p>Aquí podrás ver películas pero de forma limitada. No monetizarás, es decir, no generarás dinero en este modo.</p>
+    <div class="mode-switch">
+      <div class="mode-text">
+        <h3>Modo Libre</h3>
+        <p>Estás navegando en modo Libre aca no podras generar ingresos,las actualizaciones de peliculas demoran un poco mas. Monetiza tu experiencia o mejora a premium.</p>
+      </div>
+      <a href="#" class="btn premium-btn">Activar Premium</a>
+    </div>
+    
+    <!-- Banner Ad -->
+    <div class="ad-container">
+      <script type="text/javascript">
+        atOptions = {
+          'key' : 'b330ccd204185aee9ef640adccf896d2',
+          'format' : 'iframe',
+          'height' : 90,
+          'width' : 728,
+          'params' : {}
+        };
+      </script>
+      <script type="text/javascript" src="//www.highperformanceformat.com/b330ccd204185aee9ef640adccf896d2/invoke.js"></script>
     </div>
     
     <h2 class="section-title">Tendencias</h2>
     <div class="movie-row">
       <div class="movie-card">
-        <img src="/api/placeholder/180/260" alt="Película 1">
+        <img src="https://images.justwatch.com/poster/322836177/s166/equipaje-de-mano-2024.avif" alt="Equipaje de mano">
+        <div class="movie-info">
+          <div class="movie-title">Equipaje de mano</div>
+          <div class="movie-description">El día de Nochebuena, en el concurrido aeropuerto de Los Angeles, un desconocido chantajea a un joven agente para que le deje subir una misteriosa maleta al avión.</div>
+          <a href="https://do7go.com/e/s5x630jojq2x" class="btn" target="_blank">Ver</a>
+        </div>
+      </div>
+      
+      <div class="movie-card">
+        <img src="/api/placeholder/180/260" alt="Stranger Things">
         <div class="movie-info">
           <div class="movie-title">Stranger Things</div>
+          <div class="movie-description">Cuando un niño desaparece, un pequeño pueblo descubre un misterio que involucra experimentos secretos, fuerzas sobrenaturales y una extraña niña.</div>
           <a href="https://pixeldrain.com/u/3jPGvDNy" class="btn" target="_blank">Ver</a>
         </div>
       </div>
       
       <div class="movie-card">
-        <img src="/api/placeholder/180/260" alt="Película 2">
+        <img src="/api/placeholder/180/260" alt="La Casa de Papel">
         <div class="movie-info">
           <div class="movie-title">La Casa de Papel</div>
+          <div class="movie-description">Un grupo de ladrones perfectamente preparados asalta la Fábrica Nacional de Moneda y Timbre con el objetivo de llevar a cabo el mayor robo de la historia.</div>
           <a href="#" class="btn">Ver</a>
         </div>
       </div>
       
       <div class="movie-card">
-        <img src="/api/placeholder/180/260" alt="Película 3">
-        <div class="movie-info">
-          <div class="movie-title">Gambito de Dama</div>
-          <a href="#" class="btn">Ver</a>
-        </div>
-      </div>
-      
-      <div class="movie-card">
-        <img src="/api/placeholder/180/260" alt="Película 4">
+        <img src="/api/placeholder/180/260" alt="The Witcher">
         <div class="movie-info">
           <div class="movie-title">The Witcher</div>
+          <div class="movie-description">Un cazador de monstruos solitario lucha por encontrar su lugar en un mundo donde las personas suelen ser más malvadas que las bestias.</div>
           <a href="#" class="btn">Ver</a>
         </div>
       </div>
       
       <div class="movie-card">
-        <img src="/api/placeholder/180/260" alt="Película 5">
+        <img src="/api/placeholder/180/260" alt="Ozark">
         <div class="movie-info">
           <div class="movie-title">Ozark</div>
+          <div class="movie-description">Un asesor financiero arrastra a su familia desde Chicago hasta los lagos de Ozark para lavar 500 millones de dólares y apaciguar a un capo de la droga.</div>
           <a href="#" class="btn">Ver</a>
         </div>
       </div>
     </div>
     
+    <!-- Side Ad -->
+    <div class="ad-container" style="float: right; margin: 0 0 20px 20px;">
+      <script type="text/javascript">
+        atOptions = {
+          'key' : 'a55c7cdc78df0520f71c2b00e4046167',
+          'format' : 'iframe',
+          'height' : 300,
+          'width' : 160,
+          'params' : {}
+        };
+      </script>
+      <script type="text/javascript" src="//www.highperformanceformat.com/a55c7cdc78df0520f71c2b00e4046167/invoke.js"></script>
+    </div>
+    
     <h2 class="section-title">Películas populares</h2>
     <div class="movie-row">
       <div class="movie-card">
-        <img src="/api/placeholder/180/260" alt="Película 6">
+        <img src="/api/placeholder/180/260" alt="El Padrino">
         <div class="movie-info">
           <div class="movie-title">El Padrino</div>
+          <div class="movie-description">El patriarca envejecido de una dinastía del crimen organizado transfiere el control de su imperio clandestino a su reacio hijo.</div>
           <a href="#" class="btn">Ver</a>
         </div>
       </div>
       
       <div class="movie-card">
-        <img src="/api/placeholder/180/260" alt="Película 7">
+        <img src="/api/placeholder/180/260" alt="Interestelar">
         <div class="movie-info">
           <div class="movie-title">Interestelar</div>
+          <div class="movie-description">Un equipo de exploradores viaja a través de un agujero de gusano en el espacio en un intento de garantizar la supervivencia de la humanidad.</div>
           <a href="#" class="btn">Ver</a>
         </div>
       </div>
       
       <div class="movie-card">
-        <img src="/api/placeholder/180/260" alt="Película 8">
+        <img src="/api/placeholder/180/260" alt="El Irlandés">
         <div class="movie-info">
           <div class="movie-title">El Irlandés</div>
+          <div class="movie-description">Un veterano de la Segunda Guerra Mundial recuerda su vida como sicario de la mafia mientras reflexiona sobre su papel en la desaparición de un líder sindical.</div>
           <a href="#" class="btn">Ver</a>
         </div>
       </div>
       
       <div class="movie-card">
-        <img src="/api/placeholder/180/260" alt="Película 9">
+        <img src="/api/placeholder/180/260" alt="Pulp Fiction">
         <div class="movie-info">
           <div class="movie-title">Pulp Fiction</div>
+          <div class="movie-description">Las vidas de dos mafiosos, un boxeador, la esposa de un gánster y un par de bandidos se entrelazan en cuatro historias de violencia y redención.</div>
           <a href="#" class="btn">Ver</a>
         </div>
       </div>
       
       <div class="movie-card">
-        <img src="/api/placeholder/180/260" alt="Película 10">
+        <img src="/api/placeholder/180/260" alt="El Caballero Oscuro">
         <div class="movie-info">
           <div class="movie-title">El Caballero Oscuro</div>
+          <div class="movie-description">Batman debe aceptar una de sus mayores pruebas psicológicas y físicas para luchar contra la injusticia causada por el Joker.</div>
           <a href="#" class="btn">Ver</a>
         </div>
       </div>
     </div>
+    
+    <!-- Container Ad -->
+    <div class="ad-container" style="margin-top: 40px;">
+      <script async="async" data-cfasync="false" src="//pl26063295.profitableratecpm.com/2537ae2ea8b16bc9e554273a94dfd098/invoke.js"></script>
+      <div id="container-2537ae2ea8b16bc9e554273a94dfd098"></div>
+    </div>
   </div>
+
+  <script>
+    // Script para cargar películas desde un formato JSON
+    const peliculas = [
+      {
+        id: 2,
+        titulo: "Equipaje de mano",
+        imagen: "https://images.justwatch.com/poster/322836177/s166/equipaje-de-mano-2024.avif",
+        descripcion: "El día de Nochebuena, en el concurrido aeropuerto de Los Angeles, un desconocido chantajea a un joven agente para que le deje subir una misteriosa maleta al avión.",
+        url: "https://do7go.com/e/s5x630jojq2x"
+      },
+      // Puedes agregar más películas con el mismo formato
+      {
+        id: 3,
+        titulo: "Gladiator II",
+        imagen: "/api/placeholder/180/260",
+        descripcion: "La historia de Lucius, el sobrino de Cómodo, que se ve obligado a convertirse en gladiador tras la destrucción de su hogar y familia.",
+        url: "#"
+      },
+      {
+        id: 4,
+        titulo: "Joker: Folie à Deux",
+        imagen: "/api/placeholder/180/260",
+        descripcion: "Arthur Fleck, ahora internado en el Asilo Arkham, navega por su complicada relación con Harley Quinn mientras enfrenta sus demonios internos.",
+        url: "#"
+      }
+      // Puedes seguir agregando más películas siguiendo este formato
+    ];
+    
+    // Esta función se puede utilizar para cargar películas dinámicamente
+    function cargarPeliculas() {
+      // Aquí puedes implementar la carga dinámica de películas
+      console.log("Películas disponibles:", peliculas);
+    }
+    
+    // Inicializar carga de películas al cargar la página
+    window.onload = cargarPeliculas;
+  </script>
 </body>
 </html>
