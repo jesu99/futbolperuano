@@ -2,55 +2,252 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Catálogo de Películas</title>
+  <title>MODO-SIN-ANUNCIO</title>
   <style>
     body {
-      font-family: Arial, sans-serif;
-      background-color: #121212;
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+      background-color: #141414;
       color: #fff;
+      padding: 0;
+      margin: 0;
+    }
+    
+    .header {
+      background-color: #000;
+      padding: 15px 40px;
       display: flex;
-      flex-direction: column;
+      justify-content: space-between;
       align-items: center;
-      padding: 20px;
-    }
-    .pelicula {
-      background-color: #1e1e1e;
-      border-radius: 10px;
-      padding: 15px;
-      margin: 10px;
-      text-align: center;
-      width: 250px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.5);
-    }
-    .pelicula img {
+      position: fixed;
       width: 100%;
-      border-radius: 10px;
+      top: 0;
+      z-index: 1000;
+      box-sizing: border-box;
     }
-    .pelicula button {
-      margin-top: 10px;
-      padding: 10px 15px;
-      border: none;
-      background-color: #28a745;
-      color: white;
-      border-radius: 5px;
+    
+    .logo {
+      color: #e50914;
+      font-size: 28px;
+      font-weight: bold;
+      text-transform: uppercase;
+    }
+    
+    .main-content {
+      margin-top: 100px;
+      padding: 20px 40px;
+    }
+    
+    .section-title {
+      font-size: 22px;
+      margin-bottom: 15px;
+    }
+    
+    .movie-row {
+      display: flex;
+      overflow-x: auto;
+      padding: 10px 0;
+      scrollbar-width: none; /* Oculta la barra de desplazamiento en Firefox */
+    }
+    
+    .movie-row::-webkit-scrollbar {
+      display: none; /* Oculta la barra de desplazamiento en Chrome/Safari */
+    }
+    
+    .movie-card {
+      background-color: #2c2c2c;
+      margin-right: 15px;
+      border-radius: 4px;
+      overflow: hidden;
+      transition: transform 0.3s;
+      min-width: 180px;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.3);
+    }
+    
+    .movie-card:hover {
+      transform: scale(1.05);
       cursor: pointer;
     }
-    .pelicula button:hover {
-      background-color: #218838;
+    
+    .movie-card img {
+      width: 100%;
+      height: 260px;
+      object-fit: cover;
+    }
+    
+    .movie-info {
+      padding: 10px;
+    }
+    
+    .movie-title {
+      font-weight: bold;
+      margin-bottom: 8px;
+    }
+    
+    .btn {
+      display: inline-block;
+      background-color: #e50914;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 4px;
+      font-weight: bold;
+      cursor: pointer;
+      text-decoration: none;
+      font-size: 14px;
+      transition: background-color 0.2s;
+    }
+    
+    .btn:hover {
+      background-color: #f40612;
+    }
+    
+    .dashboard-btn {
+      background-color: #333;
+      margin-left: 15px;
+    }
+    
+    .dashboard-btn:hover {
+      background-color: #555;
+    }
+    
+    .no-ads-notice {
+      background-color: rgba(0, 0, 0, 0.8);
+      padding: 20px;
+      border-radius: 8px;
+      margin: 20px auto;
+      max-width: 800px;
+      border-left: 4px solid #e50914;
+    }
+    
+    .hero {
+      background: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url('/api/placeholder/1200/500');
+      background-size: cover;
+      background-position: center;
+      height: 400px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 0 40px;
+      margin-bottom: 30px;
+    }
+    
+    .hero-title {
+      font-size: 48px;
+      margin-bottom: 15px;
+    }
+    
+    .hero-subtitle {
+      font-size: 24px;
+      margin-bottom: 20px;
+      opacity: 0.8;
     }
   </style>
 </head>
 <body>
-
-  <h1>Catálogo de Películas</h1>
-
-  <div class="pelicula">
-    <img src="https://via.placeholder.com/250x350.png?text=Poster+de+Pelicula" alt="Poster de la película">
-    <h3>Título de la Película</h3>
-    <a href="https://pixeldrain.com/u/3jPGvDNy" target="_blank">
-      <button>Ver</button>
-    </a>
+  <div class="header">
+    <div class="logo">NetflixClon</div>
+    <div>
+      <a href="dashboard.html" class="btn dashboard-btn">Dashboard</a>
+    </div>
   </div>
-
+  
+  <div class="main-content">
+    <div class="hero">
+      <h1 class="hero-title">Bienvenido a NetflixClon</h1>
+      <p class="hero-subtitle">Disfruta de las mejores películas y series</p>
+      <a href="dashboard.html" class="btn">Ir a Dashboard</a>
+    </div>
+    
+    <div class="no-ads-notice">
+      <h3>Estás en modo sin anuncios</h3>
+      <p>Aquí podrás ver películas pero de forma limitada. No monetizarás, es decir, no generarás dinero en este modo.</p>
+    </div>
+    
+    <h2 class="section-title">Tendencias</h2>
+    <div class="movie-row">
+      <div class="movie-card">
+        <img src="/api/placeholder/180/260" alt="Película 1">
+        <div class="movie-info">
+          <div class="movie-title">Stranger Things</div>
+          <a href="https://pixeldrain.com/u/3jPGvDNy" class="btn" target="_blank">Ver</a>
+        </div>
+      </div>
+      
+      <div class="movie-card">
+        <img src="/api/placeholder/180/260" alt="Película 2">
+        <div class="movie-info">
+          <div class="movie-title">La Casa de Papel</div>
+          <a href="#" class="btn">Ver</a>
+        </div>
+      </div>
+      
+      <div class="movie-card">
+        <img src="/api/placeholder/180/260" alt="Película 3">
+        <div class="movie-info">
+          <div class="movie-title">Gambito de Dama</div>
+          <a href="#" class="btn">Ver</a>
+        </div>
+      </div>
+      
+      <div class="movie-card">
+        <img src="/api/placeholder/180/260" alt="Película 4">
+        <div class="movie-info">
+          <div class="movie-title">The Witcher</div>
+          <a href="#" class="btn">Ver</a>
+        </div>
+      </div>
+      
+      <div class="movie-card">
+        <img src="/api/placeholder/180/260" alt="Película 5">
+        <div class="movie-info">
+          <div class="movie-title">Ozark</div>
+          <a href="#" class="btn">Ver</a>
+        </div>
+      </div>
+    </div>
+    
+    <h2 class="section-title">Películas populares</h2>
+    <div class="movie-row">
+      <div class="movie-card">
+        <img src="/api/placeholder/180/260" alt="Película 6">
+        <div class="movie-info">
+          <div class="movie-title">El Padrino</div>
+          <a href="#" class="btn">Ver</a>
+        </div>
+      </div>
+      
+      <div class="movie-card">
+        <img src="/api/placeholder/180/260" alt="Película 7">
+        <div class="movie-info">
+          <div class="movie-title">Interestelar</div>
+          <a href="#" class="btn">Ver</a>
+        </div>
+      </div>
+      
+      <div class="movie-card">
+        <img src="/api/placeholder/180/260" alt="Película 8">
+        <div class="movie-info">
+          <div class="movie-title">El Irlandés</div>
+          <a href="#" class="btn">Ver</a>
+        </div>
+      </div>
+      
+      <div class="movie-card">
+        <img src="/api/placeholder/180/260" alt="Película 9">
+        <div class="movie-info">
+          <div class="movie-title">Pulp Fiction</div>
+          <a href="#" class="btn">Ver</a>
+        </div>
+      </div>
+      
+      <div class="movie-card">
+        <img src="/api/placeholder/180/260" alt="Película 10">
+        <div class="movie-info">
+          <div class="movie-title">El Caballero Oscuro</div>
+          <a href="#" class="btn">Ver</a>
+        </div>
+      </div>
+    </div>
+  </div>
 </body>
 </html>
