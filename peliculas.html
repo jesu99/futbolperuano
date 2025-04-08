@@ -34,7 +34,7 @@
     
     header {
       background-color: var(--header-bg);
-      padding: 1rem;
+      padding: 1rem 2rem;
       position: sticky;
       top: 0;
       z-index: 100;
@@ -42,42 +42,40 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      flex-wrap: wrap;
     }
     
     .logo {
       color: var(--primary-color);
-      font-size: 1.8rem;
+      font-size: 2rem;
       font-weight: bold;
       letter-spacing: 0.5px;
       text-transform: uppercase;
-      margin-bottom: 0.5rem;
     }
     
     .user-info {
       background: rgba(0, 0, 0, 0.7);
-      padding: 15px;
+      padding: 20px;
       border-radius: 8px;
-      margin: 15px;
+      margin: 20px;
       box-shadow: 0 4px 15px rgba(0,0,0,0.3);
       border: 1px solid rgba(255,255,255,0.05);
     }
     
     .user-data {
       display: flex;
-      flex-direction: column;
-      gap: 10px;
+      justify-content: space-between;
+      align-items: center;
     }
     
     .user-balance {
-      font-size: 1.1rem;
+      font-size: 1.2rem;
       font-weight: bold;
       color: #4BB543;
     }
     
     #contador {
-      font-size: 1.1rem;
-      margin: 15px;
+      font-size: 1.2rem;
+      margin: 20px;
       padding: 12px;
       background: rgba(229, 9, 20, 0.2);
       border-radius: 8px;
@@ -87,49 +85,11 @@
       font-weight: bold;
     }
     
-    .instructions-banner {
-      background: linear-gradient(to right, #1a237e, #283593);
-      color: white;
-      padding: 15px;
-      margin: 15px;
-      border-radius: 8px;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-      position: relative;
-      overflow: hidden;
-      border-left: 4px solid #3949ab;
-    }
-    
-    .instructions-title {
-      font-size: 1.2rem;
-      font-weight: bold;
-      margin-bottom: 10px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    
-    .instructions-content {
-      font-size: 0.95rem;
-      line-height: 1.5;
-    }
-    
-    .instructions-point {
-      display: flex;
-      align-items: flex-start;
-      margin: 8px 0;
-      gap: 8px;
-    }
-    
-    .instructions-point i {
-      margin-top: 3px;
-      flex-shrink: 0;
-    }
-    
     .warning-banner {
       background: linear-gradient(to right, #ff8a00, #e52e71);
       color: white;
-      padding: 15px;
-      margin: 15px;
+      padding: 20px;
+      margin: 20px;
       border-radius: 8px;
       box-shadow: 0 4px 15px rgba(0,0,0,0.3);
       position: relative;
@@ -137,49 +97,44 @@
     }
     
     .warning-icon {
-      font-size: 1.5rem;
-      margin-bottom: 8px;
+      font-size: 2rem;
+      margin-bottom: 10px;
       display: block;
       text-align: center;
     }
     
     .warning-title {
-      font-size: 1.2rem;
+      font-size: 1.5rem;
       font-weight: bold;
-      margin-bottom: 12px;
+      margin-bottom: 15px;
       text-align: center;
     }
     
     .ad-banner {
-      margin: 15px;
+      margin: 20px;
       text-align: center;
       background: rgba(0, 0, 0, 0.5);
       padding: 15px;
       border-radius: 8px;
       box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-      overflow: hidden;
     }
     
     .button-container {
       display: flex;
-      gap: 8px;
+      gap: 10px;
     }
     
     .header-buttons {
       display: flex;
-      gap: 8px;
-      margin-top: 0.5rem;
-      width: 100%;
+      gap: 10px;
     }
     
     .dashboard-btn, .logout-btn {
-      padding: 8px 12px;
+      padding: 8px 15px;
       border: none;
       border-radius: 4px;
       cursor: pointer;
       transition: background-color 0.3s;
-      flex: 1;
-      font-size: 0.9rem;
     }
     
     .dashboard-btn {
@@ -204,7 +159,7 @@
       position: fixed;
       top: 20px;
       right: 20px;
-      padding: 12px 20px;
+      padding: 15px 25px;
       background: rgba(75, 181, 67, 0.9);
       color: white;
       border-radius: 8px;
@@ -212,8 +167,6 @@
       display: none;
       z-index: 1000;
       animation: slideIn 0.5s forwards;
-      font-size: 0.9rem;
-      max-width: 90%;
     }
     
     @keyframes slideIn {
@@ -228,18 +181,19 @@
     }
     
     .search-container {
-      margin: 15px;
+      margin: 20px;
       position: relative;
     }
     
     .search-container input {
       width: 100%;
-      padding: 10px 15px 10px 35px;
+      padding: 12px 20px;
       border-radius: 30px;
       border: none;
       background-color: var(--secondary-bg);
       color: var(--text-color);
-      font-size: 0.95rem;
+      font-size: 1rem;
+      padding-left: 40px;
     }
     
     .search-container i {
@@ -252,9 +206,9 @@
     
     .peliculas-container {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-      gap: 15px;
-      padding: 15px;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 20px;
+      padding: 20px;
     }
     
     .pelicula {
@@ -270,55 +224,50 @@
     }
     
     .pelicula:hover {
-      transform: translateY(-5px);
+      transform: translateY(-10px);
       box-shadow: 0 10px 25px rgba(0,0,0,0.5);
     }
     
     .pelicula img {
       width: 100%;
-      height: auto;
-      aspect-ratio: 2/3;
+      height: 450px;
       object-fit: cover;
       transition: opacity 0.3s;
     }
     
     .pelicula:hover img {
-      opacity: 0.8;
+      opacity: 0.7;
     }
     
     .pelicula-info {
-      padding: 12px;
+      padding: 15px;
       flex-grow: 1;
       display: flex;
       flex-direction: column;
     }
     
     .pelicula h3 {
-      margin: 0 0 8px;
-      font-size: 1.1rem;
+      margin: 0 0 10px;
+      font-size: 1.3rem;
       font-weight: 700;
     }
     
     .pelicula p {
-      font-size: 0.9rem;
+      font-size: 0.95rem;
       color: rgba(255,255,255,0.7);
-      margin-bottom: 12px;
+      margin-bottom: 15px;
       flex-grow: 1;
-      display: -webkit-box;
-      -webkit-line-clamp: 4;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
     }
     
     .pelicula button {
-      padding: 10px;
+      padding: 12px;
       border: none;
       border-radius: 5px;
       background-color: var(--primary-color);
       color: white;
       cursor: pointer;
       font-weight: bold;
-      font-size: 0.95rem;
+      font-size: 1rem;
       transition: background-color 0.3s;
       margin-top: auto;
     }
@@ -329,70 +278,35 @@
     
     .check-item {
       display: flex;
-      align-items: flex-start;
-      margin: 6px 0;
-      gap: 8px;
+      align-items: center;
+      margin: 8px 0;
     }
     
     .check-item i {
       color: #4BB543;
-      margin-top: 5px;
-      flex-shrink: 0;
+      margin-right: 10px;
     }
     
     .disclaimer {
       font-style: italic;
       color: rgba(255,255,255,0.7);
       margin-top: 10px;
-      font-size: 0.85rem;
+      font-size: 0.9rem;
     }
     
     .empty-search {
       text-align: center;
-      padding: 30px;
+      padding: 40px;
       grid-column: 1 / -1;
     }
     
     .bottom-ad {
-      margin-top: 30px;
-      margin-bottom: 30px;
-      padding: 15px;
+      margin-top: 40px;
+      margin-bottom: 40px;
+      padding: 20px;
       text-align: center;
       background: rgba(0, 0, 0, 0.5);
       border-radius: 8px;
-      margin-left: 15px;
-      margin-right: 15px;
-    }
-    
-    /* Media queries para adaptación móvil */
-    @media (min-width: 768px) {
-      header {
-        padding: 1rem 2rem;
-        flex-wrap: nowrap;
-      }
-      
-      .logo {
-        margin-bottom: 0;
-        font-size: 2rem;
-      }
-      
-      .header-buttons {
-        width: auto;
-        margin-top: 0;
-      }
-      
-      .user-data {
-        flex-direction: row;
-        justify-content: space-between;
-      }
-      
-      .pelicula img {
-        height: 380px;
-      }
-      
-      .pelicula p {
-        -webkit-line-clamp: 5;
-      }
     }
   </style>
 </head>
@@ -413,39 +327,6 @@
       <div class="user-balance">
         <p>Saldo: S/ <span id="saldo">Cargando...</span></p>
       </div>
-    </div>
-  </div>
-  
-  <!-- Nuevo banner de instrucciones -->
-  <div class="instructions-banner">
-    <div class="instructions-title">
-      <i class="fas fa-film"></i>
-      <span>🎬 Antes de ver la película, por favor lee esto:</span>
-    </div>
-    <div class="instructions-content">
-      <p>Para mantener esta plataforma gratuita y al mismo tiempo poder recompensarte por tu tiempo, <strong>verás varios anuncios emergentes (pop-ups)</strong> antes de que comience cada película.</p>
-      
-      <div class="instructions-point">
-        <i class="fas fa-desktop"></i>
-        <span><strong>Si estás en PC:</strong> Se abrirán nuevas pestañas con publicidad. <strong>Solo ciérralas</strong> y quédate en la pestaña original donde está el reproductor.</span>
-      </div>
-      
-      <div class="instructions-point">
-        <i class="fas fa-mobile-alt"></i>
-        <span><strong>Si estás en celular:</strong> Es posible que el navegador te redireccione. <strong>Solo presiona el botón "atrás"</strong> hasta volver al reproductor.</span>
-      </div>
-      
-      <div class="instructions-point">
-        <i class="fas fa-dollar-sign"></i>
-        <span><strong>Importante:</strong> Por cada película vista de principio a fin, recibirás <strong>$0.003</strong> acreditados en tu cuenta.</span>
-      </div>
-      
-      <div class="instructions-point">
-        <i class="fas fa-exclamation-triangle"></i>
-        <span>Los anuncios aparecen <strong>solo al inicio</strong>. Una vez comience la película, <strong>no habrá más interrupciones</strong>.</span>
-      </div>
-      
-      <p>Gracias por tu tiempo y apoyo. ¡Disfruta la película y empieza a ganar! 🍿💵</p>
     </div>
   </div>
   
@@ -536,7 +417,27 @@
         descripcion: "Una mujer enigmática despierta dentro de una comisaría abandonada en medio de la noche sin recordar cómo llegó allí. Dos detectives intentan reconstruir sus pasos para acusarla de un atropello.",
         url: "https://do7go.com/e/utfh2cbr2q7a"
       },
-     
+      {
+        id: 2,
+        titulo: "Equipaje de mano",
+        imagen: "https://images.justwatch.com/poster/322836177/s166/equipaje-de-mano-2024.avif",
+        descripcion: "El día de Nochebuena, en el concurrido aeropuerto de Los Angeles, un desconocido chantajea a un joven agente para que le deje subir una misteriosa maleta al avión.",
+        url: "https://do7go.com/e/s5x630jojq2x"
+      },
+      {
+        id: 3,
+        titulo: "Depravacion",
+        imagen: "https://images.abandomoviez.net/db/foto/db_27039_68.jpg",
+        descripcion: "Tres vecinos están atrapados en un siniestro juego de supervivencia.",
+        url: "https://do7go.com/e/d7gr48x248rj"
+      },
+      {
+        id: 4,
+        titulo: "Mi villano favorito 4",
+        imagen: "https://static.wikia.nocookie.net/doblaje/images/0/0b/MVF4_LATINO.jpg/revision/latest/scale-to-width-down/1000?cb=20240628203849&path-prefix=es",
+        descripcion: "Gru y su familia deben adoptar identidades falsas para ocultarse de un supervillano, un antiguo compañero de la escuela de Gru que le guarda rencor desde pequeño y pretende convertir a la familia en híbridos entre humano y cucaracha..",
+        url: "https://do7go.com/e/7ww27e1druzw"
+      },
      {
         id: 4,
         titulo: "Mufasa: El rey león",
@@ -560,11 +461,78 @@
       },
       {
         id: 4,
+        titulo: "Soldado anónimo",
+        imagen: "https://static.wikia.nocookie.net/doblaje/images/0/0b/MVF4_LATINO.jpg/revision/latest/scale-to-width-down/1000?cb=20240628203849&path-prefix=es",
+        descripcion: "Crónica sobre la guerra del Golfo: imágenes de pozos de petróleo ardiendo en la noche, reclutas ruidosos y llenos de entusiasmo, pero también atemorizados ante la idea de toparse con el enemigo en cualquier momento; chicos que juegan al fútbol con las máscaras antigás puestas, mientras esperan el correo. Sin embargo, en esta situación infernal nacen grandes amistades y lealtades incondicionales.",
+        url: "https://do7go.com/e/7ww27e1druzw"
+      },
+      {
+        id: 4,
+        titulo: "Would You Rather",
+        imagen: "https://m.media-amazon.com/images/S/pv-target-images/ab15a26b9e311d1b63afa30c9a9529affef76ca2253b43c67db0e04767448204.jpg",
+        descripcion: "Iris (Brittany Snow) y otras siete personas desesperadas son atrapadas en la mansión de Shepard (Jeffrey Combs). Shepard los obliga a participar en un juego sádico por una gran suma de dinero -- pero los dilemas se vuelven cada vez más letales.",
+        url: "https://do7go.com/d/ql6sln2nnjkx"
+      },
+    {
+        id: 4,
+        titulo: "Rápidos y Furiosos 9",
+        imagen: "https://m.media-amazon.com/images/S/pv-target-images/ab15a26b9e311d1b63afa30c9a9529affef76ca2253b43c67db0e04767448204.jpg",
+        descripcion: "Iris (Brittany Snow) y otras siete personas desesperadas son atrapadas en la mansión de Shepard (Jeffrey Combs). Shepard los obliga a participar en un juego sádico por una gran suma de dinero -- pero los dilemas se vuelven cada vez más letales.",
+        url: "https://do7go.com/e/3tiaa5a9nso0"
+      },
+      {
+        id: 4,
+        titulo: "Rápidos y furiosos 10",
+        imagen: "https://www.lavanguardia.com/peliculas-series/images/movie/poster/2023/5/w300/3P9QvWVN02Etn4kYGC702WVoXEb.jpg",
+        descripcion: "Motivado por su sed de venganza, el hijo del narcotraficante Hernán Reyes pone a Dom Toretto y a toda su familia en el punto de mira. Aunque en el pasado Dom y compañía fueron capaces de salir victoriosos de misiones casi imposibles, esta vez la amenaza sobre ellos luce implacable y dispuesta a saldar cuentas sin importar las consecuencias.",
+        url: "https://do7go.com/e/wz9qysy1aqxt"
+      },
+      {
+        id: 4,
+        titulo: "Apocalypto",
+        imagen: "https://www.posterscine.com/media/catalog/product/cache/1c91d037a1f0ef180108abb0973795cc/p/_/p_ster_apocalypto_pel_cula.png",
+        descripcion: "Mientras la oscuridad cae sobre lo que alguna vez fue la gran civilización maya, un hombre cautivo hace un intento desesperado por escapar de la brutal tribu que planea usarlo como un sacrificio humano. Si él logra sobrevivir, regresará con su familia y con la mujer que ama.",
+        url: "https://do7go.com/e/mbzimpzlbpcy"
+      },
+      {
+        id: 4,
+        titulo: "Armados y peligrosos",
+        imagen: "https://cineplex.com.co/wp-content/uploads/2020/10/armados-y-peligrosos-poster-pelicula.jpg",
+        descripcion: "Un agente de la DEA, Bobby Trench (Denzel Washington), y un oficial de la Inteligencia Naval, Michael Stigman (Mark Wahlberg), consiguen robarle 43 millones de dólares a la mafia. El problema consiste en que en realidad ese dinero no era de la organización criminal, sino de la CIA. Adaptación al cine de una novela gráfica de Steven Grant.",
+        url: "https://do7go.com/e/shmq2lc6lz20"
+      },
+      {
+        id: 4,
+        titulo: "Rescate del metro 1 2 3",
+        imagen: "https://image.tmdb.org/t/p/w440_and_h660_face/A06gSqAO7Xzdi1zBRXXzzUVhiAI.jpg",
+        descripcion: "Walter Garber, supervisor del metro de Nueva York, tiene que afrontar el caos provocado por el secuestro de un vagón por una banda armada. La banda amenaza con ejecutar a los pasajeros si, en el plazo de una hora, no se les paga un alto rescate. Garber utilizará sus conocimientos del sistema subterráneo para intentar salvar a los rehenes.",
+        url: "https://do7go.com/d/mc562jxn456o"
+      },
+      {
+        id: 4,
+        titulo: "Rescate del metro 1 2 3",
+        imagen: "https://www.aceprensa.com/wp-content/uploads/2010/08/27205-0.jpg",
+        descripcion: "Dom Cobb es un ladrón con una extraña habilidad para entrar a los sueños de la gente y robarles los secretos de sus subconscientes. Su habilidad lo ha vuelto muy popular en el mundo del espionaje corporativo, pero ha tenido un gran costo en la gente que ama. Cobb obtiene la oportunidad de redimirse cuando recibe una tarea imposible: plantar una idea en la mente de una persona. Si tiene éxito, será el crimen perfecto, pero un enemigo se anticipa a sus movimientos.",
+        url: "https://do7go.com/e/nqxaem15p7v1"
+      },
+      {
+        id: 4,
         titulo: "Contrabando",
         imagen: "https://encrypted-tbn3.gstatic.com/images?q=tbn:ANd9GcRVQ3JPc-9NgZjdk3zBbwfIGENF2nQtvsHV19yRUGZk3nT3ETNK",
         descripcion: "El excontrabanidta Chris Farraday dejó el crimen años atrás, pero se ve obligado a regresar al juego luego de que su cuñado, Andy, le falla a un narcotraficante durante un negocio de drogas, provocando una gran deuda. Con la ayuda de su mejor amigo, Chris reúne a un equipo para viajar a Panamá y recuperar una fortuna en billetes falsos. Cuando las cosas fallan, Chris debe usar sus habilidades para completar la tarea.",
         url: "https://do7go.com/e/dxd9dox6tido"
       },
+      
+
+
+
+
+
+
+
+
+
+      
     ];
     
     const tiempoMax = 90 * 60 * 1000; // 1 hora 30 min en milisegundos
@@ -613,29 +581,7 @@
       
       // Verificar si hay un temporizador activo
       verificarTemporizadorActivo();
-      
-      // Ajustar banners de anuncios en móviles
-      adjustAdsForMobile();
     });
-    
-    // Función para ajustar anuncios en móviles
-    function adjustAdsForMobile() {
-      if (window.innerWidth < 768) {
-        const adBanners = document.querySelectorAll('.ad-banner');
-        adBanners.forEach(banner => {
-          const scripts = banner.querySelectorAll('script');
-          if (scripts.length > 0) {
-            const scriptContent = scripts[0].innerHTML;
-            if (scriptContent.includes('width') && scriptContent.includes('height')) {
-              const newScript = document.createElement('script');
-              newScript.type = 'text/javascript';
-              newScript.innerHTML = scriptContent.replace(/width'\s*:\s*\d+/, "width' : " + Math.min(300, window.innerWidth - 40));
-              scripts[0].parentNode.replaceChild(newScript, scripts[0]);
-            }
-          }
-        });
-      }
-    }
     
     // Función para cargar películas
     function cargarPeliculas(listaPeliculas) {
@@ -651,7 +597,7 @@
         const peliculaElement = document.createElement("div");
         peliculaElement.className = "pelicula";
         peliculaElement.innerHTML = `
-          <img src="${pelicula.imagen}" alt="${pelicula.titulo}" loading="lazy">
+          <img src="${pelicula.imagen}" alt="${pelicula.titulo}">
           <div class="pelicula-info">
             <h3>${pelicula.titulo}</h3>
             <p>${pelicula.descripcion}</p>
@@ -718,164 +664,169 @@
           localStorage.removeItem("temporizadorData");
           document.getElementById("contador").textContent = "Tiempo finalizado. ¡Ganancia registrada!";
         }
-      } else {
-        document.getElementById("contador").textContent = "Selecciona una película para iniciar el temporizador";
       }
     }
     
-    // Función para iniciar el temporizador
-function iniciarTemporizador(duracion = tiempoMax) {
-  clearInterval(timer);
-  contadorPausado = false;
-  
-  const inicio = Date.now();
-  const finalizacion = inicio + duracion;
-  
-  // Guardar datos del temporizador en localStorage
-  localStorage.setItem("temporizadorData", JSON.stringify({
-    inicio: inicio,
-    duracion: duracion,
-    pausado: false
-  }));
-  
-  timer = setInterval(() => {
-    const ahora = Date.now();
-    const tiempoRestante = finalizacion - ahora;
-    
-    if (tiempoRestante <= 0) {
-      clearInterval(timer);
-      document.getElementById("contador").textContent = "¡Tiempo completado! Registrando ganancia...";
-      registrarGanancia();
-      localStorage.removeItem("temporizadorData");
-    } else {
-      // Formatear tiempo restante
-      const minutos = Math.floor(tiempoRestante / 60000);
-      const segundos = Math.floor((tiempoRestante % 60000) / 1000);
-      document.getElementById("contador").textContent = 
-        `Tiempo restante: ${minutos}:${segundos < 10 ? '0' : ''}${segundos}`;
-    }
-  }, 1000);
-}
-
-// Función para pausar el temporizador
-function pausarTemporizador() {
-  if (timer) {
-    clearInterval(timer);
-    const temporizadorData = JSON.parse(localStorage.getItem("temporizadorData"));
-    
-    if (temporizadorData) {
-      const tiempoTranscurrido = Date.now() - temporizadorData.inicio;
-      const tiempoRestante = temporizadorData.duracion - tiempoTranscurrido;
+    // Función para iniciar la visualización de una película
+    function verPelicula(url) {
+      // Si hay un temporizador pausado, restaurar desde donde se quedó
+      const temporizadorData = localStorage.getItem("temporizadorData");
+      let tiempoRestante = tiempoMax;
       
-      // Guardar datos del temporizador pausado
+      if (temporizadorData) {
+        const data = JSON.parse(temporizadorData);
+        if (data.pausado && data.tiempoRestante) {
+          tiempoRestante = data.tiempoRestante;
+        }
+      }
+      
+      // Guardar datos del temporizador
+      const inicioTiempo = Date.now();
       localStorage.setItem("temporizadorData", JSON.stringify({
-        inicio: Date.now(),
-        duracion: tiempoRestante,
-        pausado: true
+        inicio: inicioTiempo,
+        url: url,
+        pausado: false,
+        tiempoRestante: tiempoRestante
       }));
+      
+      // Abrir la película en una nueva pestaña y guardar referencia
+      peliculaVentana = window.open(url, "_blank");
+      
+      // Verificar periódicamente si la ventana está cerrada
+      const checkWindowInterval = setInterval(() => {
+        if (peliculaVentana && peliculaVentana.closed) {
+          clearInterval(checkWindowInterval);
+          pausarTemporizador();
+          peliculaVentana = null;
+        }
+      }, 1000);
+      
+      // Iniciar el temporizador
+      contadorPausado = false;
+      iniciarTemporizador(tiempoRestante);
+    }
+    
+    // Función para pausar el temporizador
+    function pausarTemporizador() {
+      if (timer) {
+        clearInterval(timer);
+        timer = null;
+      }
       
       contadorPausado = true;
       document.getElementById("contador").textContent = "Temporizador pausado. Ver película para continuar.";
+      
+      // Actualizar el estado en localStorage
+      const temporizadorData = localStorage.getItem("temporizadorData");
+      if (temporizadorData) {
+        const data = JSON.parse(temporizadorData);
+        // Calcular tiempo restante
+        const tiempoTranscurrido = Date.now() - data.inicio;
+        const tiempoRestante = tiempoMax - tiempoTranscurrido;
+        
+        // Guardar el tiempo restante y marcar como pausado
+        localStorage.setItem("temporizadorData", JSON.stringify({
+          ...data,
+          pausado: true,
+          tiempoRestante: tiempoRestante > 0 ? tiempoRestante : 0
+        }));
+      }
     }
-  }
-}
-
-// Función para registrar la ganancia después de ver la película
-async function registrarGanancia() {
-  if (!userId) return;
-  
-  try {
-    // Obtener saldo actual
-    const { data: userData, error: userError } = await supabase
-      .from("users")
-      .select("balance")
-      .eq("id", userId)
-      .single();
     
-    if (userError) throw userError;
-    
-    // Valor de la recompensa
-    const recompensa = 0.003;
-    
-    // Actualizar saldo
-    const nuevoSaldo = parseFloat(userData.balance) + recompensa;
-    
-    const { error: updateError } = await supabase
-      .from("users")
-      .update({ balance: nuevoSaldo })
-      .eq("id", userId);
-    
-    if (updateError) throw updateError;
-    
-    // Mostrar notificación y actualizar saldo en la página
-    mostrarNotificacion(`¡Recompensa exitosa! Se ha añadido ${recompensa.toFixed(3)} a tu saldo.`);
-    document.getElementById("saldo").textContent = formatearSaldo(nuevoSaldo);
-    
-    // Registrar la transacción
-    const { error: transError } = await supabase
-      .from("transactions")
-      .insert({
-        user_id: userId,
-        amount: recompensa,
-        type: "reward",
-        description: "Recompensa por ver película"
-      });
-    
-    if (transError) console.error("Error al registrar transacción:", transError);
-    
-  } catch (error) {
-    console.error("Error al registrar ganancia:", error);
-    mostrarNotificacion("Hubo un error al procesar tu recompensa. Inténtalo de nuevo.");
-  }
-}
-
-// Función para ver película
-function verPelicula(url) {
-  // Abrir película en nueva ventana/pestaña
-  peliculaVentana = window.open(url, "_blank");
-  
-  // Iniciar o reanudar el temporizador
-  const temporizadorData = localStorage.getItem("temporizadorData");
-  
-  if (temporizadorData) {
-    const data = JSON.parse(temporizadorData);
-    
-    if (data.pausado) {
-      // Reanudar temporizador pausado
-      iniciarTemporizador(data.duracion);
+    // Función para iniciar el temporizador con la duración especificada
+    function iniciarTemporizador(duracion) {
+      let restante = duracion;
+      const display = document.getElementById("contador");
+      clearInterval(timer); // Limpiar cualquier temporizador existente
+      
+      timer = setInterval(() => {
+        // Si el contador está pausado, no continuar
+        if (contadorPausado) {
+          clearInterval(timer);
+          timer = null;
+          return;
+        }
+        
+        restante -= 1000;
+        
+        if (restante <= 0) {
+          clearInterval(timer);
+          localStorage.removeItem("temporizadorData");
+          display.textContent = "Tiempo finalizado. ¡Ganancia registrada!";
+          registrarGanancia();
+          return;
+        }
+        
+        const minutos = Math.floor(restante / 60000);
+        const segundos = Math.floor((restante % 60000) / 1000);
+        display.textContent = `Tiempo restante: ${minutos}m ${segundos}s`;
+      }, 1000);
     }
-  } else {
-    // Iniciar nuevo temporizador
-    iniciarTemporizador();
-  }
-}
-
-// Función para ir al dashboard
-function irAlDashboard() {
-  window.location.href = "dashboard.html";
-}
-
-// Función para cerrar sesión
-async function cerrarSesion() {
-  if (timer) {
-    pausarTemporizador();
-  }
-  
-  const { error } = await supabase.auth.signOut();
-  if (error) {
-    console.error("Error al cerrar sesión:", error);
-    return;
-  }
-  
-  window.location.href = "login.html";
-}
-
-// Manejar visibilidad de la página
-document.addEventListener("visibilitychange", function() {
-  if (document.visibilityState === "hidden" && timer && !contadorPausado) {
-    pausarTemporizador();
-  }
-});
-
-// Ajustar para dispositivos móbiles en cambio de orientación
-window.addEventListener("resize", adjustAdsForMobile);
+    
+    // Función para registrar la ganancia cuando se completa el tiempo
+    async function registrarGanancia() {
+      try {
+        if (!userId) {
+          console.error("ID de usuario no disponible");
+          return;
+        }
+        
+        // Obtener saldo actual
+        const { data, error: balanceError } = await supabase
+          .from("users")
+          .select("balance")
+          .eq("id", userId)
+          .single();
+        
+        if (balanceError || !data) {
+          console.error("Error al obtener saldo:", balanceError);
+          return;
+        }
+        
+        // Calcular el nuevo saldo (agregar 0.5 por ver un video completo y 0.003 de recompensa adicional)
+        const nuevoSaldo = parseFloat(data.balance) + 0.0 + 0.003;
+        const saldoFormateado = formatearSaldo(nuevoSaldo);
+        
+        // Actualizar el saldo en la base de datos
+        const { error: updateError } = await supabase
+          .from("users")
+          .update({ balance: nuevoSaldo })
+          .eq("id", userId);
+        
+        if (updateError) {
+          console.error("Error al actualizar saldo:", updateError);
+        } else {
+          // Actualizar el saldo en la interfaz
+          document.getElementById("saldo").textContent = saldoFormateado;
+          
+          // Mostrar notificación de recompensa exitosa
+          mostrarNotificacion("¡Recompensa exitosa! Se ha añadido 0.003 a tu saldo.");
+        }
+      } catch (error) {
+        console.error("Error al registrar ganancia:", error);
+      }
+    }
+    
+    // Función para ir al dashboard
+    function irAlDashboard() {
+      window.location.href = "dashboard.html";
+    }
+    
+    // Función para cerrar sesión
+    async function cerrarSesion() {
+      // Limpiar temporizador y datos locales
+      clearInterval(timer);
+      localStorage.removeItem("temporizadorData");
+      
+      // Cerrar sesión en Supabase
+      const { error } = await supabase.auth.signOut();
+      
+      if (error) {
+        console.error("Error al cerrar sesión:", error);
+      } else {
+        window.location.href = "login.html";
+      }
+    }
+  </script>
+</body>
+</html>
