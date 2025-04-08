@@ -39,6 +39,9 @@
             justify-content: space-between;
             align-items: center;
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+            position: sticky;
+            top: 0;
+            z-index: 100;
         }
         
         .logo {
@@ -71,6 +74,29 @@
             max-width: 1200px;
             margin: 0 auto;
             width: 100%;
+        }
+        
+        .welcome-message {
+            background-color: rgba(229, 9, 20, 0.15);
+            border-left: 4px solid var(--accent-color);
+            padding: 20px;
+            border-radius: 6px;
+            margin-bottom: 30px;
+            line-height: 1.6;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+        
+        .welcome-message h2 {
+            color: var(--accent-color);
+            margin-bottom: 10px;
+        }
+        
+        .welcome-message p {
+            margin-bottom: 10px;
+        }
+        
+        .welcome-message .important {
+            font-weight: bold;
         }
         
         .balance-display {
@@ -128,6 +154,24 @@
             margin-bottom: 10px;
         }
         
+        #btn-custom2 {
+            background-color: rgba(229, 9, 20, 0.3);
+            border: 2px solid var(--accent-color);
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(229, 9, 20, 0.7);
+            }
+            70% {
+                box-shadow: 0 0 0 10px rgba(229, 9, 20, 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(229, 9, 20, 0);
+            }
+        }
+        
         footer {
             background-color: rgba(0, 0, 0, 0.8);
             padding: 20px;
@@ -139,20 +183,55 @@
         @media (max-width: 768px) {
             header {
                 padding: 15px 20px;
-                flex-direction: column;
-                gap: 15px;
             }
             
             main {
                 padding: 20px;
             }
             
+            .logo {
+                font-size: 24px;
+            }
+            
             .button-grid {
-                grid-template-columns: 1fr 1fr;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 15px;
+            }
+            
+            .menu-button {
+                height: 100px;
+                padding: 15px;
+            }
+            
+            .menu-button .icon {
+                font-size: 24px;
             }
         }
         
         @media (max-width: 480px) {
+            header {
+                padding: 12px 15px;
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .user-info {
+                width: 100%;
+                justify-content: center;
+            }
+            
+            .logo {
+                margin-bottom: 5px;
+            }
+            
+            main {
+                padding: 15px;
+            }
+            
+            .welcome-message {
+                padding: 15px;
+            }
+            
             .button-grid {
                 grid-template-columns: 1fr;
             }
@@ -161,6 +240,15 @@
                 flex-direction: column;
                 gap: 10px;
                 text-align: center;
+                padding: 15px;
+            }
+            
+            .balance-amount {
+                font-size: 28px;
+            }
+            
+            .menu-button {
+                height: 90px;
             }
         }
     </style>
@@ -175,6 +263,14 @@
     </header>
     
     <main>
+        <div class="welcome-message">
+            <h2>🎉 ¡Bienvenido al Dashboard!</h2>
+            <p>Este será tu menú principal, donde encontrarás todas las herramientas necesarias para comenzar a monetizar tu actividad dentro de la plataforma.</p>
+            <p class="important">⚠️ <strong>IMPORTANTE:</strong> Antes de utilizar cualquier función, asegúrate de leer cuidadosamente todas las instrucciones. Evitar errores es clave para garantizar que tus ganancias se registren correctamente y no corras el riesgo de perder tu dinero.</p>
+            <p>👉 <strong>Lo primero que debes hacer es presionar el botón "Cómo funciona".</strong> Ahí encontrarás toda la información esencial para empezar correctamente.</p>
+            <p>Tu experiencia y tus ganancias dependen de ello. ¡Éxitos y a monetizar! 💰🚀</p>
+        </div>
+        
         <div class="balance-display">
             <div>
                 <h2>Tu Balance</h2>
